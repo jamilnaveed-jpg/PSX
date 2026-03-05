@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSX Market Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & Base ─────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0b0f14;
+    --surface:    #111820;
+    --border:     #1e2a38;
+    --border2:    #243040;
+    --text:       #c8d8e8;
+    --text-dim:   #5a7a96;
+    --text-muted: #2d4560;
+    --accent:     #00c8ff;
+    --accent-dim: #006680;
+    --green:      #00e676;
+    --green-dim:  #00401c;
+    --green-mid:  #00802a;
+    --red:        #ff4444;
+    --red-dim:    #400000;
+    --red-mid:    #801010;
+    --gold:       #ffd740;
+    --mono:       'IBM Plex Mono', monospace;
+    --sans:       'IBM Plex Sans', sans-serif;
+    --header-h:   56px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: auto;
+  }
+
+  /* ── Scanline texture overlay ────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── Header ──────────────────────────────────────────────── */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: var(--header-h);
+    background: rgba(11,15,20,0.96);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 20px;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .logo span { color: var(--text-dim); font-weight: 400; }
+
+  .header-sep {
+    width: 1px; height: 28px;
+    background: var(--border);
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 0.06em;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  #last-updated {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── Page layout ─────────────────────────────────────────── */
+  .page { padding: 24px 24px 60px; max-width: 1700px; margin: 0 auto; }
+
+  /* ── Summary strip ───────────────────────────────────────── */
+  .summary-strip {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+
+  .summary-cell {
+    flex: 1;
+    background: var(--surface);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 110px;
+    animation: fadein 0.4s ease both;
+  }
+
+  .summary-cell:hover { background: #141e2a; }
+
+  .sc-label {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .sc-value {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .sc-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .sc-green .sc-value { color: var(--green); }
+  .sc-red   .sc-value { color: var(--red); }
+  .sc-gold  .sc-value { color: var(--gold); }
+  .sc-blue  .sc-value { color: var(--accent); }
+
+  /* ── Section labels ──────────────────────────────────────── */
+  .section-labels {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 4px 10px;
+    border: 1px solid var(--accent-dim);
+    border-radius: 4px;
+  }
+
+  .section-label.secondary { color: var(--gold); border-color: #664000; }
+
+  /* ── Main table wrapper ──────────────────────────────────── */
+  .table-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  /* ── Table ───────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  /* ── Column group dividers ───────────────────────────────── */
+  .col-divider { border-left: 2px solid var(--border2) !important; }
+
+  /* ── Header rows ─────────────────────────────────────────── */
+  thead tr.group-row th {
+    padding: 8px 10px 6px;
+    font-size: 9.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+    text-align: center;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .gh-primary {
+    background: #0d1f30;
+    color: var(--accent);
+    border-right: 2px solid var(--border2);
+  }
+
+  .gh-secondary {
+    background: #1a1500;
+    color: var(--gold);
+  }
+
+  thead tr.col-row th {
+    background: #0e1520;
+    color: var(--text-dim);
+    padding: 7px 10px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-align: center;
+    white-space: nowrap;
+    border-bottom: 2px solid var(--border2);
+    position: sticky;
+    top: var(--header-h);
+  }
+
+  thead tr.col-row th.col-date {
+    text-align: left;
+    padding-left: 14px;
+  }
+
+  /* ── Body rows ───────────────────────────────────────────── */
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody tr:hover { background: #131c28 !important; }
+
+  tbody tr:nth-child(even) { background: #0d141c; }
+  tbody tr:nth-child(odd)  { background: var(--surface); }
+
+  /* Latest row highlight */
+  tbody tr.row-latest {
+    background: #0d1f18 !important;
+    border-left: 3px solid var(--green);
+  }
+
+  tbody td {
+    padding: 6px 10px;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  tbody td.td-date {
+    text-align: left;
+    padding-left: 14px;
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  tbody tr.row-latest td.td-date {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  tbody tr.row-latest td.td-date::after {
+    content: ' ◀ TODAY';
+    font-size: 9px;
+    color: var(--green);
+    opacity: 0.7;
+    margin-left: 6px;
+  }
+
+  /* ── Bar cells ───────────────────────────────────────────── */
+  .bar-cell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    min-width: 80px;
+  }
+
+  .bar-wrap {
+    flex: 1;
+    height: 14px;
+    background: #0d151e;
+    border-radius: 2px;
+    overflow: hidden;
+    max-width: 90px;
+  }
+
+  .bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    min-width: 1px;
+  }
+
+  .bar-num {
+    font-size: 11.5px;
+    font-weight: 600;
+    min-width: 32px;
+    text-align: right;
+  }
+
+  /* ── Ratio cells ─────────────────────────────────────────── */
+  .ratio-cell {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  /* ── Total cell ──────────────────────────────────────────── */
+  .total-cell {
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  /* ── Loading / error states ──────────────────────────────── */
+  .state-row td {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Legend ──────────────────────────────────────────────── */
+  .legend {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  .legend strong { color: var(--text); }
+
+  /* ── Row fade in ─────────────────────────────────────────── */
+  @keyframes fadein {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  tbody tr {
+    animation: fadein 0.25s ease both;
+  }
+
+  /* ── Responsive ──────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    .page { padding: 14px 10px 40px; }
+    .summary-strip { flex-wrap: wrap; }
+    .summary-cell { min-width: 90px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PSX <span>/</span> Market Monitor</div>
+  <div class="header-sep"></div>
+  <div class="live-badge">
+    <div class="live-dot"></div>
+    DAILY UPDATE
+  </div>
+  <div id="last-updated">—</div>
+</header>
+
+<div class="page">
+
+  <!-- Summary strip (populated by JS) -->
+  <div class="summary-strip" id="summary-strip">
+    <div class="summary-cell sc-blue">
+      <div class="sc-label">Last Date</div>
+      <div class="sc-value" id="s-date" style="font-size:14px;">—</div>
+    </div>
+    <div class="summary-cell sc-green">
+      <div class="sc-label">Up 4% Today</div>
+      <div class="sc-value" id="s-up4">—</div>
+    </div>
+    <div class="summary-cell sc-red">
+      <div class="sc-label">Down 4% Today</div>
+      <div class="sc-value" id="s-dn4">—</div>
+    </div>
+    <div class="summary-cell sc-gold">
+      <div class="sc-label">5-Day Ratio</div>
+      <div class="sc-value" id="s-r5">—</div>
+      <div class="sc-sub">≥1 = Bull bias</div>
+    </div>
+    <div class="summary-cell sc-gold">
+      <div class="sc-label">10-Day Ratio</div>
+      <div class="sc-value" id="s-r10">—</div>
+      <div class="sc-sub">≥1 = Bull bias</div>
+    </div>
+    <div class="summary-cell sc-green">
+      <div class="sc-label">Up 25% / Qtr</div>
+      <div class="sc-value" id="s-up25q">—</div>
+    </div>
+    <div class="summary-cell sc-red">
+      <div class="sc-label">Dn 25% / Qtr</div>
+      <div class="sc-value" id="s-dn25q">—</div>
+    </div>
+    <div class="summary-cell sc-blue">
+      <div class="sc-label">Total Stocks</div>
+      <div class="sc-value" id="s-total">—</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <table id="mm-table">
+      <thead>
+        <tr class="group-row">
+          <th rowspan="2" style="background:#0e1520;border-right:1px solid #1e2a38;
+                                  text-align:left;padding-left:14px;
+                                  position:sticky;top:var(--header-h);">
+            Date
+          </th>
+          <th colspan="4" class="gh-primary">Primary Breadth Indicators</th>
+          <th colspan="9" class="gh-secondary">Secondary Breadth Indicators</th>
+        </tr>
+        <tr class="col-row">
+          <!-- Primary -->
+          <th title="Stocks up 4%+ today">Up 4%+<br>Today</th>
+          <th title="Stocks down 4%+ today">Down 4%+<br>Today</th>
+          <th class="col-divider" title="Ratio of 5-day sum of up4 / dn4">5-Day<br>Ratio</th>
+          <th title="Ratio of 10-day sum of up4 / dn4">10-Day<br>Ratio</th>
+          <!-- Secondary -->
+          <th class="col-divider" title="Up 25%+ in last quarter (65 days)">Up 25%<br>Quarter</th>
+          <th title="Down 25%+ in last quarter">Down 25%<br>Quarter</th>
+          <th class="col-divider" title="Up 25%+ in last month (21 days)">Up 25%<br>Month</th>
+          <th title="Down 25%+ in last month">Down 25%<br>Month</th>
+          <th class="col-divider" title="Up 50%+ in last month">Up 50%<br>Month</th>
+          <th title="Down 50%+ in last month">Down 50%<br>Month</th>
+          <th class="col-divider" title="Up 13%+ in last 34 trading days">Up 13%<br>34 Days</th>
+          <th title="Down 13%+ in last 34 days">Down 13%<br>34 Days</th>
+          <th class="col-divider" title="Total PSX stocks scanned">Total<br>Stocks</th>
+        </tr>
+      </thead>
+      <tbody id="mm-body">
+        <tr class="state-row">
+          <td colspan="14">
+            <span class="spinner"></span> Loading market data…
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div>
+      <strong>Primary Breadth:</strong>
+      Up/Down 4%+ = stocks moving ≥4% in a single session.
+      5/10-Day Ratio = rolling sum of up4 days ÷ sum of dn4 days.
+      Ratio &gt;1.0 = bullish bias; &lt;0.5 = extreme bearish.
+    </div>
+    <div>
+      <strong>Secondary Breadth:</strong>
+      Quarter = last 65 trading days.
+      Month = last 21 trading days.
+      34 Days = last 34 trading days.
+      All counts require avg daily volume ≥ 100,000.
+    </div>
+    <div>
+      <strong>Reading signals:</strong>
+      Up 4%+ &gt; 100 on multiple days = strong bull momentum.
+      Ratio &lt; 0.5 = oversold / potential bottom.
+      Up 25% Quarter &gt; 200 = broad bull market condition.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+const DATA_URL = 'mm_data.json';    // same folder as index.html
+const MAX_ROWS = 120;               // show last ~6 months in table
+
+// Bar scale maximums (tweak after a few weeks of real data)
+const BAR_MAX = {
+  up4:     150,   dn4:     150,
+  up25q:   300,   dn25q:   300,
+  up25m:   200,   dn25m:   200,
+  up50m:   100,   dn50m:   100,
+  up13_34: 250,   dn13_34: 250,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function barCell(val, maxVal, colorVar, align = 'right') {
+  if (val === null || val === undefined) {
+    return `<td><span style="color:var(--text-muted)">—</span></td>`;
+  }
+  const pct    = clamp(val / maxVal * 100, 0, 100).toFixed(1);
+  const isGreen = colorVar === '--green';
+  const color   = `var(${colorVar})`;
+  const dimColor = isGreen ? 'var(--green-dim)' : 'var(--red-dim)';
+  return `
+    <td>
+      <div class="bar-cell">
+        <div class="bar-wrap">
+          <div class="bar" style="width:${pct}%;background:${color};
+               box-shadow:0 0 6px ${color}40;"></div>
+        </div>
+        <span class="bar-num" style="color:${color};">${val}</span>
+      </div>
+    </td>`;
+}
+
+function ratioCell(val) {
+  if (val === null || val === undefined) {
+    return `<td><span style="color:var(--text-muted)">—</span></td>`;
+  }
+  let bg, color;
+  if (val >= 2.0)      { bg = '#003d20'; color = 'var(--green)'; }
+  else if (val >= 1.0) { bg = '#002a15'; color = '#00c853'; }
+  else if (val >= 0.5) { bg = '#2a1500'; color = '#ff9800'; }
+  else                 { bg = '#3d0000'; color = 'var(--red)'; }
+  return `
+    <td>
+      <span class="ratio-cell" style="background:${bg};color:${color};">
+        ${val.toFixed(2)}
+      </span>
+    </td>`;
+}
+
+function totalCell(val) {
+  return `<td class="total-cell col-divider">${val ?? '—'}</td>`;
+}
+
+function fmtDate(dateStr) {
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  } catch { return dateStr; }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function renderTable(rows) {
+  const tbody  = document.getElementById('mm-body');
+  const latest = rows[rows.length - 1];
+
+  // Populate summary strip
+  document.getElementById('s-date').textContent   = fmtDate(latest.date);
+  document.getElementById('s-up4').textContent    = latest.up4  ?? '—';
+  document.getElementById('s-dn4').textContent    = latest.dn4  ?? '—';
+  document.getElementById('s-r5').textContent     = latest.r5   != null ? latest.r5.toFixed(2)  : '—';
+  document.getElementById('s-r10').textContent    = latest.r10  != null ? latest.r10.toFixed(2) : '—';
+  document.getElementById('s-up25q').textContent  = latest.up25q ?? '—';
+  document.getElementById('s-dn25q').textContent  = latest.dn25q ?? '—';
+  document.getElementById('s-total').textContent  = latest.total  ?? '—';
+
+  document.getElementById('last-updated').textContent =
+    'Updated: ' + fmtDate(latest.date);
+
+  // Build table rows newest-first
+  const display = [...rows].reverse().slice(0, MAX_ROWS);
+  let html = '';
+
+  display.forEach((r, idx) => {
+    const isLatest = idx === 0;
+    const rowClass = isLatest ? 'row-latest' : '';
+
+    html += `<tr class="${rowClass}">`;
+    html += `<td class="td-date">${fmtDate(r.date)}</td>`;
+
+    // Primary
+    html += barCell(r.up4,  BAR_MAX.up4,  '--green');
+    html += barCell(r.dn4,  BAR_MAX.dn4,  '--red');
+    html += `<td class="col-divider">${ratioCell(r.r5).replace('<td>', '').replace('</td>', '')}</td>`;
+    html += ratioCell(r.r10).replace('class="col-divider"','');
+
+    // Secondary
+    html += `<td class="col-divider">`;
+    html += `<div class="bar-cell">`
+          + `<div class="bar-wrap"><div class="bar" style="width:${clamp(r.up25q/BAR_MAX.up25q*100,0,100).toFixed(1)}%;background:var(--green);box-shadow:0 0 6px #00e67640;"></div></div>`
+          + `<span class="bar-num" style="color:var(--green);">${r.up25q ?? '—'}</span>`
+          + `</div></td>`;
+    html += barCell(r.dn25q, BAR_MAX.dn25q, '--red');
+
+    html += `<td class="col-divider">`;
+    html += `<div class="bar-cell">`
+          + `<div class="bar-wrap"><div class="bar" style="width:${clamp(r.up25m/BAR_MAX.up25m*100,0,100).toFixed(1)}%;background:var(--green);box-shadow:0 0 6px #00e67640;"></div></div>`
+          + `<span class="bar-num" style="color:var(--green);">${r.up25m ?? '—'}</span>`
+          + `</div></td>`;
+    html += barCell(r.dn25m, BAR_MAX.dn25m, '--red');
+
+    html += `<td class="col-divider">`;
+    html += `<div class="bar-cell">`
+          + `<div class="bar-wrap"><div class="bar" style="width:${clamp(r.up50m/BAR_MAX.up50m*100,0,100).toFixed(1)}%;background:#00e676;box-shadow:0 0 8px #00e67660;"></div></div>`
+          + `<span class="bar-num" style="color:#00e676;">${r.up50m ?? '—'}</span>`
+          + `</div></td>`;
+    html += barCell(r.dn50m, BAR_MAX.dn50m, '--red');
+
+    html += `<td class="col-divider">`;
+    html += `<div class="bar-cell">`
+          + `<div class="bar-wrap"><div class="bar" style="width:${clamp(r.up13_34/BAR_MAX.up13_34*100,0,100).toFixed(1)}%;background:var(--green);box-shadow:0 0 6px #00e67640;"></div></div>`
+          + `<span class="bar-num" style="color:var(--green);">${r.up13_34 ?? '—'}</span>`
+          + `</div></td>`;
+    html += barCell(r.dn13_34, BAR_MAX.dn13_34, '--red');
+
+    html += totalCell(r.total);
+    html += `</tr>`;
+  });
+
+  tbody.innerHTML = html;
+}
+
+function showError(msg) {
+  document.getElementById('mm-body').innerHTML = `
+    <tr class="state-row">
+      <td colspan="14" style="color:var(--red);">⚠ ${msg}</td>
+    </tr>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LOAD
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const resp = await fetch(DATA_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const rows = await resp.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      showError('No data available yet. Run psx_mm_updater.py to populate.');
+      return;
+    }
+    renderTable(rows);
+  } catch (err) {
+    showError('Could not load mm_data.json — ' + err.message +
+              '. Make sure the data file is in the same folder as this page.');
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
