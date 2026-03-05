@@ -1,13 +1,14 @@
 """
-PSX Daily Stock Scanner — v8
+PSX Daily Stock Scanner — v9
 =====================================================================
 Data source: psxterminal.com (confirmed working)
 
-CHANGES FROM v7:
-  1. List 2 — High-Volume Movers: volume >= 9M only (4% filter REMOVED)
-  2. List 4 — Top Losers: down 4%+ with volume >= 100K (NEW)
-  3. Sector info added to all lists via /api/companies/{symbol}
-  4. Market summary bar: total gainers, losers, unchanged, total volume
+CHANGES FROM v8:
+  - Full per-sector breakdown replacing simple top-5 table
+  - Every sector card shows: total volume, total value, avg change%
+    (volume-weighted), gainers/losers/unchanged count, mini breadth
+    bar, and top 3 stocks by volume within the sector
+  - Sectors sorted by total volume descending
 
 LIST 1 — Momentum Gainers   : change >= +4%   AND volume >= 100,000
 LIST 2 — High-Volume Movers : volume >= 9,000,000  (any direction)
@@ -178,19 +179,64 @@ def fetch_all_stocks():
 
 # ── Market Summary ─────────────────────────────────────────────────────────────
 def market_summary(stocks):
-    """Compute overall market stats from all fetched stocks."""
+    """
+    Compute overall market stats + full per-sector breakdown.
+    Each sector entry contains:
+      total_vol, total_val, gainers, losers, unchanged,
+      avg_change_pct (volume-weighted), top3 stocks by volume
+    """
     gainers   = sum(1 for s in stocks if s["change_pct"] > 0)
     losers    = sum(1 for s in stocks if s["change_pct"] < 0)
     unchanged = sum(1 for s in stocks if s["change_pct"] == 0)
     total_vol = sum(s["volume"] for s in stocks)
     total_val = sum(s["price"] * s["volume"] for s in stocks)
 
-    # Sector breakdown — top 5 sectors by total volume
-    sector_vol = {}
+    # Build per-sector dict
+    sectors = {}
     for s in stocks:
-        sec = s["sector"] if s["sector"] != "—" else "Unknown"
-        sector_vol[sec] = sector_vol.get(sec, 0) + s["volume"]
-    top_sectors = sorted(sector_vol.items(), key=lambda x: x[1], reverse=True)[:5]
+        sec = s["sector"] if s["sector"] not in ("—", "", None) else "Unknown"
+        if sec not in sectors:
+            sectors[sec] = {
+                "stocks":    [],
+                "total_vol": 0,
+                "total_val": 0,
+                "gainers":   0,
+                "losers":    0,
+                "unchanged": 0,
+                "wtd_pct":   0.0,   # volume-weighted avg change%
+            }
+        d = sectors[sec]
+        d["stocks"].append(s)
+        d["total_vol"] += s["volume"]
+        d["total_val"] += s["price"] * s["volume"]
+        d["wtd_pct"]   += s["change_pct"] * s["volume"]  # accumulate; divide later
+        if s["change_pct"] > 0:
+            d["gainers"]   += 1
+        elif s["change_pct"] < 0:
+            d["losers"]    += 1
+        else:
+            d["unchanged"] += 1
+
+    # Finalise each sector
+    sector_list = []
+    for name, d in sectors.items():
+        avg_pct = round(d["wtd_pct"] / d["total_vol"], 2) if d["total_vol"] > 0 else 0.0
+        # Top 3 stocks by volume within sector
+        top3 = sorted(d["stocks"], key=lambda x: x["volume"], reverse=True)[:3]
+        sector_list.append({
+            "name":      name,
+            "total_vol": d["total_vol"],
+            "total_val": d["total_val"],
+            "gainers":   d["gainers"],
+            "losers":    d["losers"],
+            "unchanged": d["unchanged"],
+            "count":     len(d["stocks"]),
+            "avg_pct":   avg_pct,
+            "top3":      top3,
+        })
+
+    # Sort sectors by total volume descending
+    sector_list.sort(key=lambda x: x["total_vol"], reverse=True)
 
     return {
         "gainers":     gainers,
@@ -199,7 +245,7 @@ def market_summary(stocks):
         "total":       len(stocks),
         "total_vol":   total_vol,
         "total_val":   total_val,
-        "top_sectors": top_sectors,
+        "sectors":     sector_list,
     }
 
 
@@ -341,84 +387,159 @@ def build_email(list1, list2, list3, list4, mkt, scan_date, source_name):
     COLS_TIGHT = ["Symbol","Sector","Price (PKR)","Change %","Dir","High / Low","Volume"]
     COLS_VOL   = ["Symbol","Sector","Price (PKR)","Change","Change %","High / Low","Volume"]
 
-    # ── Market Summary ────────────────────────────────────────────────────────
-    g_pct  = round(mkt["gainers"]   / mkt["total"] * 100) if mkt["total"] else 0
-    l_pct  = round(mkt["losers"]    / mkt["total"] * 100) if mkt["total"] else 0
-    u_pct  = round(mkt["unchanged"] / mkt["total"] * 100) if mkt["total"] else 0
+    # ── Market Overview numbers ───────────────────────────────────────────────
+    g_pct = round(mkt["gainers"]   / mkt["total"] * 100) if mkt["total"] else 0
+    l_pct = round(mkt["losers"]    / mkt["total"] * 100) if mkt["total"] else 0
+    u_pct = round(mkt["unchanged"] / mkt["total"] * 100) if mkt["total"] else 0
 
-    # Breadth bar
     breadth_bar = f"""
-    <div style="margin:14px 0 6px;">
-      <div style="font-size:11px;color:#888;margin-bottom:4px;">Market Breadth</div>
-      <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;">
-        <div style="width:{g_pct}%;background:#2e7d32;" title="Gainers {g_pct}%"></div>
-        <div style="width:{u_pct}%;background:#bbb;"    title="Unchanged {u_pct}%"></div>
-        <div style="width:{l_pct}%;background:#c62828;" title="Losers {l_pct}%"></div>
+    <div style="margin:14px 0 8px;">
+      <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;">
+          Market Breadth</div>
+      <div style="display:flex;height:14px;border-radius:7px;overflow:hidden;">
+        <div style="width:{g_pct}%;background:#2e7d32;"></div>
+        <div style="width:{u_pct}%;background:#bdbdbd;"></div>
+        <div style="width:{l_pct}%;background:#c62828;"></div>
       </div>
-      <div style="display:flex;gap:16px;margin-top:5px;font-size:11px;">
-        <span style="color:#2e7d32;">▲ Gainers {mkt['gainers']} ({g_pct}%)</span>
-        <span style="color:#bbb;">— Unchanged {mkt['unchanged']}</span>
-        <span style="color:#c62828;">▼ Losers {mkt['losers']} ({l_pct}%)</span>
+      <div style="display:flex;gap:18px;margin-top:5px;font-size:11.5px;">
+        <span style="color:#2e7d32;font-weight:bold;">▲ {mkt['gainers']} Gainers ({g_pct}%)</span>
+        <span style="color:#888;">— {mkt['unchanged']} Unchanged</span>
+        <span style="color:#c62828;font-weight:bold;">▼ {mkt['losers']} Losers ({l_pct}%)</span>
       </div>
     </div>"""
 
-    # Top sectors table
-    sector_rows = ""
-    for sec, vol in mkt["top_sectors"]:
-        sector_rows += f"""<tr>
-          <td style="padding:6px 10px;color:#333;">{sec}</td>
-          <td style="padding:6px 10px;text-align:right;color:#555;">{fmt_vol(vol)}</td>
-        </tr>"""
-
-    market_summary_html = f"""
+    overview_html = f"""
     <div style="background:#f8f9fa;border:1px solid #e0e0e0;border-radius:8px;
-                padding:18px 20px;margin-top:20px;">
-      <h3 style="margin:0 0 14px;font-size:15px;color:#1a1a2e;">📊 Market Summary</h3>
-
-      <div style="display:flex;gap:30px;flex-wrap:wrap;margin-bottom:10px;">
-        <div style="text-align:center;">
+                padding:18px 22px;margin-top:20px;">
+      <h3 style="margin:0 0 16px;font-size:16px;color:#1a1a2e;">📊 Market Overview</h3>
+      <div style="display:flex;gap:28px;flex-wrap:wrap;">
+        <div style="text-align:center;min-width:80px;">
           <div style="font-size:26px;font-weight:bold;color:#1a1a2e;">{mkt['total']}</div>
-          <div style="font-size:11px;color:#888;">Stocks Scanned</div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">Stocks</div>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align:center;min-width:80px;">
           <div style="font-size:26px;font-weight:bold;color:#2e7d32;">{mkt['gainers']}</div>
-          <div style="font-size:11px;color:#888;">Gainers</div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">Gainers</div>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align:center;min-width:80px;">
           <div style="font-size:26px;font-weight:bold;color:#c62828;">{mkt['losers']}</div>
-          <div style="font-size:11px;color:#888;">Losers</div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">Losers</div>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align:center;min-width:80px;">
           <div style="font-size:26px;font-weight:bold;color:#888;">{mkt['unchanged']}</div>
-          <div style="font-size:11px;color:#888;">Unchanged</div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">Unchanged</div>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align:center;min-width:100px;">
           <div style="font-size:20px;font-weight:bold;color:#1a1a2e;">{fmt_vol(mkt['total_vol'])}</div>
-          <div style="font-size:11px;color:#888;">Total Volume</div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">Total Volume</div>
         </div>
-        <div style="text-align:center;">
+        <div style="text-align:center;min-width:100px;">
           <div style="font-size:20px;font-weight:bold;color:#1a1a2e;">{fmt_val(mkt['total_val'])}</div>
-          <div style="font-size:11px;color:#888;">Total Value</div>
+          <div style="font-size:11px;color:#888;margin-top:2px;">Total Value</div>
         </div>
       </div>
-
       {breadth_bar}
-
-      <div style="margin-top:16px;">
-        <div style="font-size:12px;font-weight:bold;color:#555;margin-bottom:6px;">
-          Top 5 Sectors by Volume
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
-          <thead>
-            <tr style="background:#e8eaf6;">
-              <th style="padding:6px 10px;text-align:left;color:#333;">Sector</th>
-              <th style="padding:6px 10px;text-align:right;color:#333;">Volume</th>
-            </tr>
-          </thead>
-          <tbody>{sector_rows}</tbody>
-        </table>
-      </div>
     </div>"""
+
+    # ── Per-Sector Breakdown ──────────────────────────────────────────────────
+    def sector_card(sec):
+        """Build one sector card with stats + top 3 stocks."""
+        sp = round(sec["gainers"] / sec["count"] * 100) if sec["count"] else 0
+        lp = round(sec["losers"]  / sec["count"] * 100) if sec["count"] else 0
+        up = 100 - sp - lp
+
+        # Sector net sentiment colour
+        if sec["avg_pct"] > 0:
+            hdr_col, arrow = "#2e7d32", "▲"
+        elif sec["avg_pct"] < 0:
+            hdr_col, arrow = "#c62828", "▼"
+        else:
+            hdr_col, arrow = "#607d8b", "—"
+
+        avg_badge = pct_badge(sec["avg_pct"])
+
+        # Mini breadth bar for the sector
+        mini_bar = f"""
+        <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;margin:6px 0 3px;">
+          <div style="width:{sp}%;background:#2e7d32;"></div>
+          <div style="width:{up}%;background:#bdbdbd;"></div>
+          <div style="width:{lp}%;background:#c62828;"></div>
+        </div>
+        <div style="font-size:10px;color:#999;">
+          ▲{sec['gainers']} &nbsp;—{sec['unchanged']} &nbsp;▼{sec['losers']}
+          &nbsp;|&nbsp; {sec['count']} stocks
+        </div>"""
+
+        # Top 3 stocks rows
+        top3_rows = ""
+        for t in sec["top3"]:
+            chg_col = "#2e7d32" if t["change_pct"] > 0 else ("#c62828" if t["change_pct"] < 0 else "#888")
+            sign    = "+" if t["change_pct"] > 0 else ""
+            top3_rows += f"""
+            <tr style="border-top:1px solid #f0f0f0;">
+              <td style="padding:5px 8px;font-weight:bold;font-size:12px;color:#1a1a2e;">
+                  {t['symbol']}</td>
+              <td style="padding:5px 8px;text-align:right;font-size:12px;color:#444;">
+                  {t['price']:,.2f}</td>
+              <td style="padding:5px 8px;text-align:right;font-size:12px;
+                         font-weight:bold;color:{chg_col};">
+                  {sign}{t['change_pct']:.2f}%</td>
+              <td style="padding:5px 8px;text-align:right;font-size:11px;color:#777;">
+                  {fmt_vol(t['volume'])}</td>
+            </tr>"""
+
+        return f"""
+        <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;
+                    overflow:hidden;margin-bottom:14px;">
+          <!-- Sector header -->
+          <div style="background:{hdr_col};padding:9px 14px;display:flex;
+                      justify-content:space-between;align-items:center;">
+            <span style="color:#fff;font-weight:bold;font-size:13px;">{sec['name']}</span>
+            <div style="display:flex;gap:12px;align-items:center;">
+              <span style="color:rgba(255,255,255,0.85);font-size:11.5px;">
+                  Vol: {fmt_vol(sec['total_vol'])}</span>
+              <span style="color:rgba(255,255,255,0.85);font-size:11.5px;">
+                  Val: {fmt_val(sec['total_val'])}</span>
+              <span style="background:rgba(255,255,255,0.2);color:#fff;padding:2px 8px;
+                           border-radius:10px;font-size:11.5px;font-weight:bold;">
+                  {arrow} Avg {sec['avg_pct']:+.2f}%</span>
+            </div>
+          </div>
+          <!-- Breadth mini bar -->
+          <div style="padding:8px 14px 4px;">{mini_bar}</div>
+          <!-- Top 3 stocks -->
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f5f5f5;">
+                <th style="padding:5px 8px;text-align:left;font-size:11px;
+                           color:#888;font-weight:600;">Top by Vol</th>
+                <th style="padding:5px 8px;text-align:right;font-size:11px;
+                           color:#888;font-weight:600;">Price</th>
+                <th style="padding:5px 8px;text-align:right;font-size:11px;
+                           color:#888;font-weight:600;">Chg%</th>
+                <th style="padding:5px 8px;text-align:right;font-size:11px;
+                           color:#888;font-weight:600;">Volume</th>
+              </tr>
+            </thead>
+            <tbody>{top3_rows}</tbody>
+          </table>
+        </div>"""
+
+    # Build all sector cards (sorted by volume, already done in market_summary)
+    all_sector_cards = "".join(sector_card(s) for s in mkt["sectors"])
+
+    sector_breakdown_html = f"""
+    <div style="margin-top:24px;">
+      <h3 style="margin:0 0 14px;font-size:15px;color:#1a1a2e;
+                 border-bottom:2px solid #e0e0e0;padding-bottom:8px;">
+        🏭 Sector Breakdown
+        <span style="font-size:12px;color:#999;font-weight:normal;">
+            — {len(mkt['sectors'])} sectors, sorted by volume</span>
+      </h3>
+      {all_sector_cards}
+    </div>"""
+
+    market_summary_html = overview_html + sector_breakdown_html
 
     # ── Section 1: Momentum Gainers ──────────────────────────────────────────
     if list1:
@@ -560,7 +681,7 @@ def send_email(subject, html_body):
 def main():
     scan_date = datetime.now().strftime("%B %d, %Y")
     print(f"\n{'='*62}")
-    print(f"  PSX Daily Scanner v8  —  {scan_date}")
+    print(f"  PSX Daily Scanner v9  —  {scan_date}")
     print(f"{'='*62}\n")
 
     all_stocks, sector_map, source_name = fetch_all_stocks()
