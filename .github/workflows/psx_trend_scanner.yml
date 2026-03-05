@@ -1,0 +1,31 @@
+name: PSX Trend Scanner
+
+on:
+  schedule:
+    # 3:40 PM PKT = 10:40 AM UTC, Mon–Fri
+    # Runs 5 minutes after the daily scanner to avoid overlap
+    - cron: '40 10 * * 1-5'
+  workflow_dispatch:   # manual trigger for testing
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30   # klines take longer than ticks — allow up to 30 min
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run Trend Scanner
+        env:
+          SENDER_EMAIL:    ${{ secrets.SENDER_EMAIL }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+        run: python psx_trend_scanner.py
