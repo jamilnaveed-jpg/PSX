@@ -1,21 +1,18 @@
 """
-PSX Daily Stock Scanner — v7 FINAL
+PSX Daily Stock Scanner — v8
 =====================================================================
 Data source: psxterminal.com (confirmed working)
 
-Strategy:
-  1. GET /api/symbols          → all 553 PSX symbols
-  2. GET /api/ticks/REG/{sym}  → price, change, changePercent, volume per symbol
+CHANGES FROM v7:
+  1. List 2 — High-Volume Movers: volume >= 9M only (4% filter REMOVED)
+  2. List 4 — Top Losers: down 4%+ with volume >= 100K (NEW)
+  3. Sector info added to all lists via /api/companies/{symbol}
+  4. Market summary bar: total gainers, losers, unchanged, total volume
 
-Key field mappings (confirmed from diagnostic):
-  price         → current price (PKR)
-  change        → absolute change
-  changePercent → decimal e.g. 0.02058 = 2.058%  ← multiply by 100
-  volume        → shares traded
-
-LIST 1 — Momentum Gainers   : changePercent >= 4%  AND volume >= 100,000
-LIST 2 — High-Volume Movers : changePercent >= 4%  AND volume >= 9,000,000
-LIST 3 — Tight Range Watch  : |changePercent| <= 0.40% (up OR down)
+LIST 1 — Momentum Gainers   : change >= +4%   AND volume >= 100,000
+LIST 2 — High-Volume Movers : volume >= 9,000,000  (any direction)
+LIST 3 — Tight Range Watch  : |change%| <= 0.40%
+LIST 4 — Top Losers         : change <= -4%   AND volume >= 100,000
 =====================================================================
 """
 
@@ -42,10 +39,11 @@ HEADERS = {
     "Referer":    "https://psxterminal.com/",
 }
 
-GAINER_PCT      = 4.0      # List 1 & 2: minimum % gain
-MIN_VOLUME_L1   = 100_000  # List 1: minimum volume
-MIN_VOLUME_L2   = 9_000_000  # List 2: high-volume threshold
-TIGHT_RANGE_PCT = 0.40     # List 3: max absolute % change
+GAINER_PCT      = 4.0        # List 1: minimum % gain
+LOSER_PCT       = -4.0       # List 4: maximum % loss
+MIN_VOLUME_L1   = 100_000    # List 1 & 4: minimum volume
+MIN_VOLUME_L2   = 9_000_000  # List 2: high-volume threshold (no % filter)
+TIGHT_RANGE_PCT = 0.40       # List 3: max absolute % change
 
 
 # ── Step 1: Get all symbols ────────────────────────────────────────────────────
@@ -59,14 +57,53 @@ def get_symbols():
     return symbols
 
 
-# ── Step 2: Fetch tick for one symbol ─────────────────────────────────────────
+# ── Step 2: Fetch sector map for all symbols ───────────────────────────────────
+def get_sector_map(symbols):
+    """
+    Fetches /api/companies/{symbol} for each symbol to get sector info.
+    Returns dict: { "OGDC": "Oil & Gas Exploration", ... }
+    Runs in one pass alongside tick fetching to avoid double looping.
+    """
+    sector_map = {}
+    errors = 0
+    print(f"[SECTORS] Fetching company/sector data for {len(symbols)} symbols...")
+
+    for i, sym in enumerate(symbols):
+        try:
+            url  = f"{BASE_URL}/api/companies/{sym}"
+            resp = requests.get(url, headers=HEADERS, timeout=8)
+            if resp.status_code == 200:
+                data = resp.json()
+                info = data.get("data", {}) if isinstance(data, dict) else {}
+                if isinstance(info, dict):
+                    sector = (
+                        info.get("sector")
+                        or info.get("sectorName")
+                        or info.get("industry")
+                        or info.get("Sector")
+                        or "—"
+                    )
+                    sector_map[sym] = str(sector).strip() or "—"
+                else:
+                    sector_map[sym] = "—"
+            else:
+                sector_map[sym] = "—"
+        except Exception:
+            sector_map[sym] = "—"
+            errors += 1
+
+        if (i + 1) % 100 == 0:
+            print(f"[SECTORS] {i+1}/{len(symbols)} done, {errors} errors")
+        if (i + 1) % 50 == 0:
+            time.sleep(0.2)
+
+    filled = sum(1 for v in sector_map.values() if v != "—")
+    print(f"[SECTORS] Complete — {filled}/{len(symbols)} sectors found")
+    return sector_map
+
+
+# ── Step 3: Fetch tick for one symbol ─────────────────────────────────────────
 def get_tick(symbol):
-    """
-    Returns dict with confirmed fields:
-      price, change, changePercent (decimal), volume
-    changePercent is stored as decimal (e.g. 0.02058)
-    We convert to % by multiplying by 100
-    """
     url  = f"{BASE_URL}/api/ticks/REG/{symbol}"
     resp = requests.get(url, headers=HEADERS, timeout=10)
     if resp.status_code != 200:
@@ -76,19 +113,18 @@ def get_tick(symbol):
     if not tick or not isinstance(tick, dict):
         return None
 
-    price      = float(tick.get("price",         0) or 0)
-    change     = float(tick.get("change",         0) or 0)
-    change_pct = float(tick.get("changePercent",  0) or 0) * 100  # convert decimal → %
-    volume     = int(  tick.get("volume",         0) or 0)
-    high       = float(tick.get("high",           0) or 0)
-    low        = float(tick.get("low",            0) or 0)
-
-    # Compute prev_close from price and change
-    prev_close = round(price - change, 2) if price and change else 0
+    price      = float(tick.get("price",        0) or 0)
+    change     = float(tick.get("change",        0) or 0)
+    change_pct = float(tick.get("changePercent", 0) or 0) * 100  # decimal → %
+    volume     = int(  tick.get("volume",        0) or 0)
+    high       = float(tick.get("high",          0) or 0)
+    low        = float(tick.get("low",           0) or 0)
+    trades     = int(  tick.get("trades",        0) or 0)
+    prev_close = round(price - change, 2) if price else 0
 
     return {
         "symbol":     symbol,
-        "name":       symbol,   # psxterminal ticks don't return company name
+        "sector":     "—",          # filled in later from sector_map
         "price":      price,
         "prev_close": prev_close,
         "change":     change,
@@ -96,65 +132,101 @@ def get_tick(symbol):
         "volume":     volume,
         "high":       high,
         "low":        low,
+        "trades":     trades,
     }
 
 
-# ── Step 3: Fetch all ticks ────────────────────────────────────────────────────
+# ── Step 4: Fetch everything ───────────────────────────────────────────────────
 def fetch_all_stocks():
     symbols = get_symbols()
     if not symbols:
-        return [], "failed to get symbols"
+        return [], {}, "failed to get symbols"
 
-    stocks  = []
-    errors  = 0
-    total   = len(symbols)
+    # Fetch sectors first (parallel loop)
+    sector_map = get_sector_map(symbols)
 
-    print(f"[TICKS] Fetching {total} symbols...")
+    # Fetch ticks
+    stocks = []
+    errors = 0
+    total  = len(symbols)
+    print(f"\n[TICKS] Fetching {total} ticks...")
 
     for i, sym in enumerate(symbols):
         try:
             tick = get_tick(sym)
             if tick and tick["price"] > 0:
+                tick["sector"] = sector_map.get(sym, "—")
                 stocks.append(tick)
         except Exception:
             errors += 1
 
-        # Progress log every 100 symbols
         if (i + 1) % 100 == 0:
-            print(f"[TICKS] {i+1}/{total} done — {len(stocks)} valid, {errors} errors")
-
-        # Small polite delay every 50 requests
+            print(f"[TICKS] {i+1}/{total} — {len(stocks)} valid, {errors} errors")
         if (i + 1) % 50 == 0:
             time.sleep(0.3)
 
-    print(f"[TICKS] Complete — {len(stocks)} stocks with price data, {errors} errors")
+    print(f"[TICKS] Complete — {len(stocks)} stocks, {errors} errors")
 
-    # Log a few samples so we can verify data looks correct
+    # Sample log
     sample = sorted(stocks, key=lambda x: abs(x["change_pct"]), reverse=True)[:5]
-    print(f"[TICKS] Top movers sample:")
     for s in sample:
-        direction = "▲" if s["change_pct"] > 0 else "▼"
-        print(f"  {s['symbol']:10s}  {direction} {s['change_pct']:+.2f}%  price:{s['price']:.2f}  vol:{fmt_vol(s['volume'])}")
+        d = "▲" if s["change_pct"] > 0 else "▼"
+        print(f"  {s['symbol']:10s} {d}{abs(s['change_pct']):.2f}%  {s['sector']}")
 
-    return stocks, "psxterminal.com/api/ticks/REG"
+    return stocks, sector_map, "psxterminal.com"
+
+
+# ── Market Summary ─────────────────────────────────────────────────────────────
+def market_summary(stocks):
+    """Compute overall market stats from all fetched stocks."""
+    gainers   = sum(1 for s in stocks if s["change_pct"] > 0)
+    losers    = sum(1 for s in stocks if s["change_pct"] < 0)
+    unchanged = sum(1 for s in stocks if s["change_pct"] == 0)
+    total_vol = sum(s["volume"] for s in stocks)
+    total_val = sum(s["price"] * s["volume"] for s in stocks)
+
+    # Sector breakdown — top 5 sectors by total volume
+    sector_vol = {}
+    for s in stocks:
+        sec = s["sector"] if s["sector"] != "—" else "Unknown"
+        sector_vol[sec] = sector_vol.get(sec, 0) + s["volume"]
+    top_sectors = sorted(sector_vol.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    return {
+        "gainers":     gainers,
+        "losers":      losers,
+        "unchanged":   unchanged,
+        "total":       len(stocks),
+        "total_vol":   total_vol,
+        "total_val":   total_val,
+        "top_sectors": top_sectors,
+    }
 
 
 # ── Filters ────────────────────────────────────────────────────────────────────
 def build_lists(stocks):
-    list1, list2, list3 = [], [], []
+    list1, list2, list3, list4 = [], [], [], []
     for s in stocks:
         pct = s["change_pct"]
         vol = s["volume"]
+        # List 1: Momentum Gainers
         if pct >= GAINER_PCT and vol >= MIN_VOLUME_L1:
             list1.append(s)
-        if pct >= GAINER_PCT and vol >= MIN_VOLUME_L2:
+        # List 2: High-Volume (any direction, just 9M+)
+        if vol >= MIN_VOLUME_L2:
             list2.append(s)
+        # List 3: Tight Range
         if abs(pct) <= TIGHT_RANGE_PCT:
             list3.append(s)
-    list1.sort(key=lambda x: x["change_pct"], reverse=True)
-    list2.sort(key=lambda x: x["volume"],     reverse=True)
-    list3.sort(key=lambda x: abs(x["change_pct"]))
-    return list1, list2, list3
+        # List 4: Top Losers
+        if pct <= LOSER_PCT and vol >= MIN_VOLUME_L1:
+            list4.append(s)
+
+    list1.sort(key=lambda x: x["change_pct"], reverse=True)   # biggest gain first
+    list2.sort(key=lambda x: x["volume"],     reverse=True)   # biggest volume first
+    list3.sort(key=lambda x: abs(x["change_pct"]))            # tightest range first
+    list4.sort(key=lambda x: x["change_pct"])                 # biggest loss first
+    return list1, list2, list3, list4
 
 
 # ── HTML Helpers ───────────────────────────────────────────────────────────────
@@ -168,16 +240,24 @@ def fmt_vol(v):
     return f"{v:,}"
 
 
+def fmt_val(v):
+    if v >= 1_000_000_000:
+        return f"PKR {v/1_000_000_000:.2f}B"
+    if v >= 1_000_000:
+        return f"PKR {v/1_000_000:.1f}M"
+    return f"PKR {v:,.0f}"
+
+
 def pct_badge(pct):
     if pct > 0:
         bg, fg, sign = "#e8f5e9", "#2e7d32", "+"
     elif pct < 0:
         bg, fg, sign = "#fdecea", "#c62828", ""
     else:
-        bg, fg, sign = "#f5f5f5", "#555", ""
+        bg, fg, sign = "#f5f5f5", "#666", ""
     return (
         f'<span style="background:{bg};color:{fg};padding:3px 9px;'
-        f'border-radius:10px;font-weight:bold;font-size:12.5px;">'
+        f'border-radius:10px;font-weight:bold;font-size:12px;">'
         f'{sign}{pct:.2f}%</span>'
     )
 
@@ -185,12 +265,12 @@ def pct_badge(pct):
 def make_table(rows_html, col_headers):
     ths = ""
     for i, h in enumerate(col_headers):
-        align = "left" if i == 0 else "right"
-        ths += f'<th style="padding:11px 13px;text-align:{align};font-weight:600;">{h}</th>'
+        align = "left" if i <= 1 else "right"
+        ths += f'<th style="padding:10px 12px;text-align:{align};font-weight:600;white-space:nowrap;">{h}</th>'
     return f"""
-    <table style="width:100%;border-collapse:collapse;font-size:13.5px;
-                  font-family:Arial,sans-serif;border:1px solid #ddd;
-                  border-radius:6px;overflow:hidden;margin-bottom:6px;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;
+                  font-family:Arial,sans-serif;border:1px solid #e0e0e0;
+                  border-radius:6px;overflow:hidden;margin-bottom:4px;">
       <thead><tr style="background:#1a1a2e;color:#fff;">{ths}</tr></thead>
       <tbody>{rows_html}</tbody>
     </table>"""
@@ -199,121 +279,205 @@ def make_table(rows_html, col_headers):
 def sec_hdr(emoji, title, subtitle, colour):
     return f"""
     <div style="background:{colour};border-radius:8px 8px 0 0;
-                padding:13px 18px;margin-top:32px;">
-      <h3 style="margin:0;color:#fff;font-size:15.5px;">{emoji}&nbsp; {title}</h3>
-      <p style="margin:4px 0 0;color:rgba(255,255,255,0.72);font-size:12px;">{subtitle}</p>
+                padding:12px 18px;margin-top:30px;">
+      <h3 style="margin:0;color:#fff;font-size:15px;">{emoji}&nbsp; {title}</h3>
+      <p style="margin:3px 0 0;color:rgba(255,255,255,0.75);font-size:11.5px;">{subtitle}</p>
     </div>"""
 
 
 def empty_msg(text):
-    return f'<p style="color:#999;font-style:italic;padding:12px 0 24px;">{text}</p>'
+    return f'<p style="color:#aaa;font-style:italic;padding:10px 0 22px;">{text}</p>'
+
+
+def stock_rows(lst, show_direction=False, loss_mode=False):
+    """Generate table rows for a stock list."""
+    rows = ""
+    for i, s in enumerate(lst):
+        bg = "#f9fafb" if i % 2 == 0 else "#fff"
+        chg_color = "#c62828" if loss_mode else "#2e7d32"
+        chg_sign  = "" if loss_mode else "+"
+        sector_cell = f'<td style="padding:8px 12px;color:#666;font-size:12px;">{s["sector"]}</td>'
+
+        if show_direction:
+            if s['change_pct'] > 0:
+                d = '<span style="color:#2e7d32;font-weight:bold;">▲</span>'
+            elif s['change_pct'] < 0:
+                d = '<span style="color:#c62828;font-weight:bold;">▼</span>'
+            else:
+                d = '<span style="color:#aaa;">—</span>'
+            rows += f"""<tr style="background:{bg};">
+              <td style="padding:8px 12px;font-weight:bold;color:#1a1a2e;">{s['symbol']}</td>
+              {sector_cell}
+              <td style="padding:8px 12px;text-align:right;">{s['price']:,.2f}</td>
+              <td style="padding:8px 12px;text-align:right;">{pct_badge(s['change_pct'])}</td>
+              <td style="padding:8px 12px;text-align:center;">{d}</td>
+              <td style="padding:8px 12px;text-align:right;color:#777;">{s['high']:,.2f} / {s['low']:,.2f}</td>
+              <td style="padding:8px 12px;text-align:right;color:#555;">{fmt_vol(s['volume'])}</td>
+            </tr>"""
+        else:
+            rows += f"""<tr style="background:{bg};">
+              <td style="padding:8px 12px;font-weight:bold;color:#1a1a2e;">{s['symbol']}</td>
+              {sector_cell}
+              <td style="padding:8px 12px;text-align:right;">{s['price']:,.2f}</td>
+              <td style="padding:8px 12px;text-align:right;font-weight:bold;color:{chg_color};">
+                  {chg_sign}{s['change']:,.2f}</td>
+              <td style="padding:8px 12px;text-align:right;">{pct_badge(s['change_pct'])}</td>
+              <td style="padding:8px 12px;text-align:right;color:#777;">{s['high']:,.2f} / {s['low']:,.2f}</td>
+              <td style="padding:8px 12px;text-align:right;color:#555;">{fmt_vol(s['volume'])}</td>
+            </tr>"""
+    return rows
 
 
 # ── Email Builder ──────────────────────────────────────────────────────────────
-def build_email(list1, list2, list3, scan_date, source_name, total_stocks):
+def build_email(list1, list2, list3, list4, mkt, scan_date, source_name):
 
     subject = (
-        f"PSX Scanner {scan_date} — "
-        f"Gainers:{len(list1)} | HiVol:{len(list2)} | TightRange:{len(list3)}"
+        f"PSX {scan_date} — "
+        f"▲{len(list1)} Gainers | 🔥{len(list2)} HiVol | "
+        f"🔔{len(list3)} Tight | ▼{len(list4)} Losers"
     )
+
+    COLS_MAIN  = ["Symbol","Sector","Price (PKR)","Change","Change %","High / Low","Volume"]
+    COLS_TIGHT = ["Symbol","Sector","Price (PKR)","Change %","Dir","High / Low","Volume"]
+    COLS_VOL   = ["Symbol","Sector","Price (PKR)","Change","Change %","High / Low","Volume"]
+
+    # ── Market Summary ────────────────────────────────────────────────────────
+    g_pct  = round(mkt["gainers"]   / mkt["total"] * 100) if mkt["total"] else 0
+    l_pct  = round(mkt["losers"]    / mkt["total"] * 100) if mkt["total"] else 0
+    u_pct  = round(mkt["unchanged"] / mkt["total"] * 100) if mkt["total"] else 0
+
+    # Breadth bar
+    breadth_bar = f"""
+    <div style="margin:14px 0 6px;">
+      <div style="font-size:11px;color:#888;margin-bottom:4px;">Market Breadth</div>
+      <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;">
+        <div style="width:{g_pct}%;background:#2e7d32;" title="Gainers {g_pct}%"></div>
+        <div style="width:{u_pct}%;background:#bbb;"    title="Unchanged {u_pct}%"></div>
+        <div style="width:{l_pct}%;background:#c62828;" title="Losers {l_pct}%"></div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:5px;font-size:11px;">
+        <span style="color:#2e7d32;">▲ Gainers {mkt['gainers']} ({g_pct}%)</span>
+        <span style="color:#bbb;">— Unchanged {mkt['unchanged']}</span>
+        <span style="color:#c62828;">▼ Losers {mkt['losers']} ({l_pct}%)</span>
+      </div>
+    </div>"""
+
+    # Top sectors table
+    sector_rows = ""
+    for sec, vol in mkt["top_sectors"]:
+        sector_rows += f"""<tr>
+          <td style="padding:6px 10px;color:#333;">{sec}</td>
+          <td style="padding:6px 10px;text-align:right;color:#555;">{fmt_vol(vol)}</td>
+        </tr>"""
+
+    market_summary_html = f"""
+    <div style="background:#f8f9fa;border:1px solid #e0e0e0;border-radius:8px;
+                padding:18px 20px;margin-top:20px;">
+      <h3 style="margin:0 0 14px;font-size:15px;color:#1a1a2e;">📊 Market Summary</h3>
+
+      <div style="display:flex;gap:30px;flex-wrap:wrap;margin-bottom:10px;">
+        <div style="text-align:center;">
+          <div style="font-size:26px;font-weight:bold;color:#1a1a2e;">{mkt['total']}</div>
+          <div style="font-size:11px;color:#888;">Stocks Scanned</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:26px;font-weight:bold;color:#2e7d32;">{mkt['gainers']}</div>
+          <div style="font-size:11px;color:#888;">Gainers</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:26px;font-weight:bold;color:#c62828;">{mkt['losers']}</div>
+          <div style="font-size:11px;color:#888;">Losers</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:26px;font-weight:bold;color:#888;">{mkt['unchanged']}</div>
+          <div style="font-size:11px;color:#888;">Unchanged</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:20px;font-weight:bold;color:#1a1a2e;">{fmt_vol(mkt['total_vol'])}</div>
+          <div style="font-size:11px;color:#888;">Total Volume</div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:20px;font-weight:bold;color:#1a1a2e;">{fmt_val(mkt['total_val'])}</div>
+          <div style="font-size:11px;color:#888;">Total Value</div>
+        </div>
+      </div>
+
+      {breadth_bar}
+
+      <div style="margin-top:16px;">
+        <div style="font-size:12px;font-weight:bold;color:#555;margin-bottom:6px;">
+          Top 5 Sectors by Volume
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+          <thead>
+            <tr style="background:#e8eaf6;">
+              <th style="padding:6px 10px;text-align:left;color:#333;">Sector</th>
+              <th style="padding:6px 10px;text-align:right;color:#333;">Volume</th>
+            </tr>
+          </thead>
+          <tbody>{sector_rows}</tbody>
+        </table>
+      </div>
+    </div>"""
 
     # ── Section 1: Momentum Gainers ──────────────────────────────────────────
     if list1:
-        rows = ""
-        for i, s in enumerate(list1):
-            bg = "#f9fafb" if i % 2 == 0 else "#fff"
-            rows += f"""<tr style="background:{bg};">
-              <td style="padding:9px 13px;font-weight:bold;color:#1a1a2e;">{s['symbol']}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['price']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;color:#2e7d32;font-weight:bold;">
-                  +{s['change']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;">{pct_badge(s['change_pct'])}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['high']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['low']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;color:#555;">{fmt_vol(s['volume'])}</td>
-            </tr>"""
         sec1 = (
             sec_hdr("📈","Momentum Gainers",
-                f"Up 4%+ with Volume >= 100,000 &nbsp;|&nbsp; {len(list1)} stock(s) found today","#2e7d32")
-            + make_table(rows, ["Symbol","Price (PKR)","Change","Change %","High","Low","Volume"])
+                f"Up 4%+ | Volume ≥ 100K | {len(list1)} stock(s) found today","#2e7d32")
+            + make_table(stock_rows(list1), COLS_MAIN)
         )
     else:
         sec1 = (
-            sec_hdr("📈","Momentum Gainers","Up 4%+ with Volume >= 100K","#2e7d32")
+            sec_hdr("📈","Momentum Gainers","Up 4%+ | Volume ≥ 100K","#2e7d32")
             + empty_msg("No stocks met the Momentum Gainer criteria today.")
         )
 
-    # ── Section 2: High-Volume Power Movers ──────────────────────────────────
+    # ── Section 2: High-Volume Movers (any direction, 9M+) ───────────────────
     if list2:
-        rows = ""
-        for i, s in enumerate(list2):
-            bg = "#fdf4f4" if i % 2 == 0 else "#fff"
-            rows += f"""<tr style="background:{bg};">
-              <td style="padding:9px 13px;font-weight:bold;color:#1a1a2e;">{s['symbol']}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['price']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;color:#2e7d32;font-weight:bold;">
-                  +{s['change']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;">{pct_badge(s['change_pct'])}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['high']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['low']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;font-weight:bold;color:#b71c1c;">
-                  {fmt_vol(s['volume'])}</td>
-            </tr>"""
         sec2 = (
-            sec_hdr("🔥","High-Volume Power Movers",
-                f"Up 4%+ with Volume >= 9,000,000 &nbsp;|&nbsp; {len(list2)} stock(s) found today","#b71c1c")
-            + make_table(rows, ["Symbol","Price (PKR)","Change","Change %","High","Low","Volume"])
+            sec_hdr("🔥","High-Volume Movers",
+                f"Volume ≥ 9,000,000 — any direction | {len(list2)} stock(s) found today","#e65100")
+            + make_table(stock_rows(list2), COLS_VOL)
         )
     else:
         sec2 = (
-            sec_hdr("🔥","High-Volume Power Movers","Up 4%+ with Volume >= 9M","#b71c1c")
-            + empty_msg("No stocks traded above 9M volume with a 4%+ gain today.")
+            sec_hdr("🔥","High-Volume Movers","Volume ≥ 9M — any direction","#e65100")
+            + empty_msg("No stocks traded above 9M volume today.")
         )
 
     # ── Section 3: Tight Range Watch ─────────────────────────────────────────
     if list3:
-        rows = ""
-        for i, s in enumerate(list3):
-            bg = "#f7f4ff" if i % 2 == 0 else "#fff"
-            if s['change_pct'] > 0:
-                direction = '<span style="color:#2e7d32;font-weight:bold;">▲ Up</span>'
-            elif s['change_pct'] < 0:
-                direction = '<span style="color:#c62828;font-weight:bold;">▼ Down</span>'
-            else:
-                direction = '<span style="color:#888;">— Flat</span>'
-            rows += f"""<tr style="background:{bg};">
-              <td style="padding:9px 13px;font-weight:bold;color:#1a1a2e;">{s['symbol']}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['price']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;">{pct_badge(s['change_pct'])}</td>
-              <td style="padding:9px 13px;text-align:center;">{direction}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['high']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;">{s['low']:,.2f}</td>
-              <td style="padding:9px 13px;text-align:right;color:#666;">{fmt_vol(s['volume'])}</td>
-            </tr>"""
         sec3 = (
             sec_hdr("🔔","Tight Range Watch",
-                f"|Change| <= 0.40% (up or down) — Consolidating candidates "
-                f"&nbsp;|&nbsp; {len(list3)} stock(s) found today","#5c35a0")
-            + make_table(rows, ["Symbol","Price (PKR)","Change %","Direction","High","Low","Volume"])
+                f"|Change| ≤ 0.40% (up or down) | {len(list3)} stock(s) consolidating today","#5c35a0")
+            + make_table(stock_rows(list3, show_direction=True), COLS_TIGHT)
         )
     else:
         sec3 = (
-            sec_hdr("🔔","Tight Range Watch","|Change| <= 0.40% (up or down)","#5c35a0")
-            + empty_msg("No tight-range consolidating stocks found today.")
+            sec_hdr("🔔","Tight Range Watch","|Change| ≤ 0.40%","#5c35a0")
+            + empty_msg("No tight-range stocks found today.")
         )
 
-    ok = total_stocks > 0
-    status_note = f"""
-    <div style="background:{'#e8f5e9' if ok else '#fff8e1'};border-radius:6px;
-                padding:10px 14px;margin-top:28px;font-size:12px;color:#555;">
-      {'✅' if ok else '⚠️'} <strong>Data source:</strong> {source_name}
-      &nbsp;|&nbsp; <strong>Total stocks scanned:</strong> {total_stocks}
-    </div>"""
+    # ── Section 4: Top Losers ─────────────────────────────────────────────────
+    if list4:
+        sec4 = (
+            sec_hdr("📉","Top Losers",
+                f"Down 4%+ | Volume ≥ 100K | {len(list4)} stock(s) found today","#c62828")
+            + make_table(stock_rows(list4, loss_mode=True), COLS_MAIN)
+        )
+    else:
+        sec4 = (
+            sec_hdr("📉","Top Losers","Down 4%+ | Volume ≥ 100K","#c62828")
+            + empty_msg("No stocks down 4%+ with significant volume today.")
+        )
 
+    # ── Full Email ────────────────────────────────────────────────────────────
     html = f"""<html>
-<body style="font-family:Arial,sans-serif;max-width:900px;margin:auto;
+<body style="font-family:Arial,sans-serif;max-width:960px;margin:auto;
              padding:20px;background:#f0f0f0;">
 
+  <!-- Header -->
   <div style="background:#1a1a2e;padding:22px 26px;border-radius:10px 10px 0 0;">
     <h1 style="color:#fff;margin:0;font-size:22px;">📊 PSX Daily Stock Scanner</h1>
     <p style="color:#aaa;margin:6px 0 0;font-size:13px;">
@@ -321,42 +485,43 @@ def build_email(list1, list2, list3, scan_date, source_name, total_stocks):
     </p>
   </div>
 
-  <!-- Summary bar -->
+  <!-- Quick count bar -->
   <div style="background:#fff;border:1px solid #ddd;border-top:none;
-              padding:18px 26px;display:flex;gap:40px;flex-wrap:wrap;">
-    <div style="text-align:center;min-width:110px;">
-      <div style="font-size:30px;font-weight:bold;color:#2e7d32;">{len(list1)}</div>
-      <div style="font-size:11px;color:#888;margin-top:3px;line-height:1.4;">
-        Momentum Gainers<br><span style="color:#aaa;">4%+ &amp; vol ≥100K</span></div>
+              padding:16px 26px;display:flex;gap:30px;flex-wrap:wrap;align-items:center;">
+    <div style="text-align:center;min-width:90px;">
+      <div style="font-size:28px;font-weight:bold;color:#2e7d32;">{len(list1)}</div>
+      <div style="font-size:10px;color:#999;line-height:1.4;">Gainers<br>4%+ / ≥100K</div>
     </div>
-    <div style="text-align:center;min-width:110px;">
-      <div style="font-size:30px;font-weight:bold;color:#b71c1c;">{len(list2)}</div>
-      <div style="font-size:11px;color:#888;margin-top:3px;line-height:1.4;">
-        High-Volume Movers<br><span style="color:#aaa;">4%+ &amp; vol ≥9M</span></div>
+    <div style="text-align:center;min-width:90px;">
+      <div style="font-size:28px;font-weight:bold;color:#e65100;">{len(list2)}</div>
+      <div style="font-size:10px;color:#999;line-height:1.4;">High Vol<br>≥9M any dir</div>
     </div>
-    <div style="text-align:center;min-width:110px;">
-      <div style="font-size:30px;font-weight:bold;color:#5c35a0;">{len(list3)}</div>
-      <div style="font-size:11px;color:#888;margin-top:3px;line-height:1.4;">
-        Tight Range Stocks<br><span style="color:#aaa;">|change| ≤0.40%</span></div>
+    <div style="text-align:center;min-width:90px;">
+      <div style="font-size:28px;font-weight:bold;color:#5c35a0;">{len(list3)}</div>
+      <div style="font-size:10px;color:#999;line-height:1.4;">Tight Range<br>≤0.40%</div>
     </div>
-    <div style="text-align:center;min-width:110px;">
-      <div style="font-size:30px;font-weight:bold;color:#555;">{total_stocks}</div>
-      <div style="font-size:11px;color:#888;margin-top:3px;line-height:1.4;">
-        Total Scanned<br><span style="color:#aaa;">all PSX stocks</span></div>
+    <div style="text-align:center;min-width:90px;">
+      <div style="font-size:28px;font-weight:bold;color:#c62828;">{len(list4)}</div>
+      <div style="font-size:10px;color:#999;line-height:1.4;">Losers<br>-4%+ / ≥100K</div>
     </div>
   </div>
 
   <!-- Main content -->
   <div style="background:#fff;border:1px solid #ddd;border-top:none;
-              padding:20px 26px 28px;border-radius:0 0 10px 10px;">
+              padding:20px 26px 30px;border-radius:0 0 10px 10px;">
+
+    {market_summary_html}
+
     {sec1}
     {sec2}
     {sec3}
-    {status_note}
-    <hr style="border:none;border-top:1px solid #eee;margin:24px 0 14px;">
+    {sec4}
+
+    <hr style="border:none;border-top:1px solid #eee;margin:28px 0 14px;">
     <p style="font-size:11px;color:#bbb;margin:0;line-height:1.6;">
-      Data sourced from <a href="https://psxterminal.com" style="color:#bbb;">psxterminal.com</a>.
-      PSX closes 3:30 PM PKT. Report runs at 3:35 PM PKT Mon–Fri.<br>
+      Data sourced from
+      <a href="https://psxterminal.com" style="color:#bbb;">psxterminal.com</a>.
+      PSX closes 3:30 PM PKT. This report runs at 3:35 PM PKT Mon–Fri.<br>
       For informational purposes only — not financial advice.
     </p>
   </div>
@@ -368,11 +533,11 @@ def build_email(list1, list2, list3, scan_date, source_name, total_stocks):
 
 # ── Email Sender ───────────────────────────────────────────────────────────────
 def send_email(subject, html_body):
-    print(f"\n[EMAIL] From: {SENDER_EMAIL}  →  To: {RECIPIENT_EMAIL}")
+    print(f"\n[EMAIL] {SENDER_EMAIL} → {RECIPIENT_EMAIL}")
     if not SENDER_EMAIL:
-        print("[EMAIL] ❌ SENDER_EMAIL secret missing!"); sys.exit(1)
+        print("[EMAIL] ❌ SENDER_EMAIL missing"); sys.exit(1)
     if not SENDER_PASSWORD:
-        print("[EMAIL] ❌ SENDER_PASSWORD secret missing!"); sys.exit(1)
+        print("[EMAIL] ❌ SENDER_PASSWORD missing"); sys.exit(1)
 
     msg            = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -384,47 +549,41 @@ def send_email(subject, html_body):
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
             server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, msg.as_string())
-            print(f"[EMAIL] ✅ Sent successfully to {RECIPIENT_EMAIL}")
+            print(f"[EMAIL] ✅ Sent to {RECIPIENT_EMAIL}")
     except smtplib.SMTPAuthenticationError as e:
-        print(f"[EMAIL] ❌ AUTH FAILED: {e}")
-        sys.exit(1)
+        print(f"[EMAIL] ❌ AUTH FAILED: {e}"); sys.exit(1)
     except Exception as e:
-        print(f"[EMAIL] ❌ ERROR: {e}")
-        traceback.print_exc()
-        sys.exit(1)
+        print(f"[EMAIL] ❌ ERROR: {e}"); traceback.print_exc(); sys.exit(1)
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 def main():
     scan_date = datetime.now().strftime("%B %d, %Y")
     print(f"\n{'='*62}")
-    print(f"  PSX Daily Scanner v7  —  {scan_date}")
+    print(f"  PSX Daily Scanner v8  —  {scan_date}")
     print(f"{'='*62}\n")
 
-    all_stocks, source_name = fetch_all_stocks()
+    all_stocks, sector_map, source_name = fetch_all_stocks()
 
     if not all_stocks:
-        print("\n[MAIN] ⚠️ No data — sending warning email")
+        print("\n[MAIN] ⚠️ No data — aborting")
+        sys.exit(1)
 
-    list1, list2, list3 = build_lists(all_stocks) if all_stocks else ([], [], [])
+    mkt                     = market_summary(all_stocks)
+    list1, list2, list3, list4 = build_lists(all_stocks)
 
-    print(f"\n{'─'*45}")
-    print(f"  Total stocks scanned  : {len(all_stocks)}")
-    print(f"  List 1 Gainers  4%+   : {len(list1)}")
-    print(f"  List 2 HiVol    9M+   : {len(list2)}")
-    print(f"  List 3 TightRange     : {len(list3)}")
-    print(f"{'─'*45}")
+    print(f"\n{'─'*50}")
+    print(f"  Market : {mkt['gainers']} up / {mkt['losers']} down / {mkt['unchanged']} flat")
+    print(f"  Vol    : {fmt_vol(mkt['total_vol'])}   Value: {fmt_val(mkt['total_val'])}")
+    print(f"  List 1 Gainers   (+4%/100K) : {len(list1)}")
+    print(f"  List 2 HiVol     (9M+ any)  : {len(list2)}")
+    print(f"  List 3 TightRange(≤0.40%)   : {len(list3)}")
+    print(f"  List 4 Losers    (-4%/100K) : {len(list4)}")
+    print(f"{'─'*50}")
 
-    if list1:
-        print("\n  📈 TOP GAINERS:")
-        for s in list1[:10]:
-            print(f"     {s['symbol']:10s}  {s['change_pct']:+.2f}%  price:{s['price']:.2f}  vol:{fmt_vol(s['volume'])}")
-    if list2:
-        print("\n  🔥 HIGH VOLUME:")
-        for s in list2:
-            print(f"     {s['symbol']:10s}  {s['change_pct']:+.2f}%  price:{s['price']:.2f}  vol:{fmt_vol(s['volume'])}")
-
-    subject, html = build_email(list1, list2, list3, scan_date, source_name, len(all_stocks))
+    subject, html = build_email(
+        list1, list2, list3, list4, mkt, scan_date, source_name
+    )
     print(f"\n[EMAIL] Subject: {subject}")
     send_email(subject, html)
     print(f"\n{'='*62}\n")
