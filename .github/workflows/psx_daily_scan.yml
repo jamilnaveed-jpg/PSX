@@ -1,0 +1,38 @@
+name: PSX Daily Scanner (Web)
+
+on:
+  schedule:
+    # 3:35 PM PKT = 10:35 AM UTC, Mon–Fri
+    - cron: '35 10 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Daily Scanner
+        run: python psx_daily_scanner.py
+
+      - name: Commit scan data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add daily_data/
+          git diff --cached --quiet || git commit -m "Daily scan $(date -u +'%Y-%m-%d')"
+          git push
