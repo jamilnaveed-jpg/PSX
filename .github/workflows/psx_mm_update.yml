@@ -2,15 +2,14 @@ name: PSX Market Monitor Update
 
 on:
   schedule:
-    # 3:45 PM PKT = 10:45 AM UTC, Mon–Fri
-    # Runs 10 minutes after main scanner so APIs are not hammered simultaneously
-    - cron: '45 10 * * 1-5'
+    # 5:00 PM PKT = 12:00 UTC, Mon–Fri
+    - cron: '0 12 * * 1-5'
   workflow_dispatch:   # manual trigger
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
 
     # Give the workflow permission to write back to the repo
     permissions:
