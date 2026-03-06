@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSX Daily Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root,[data-theme="dark"]{
+  --bg:#080c10;--sf:#0d1117;--sf2:#111820;--sf3:#161e28;
+  --bd:#1c2840;--bd2:#243050;
+  --tx:#d0e4f4;--txd:#4a6a90;--txm:#1e3050;
+  --ac:#00b8e0;--ac2:#0077aa;
+  --gn:#00e676;--gnbg:#001a0d;--gnmd:#003d1a;
+  --rd:#ff3d3d;--rdbg:#1a0000;--rdmd:#3d0000;
+  --gd:#ffcc00;--gdbg:#1a1000;
+  --pu:#b388ff;--pubg:#1a0d33;
+  --or:#ff9800;--tl:#26c6da;
+  --hdr:rgba(8,12,16,0.95);
+  --cal-e:#0a0e14;--cal-h:#0d1a2a;--cal-t:#0d2010;--cal-s:#001833;
+  --sl:rgba(0,0,0,0.06);
+}
+[data-theme="light"]{
+  --bg:#f0f4f8;--sf:#fff;--sf2:#f7f9fb;--sf3:#eef2f6;
+  --bd:#d0dae8;--bd2:#b8c8d8;
+  --tx:#1a2a3a;--txd:#4a6a8a;--txm:#a0b8cc;
+  --ac:#0077aa;--ac2:#005588;
+  --gn:#1a7a40;--gnbg:#e8f8ee;--gnmd:#c0ecd0;
+  --rd:#cc2222;--rdbg:#fdeaea;--rdmd:#f8c0c0;
+  --gd:#996600;--gdbg:#fff8e0;
+  --pu:#7b22cc;--pubg:#f0e8ff;
+  --or:#c66000;--tl:#007a8a;
+  --hdr:rgba(240,244,248,0.97);
+  --cal-e:#eef2f6;--cal-h:#ddeeff;--cal-t:#e0f8ec;--cal-s:#cce4ff;
+  --sl:transparent;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Syne',sans-serif;font-size:13px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--sl) 3px,var(--sl) 4px);pointer-events:none;z-index:9999}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);border-bottom:1px solid var(--bd);backdrop-filter:blur(10px);display:flex;align-items:center;padding:0 20px;gap:12px}
+.logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ac);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.logo span{color:var(--txd);font-weight:400}
+.nav{display:flex;gap:2px}
+.nl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);text-decoration:none;padding:4px 9px;border-radius:4px;border:1px solid transparent;transition:all .15s}
+.nl:hover{color:var(--ac);border-color:var(--bd2)}
+.nl.on{color:var(--ac);background:rgba(0,184,224,.1);border-color:var(--ac2)}
+.hs{width:1px;height:22px;background:var(--bd);flex-shrink:0}
+.tog{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.tt{width:32px;height:18px;background:var(--bd);border-radius:9px;position:relative;border:1px solid var(--bd2)}
+.tk{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--txd);transition:transform .2s,background .2s}
+[data-theme="light"] .tk{transform:translateX(14px);background:var(--ac)}
+#upd{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+
+/* LAYOUT: sidebar + main */
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 52px)}
+
+/* SIDEBAR */
+.sb{border-right:1px solid var(--bd);background:var(--sf);padding:18px 14px;overflow-y:auto;transition:background .25s,border-color .25s}
+.cn{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cnb{background:none;border:1px solid var(--bd);color:var(--txd);cursor:pointer;width:26px;height:26px;border-radius:4px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.cnb:hover{border-color:var(--ac);color:var(--ac)}
+.cml{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx)}
+/* Calendar grid */
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cdow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txd);padding:3px 0;text-transform:uppercase}
+.cd{height:34px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:11px;transition:all .15s;background:var(--cal-e);color:var(--txm);position:relative;cursor:default}
+.cd.hd{background:var(--cal-h);color:var(--tx);cursor:pointer;border:1px solid var(--bd2)}
+.cd.hd:hover{border-color:var(--ac);color:var(--ac);transform:scale(1.06);z-index:1}
+.cd.td{background:var(--cal-t);color:var(--gn);font-weight:700}
+.cd.sl{background:var(--cal-s)!important;color:var(--ac)!important;border:2px solid var(--ac)!important;box-shadow:0 0 0 2px rgba(0,184,224,.2)}
+.cd.om{opacity:.2}
+.cd.hd::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--ac);opacity:.7}
+/* Recent list */
+.rl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--bd)}
+.rdi{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:4px;cursor:pointer;transition:background .1s;margin-bottom:2px;border:1px solid transparent}
+.rdi:hover{background:var(--sf2);border-color:var(--bd)}
+.rdi.sl{background:var(--cal-s);border-color:var(--ac)}
+.rdd{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx)}
+.rdi.sl .rdd{color:var(--ac)}
+.rpill{font-size:9px;font-family:'JetBrains Mono',monospace;padding:1px 5px;border-radius:3px;font-weight:600}
+.rpg{background:var(--gnbg);color:var(--gn)}.rpr{background:var(--rdbg);color:var(--rd)}
+
+/* MAIN */
+.mn{overflow-y:auto;padding:22px}
+.es{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:10px;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center}
+.es .bi{font-size:44px;opacity:.15}
+.ld{display:flex;align-items:center;gap:8px;padding:40px;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px}
+.sp{width:14px;height:14px;border:2px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Date heading */
+.dh{display:flex;align-items:flex-end;gap:14px;margin-bottom:18px;flex-wrap:wrap;border-bottom:1px solid var(--bd);padding-bottom:14px}
+.dt{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.ds{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);letter-spacing:.06em;text-transform:uppercase}
+
+/* Market strip */
+.ms{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:22px}
+.mc{background:var(--sf);padding:11px 13px;transition:background .15s}
+.mc:hover{background:var(--sf2)}
+.ml{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin-bottom:2px}
+.mv{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;line-height:1}
+.msb{font-size:9px;color:var(--txd);margin-top:2px}
+.cg2{color:var(--gn)}.cr{color:var(--rd)}.cgo{color:var(--gd)}.ct{color:var(--tl)}.ctx{color:var(--tx)}
+.bbar{height:7px;border-radius:3px;overflow:hidden;display:flex;margin-top:5px}
+.bbg{background:var(--gn)}.bbn{background:var(--bd)}.bbr{background:var(--rd)}
+
+/* Section header */
+.sh{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:6px 6px 0 0;margin-top:24px}
+.sh-ico{font-size:15px}
+.sh-ti{font-size:14px;font-weight:700;color:#fff}
+.sh-co{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;background:rgba(255,255,255,.18);padding:2px 8px;border-radius:10px;color:#fff;margin-left:6px}
+.sh-sb{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.55);margin-left:auto}
+
+/* Stock table */
+.tw{border:1px solid var(--bd);border-top:none;border-radius:0 0 6px 6px;overflow:hidden;overflow-x:auto}
+table.st{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px}
+table.st thead tr{background:var(--sf3)}
+table.st thead th{padding:6px 10px;text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);white-space:nowrap;border-bottom:1px solid var(--bd)}
+table.st thead th:not(:first-child):not(:nth-child(2)){text-align:right}
+table.st tbody tr{border-bottom:1px solid var(--bd);transition:background .1s}
+table.st tbody tr:last-child{border-bottom:none}
+table.st tbody tr:hover{background:var(--sf2)!important}
+table.st tbody tr:nth-child(even){background:var(--sf3)}
+table.st td{padding:6px 10px;white-space:nowrap}
+table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
+.sy{font-weight:600;font-size:12px;color:var(--tx)}
+.se{font-size:9.5px;color:var(--txd);font-family:'Syne',sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+.up{color:var(--gn);font-weight:600}.dn{color:var(--rd);font-weight:600}.fl{color:var(--txd)}
+.bg{display:inline-block;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600}
+.bgu{background:var(--gnbg);color:var(--gn)}.bgd{background:var(--rdbg);color:var(--rd)}.bgf{background:var(--sf3);color:var(--txd)}
+.nd{padding:14px;text-align:center;color:var(--txd);font-size:11px;font-style:italic}
+
+/* Sector cards */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-top:0}
+.scard{border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.scard:hover{border-color:var(--bd2)}
+.sch{padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.schn{font-size:11px;font-weight:700;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.schv{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:rgba(255,255,255,.6)}
+.scha{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:8px;background:rgba(255,255,255,.18);color:#fff;white-space:nowrap}
+.scb{padding:5px 12px 4px;background:var(--sf2)}
+.scbb{height:4px;border-radius:2px;overflow:hidden;display:flex;margin-bottom:3px}
+.scbn{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txd)}
+.scst{background:var(--sf)}
+.scsr{display:flex;align-items:center;justify-content:space-between;padding:4px 12px;border-top:1px solid var(--bd);font-family:'JetBrains Mono',monospace}
+.scsym{font-size:11px;font-weight:600;color:var(--tx)}
+.scprc{font-size:10px;color:var(--txd)}
+.scvol{font-size:9px;color:var(--txd)}
+
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fi{animation:fi .3s ease both}
+
+@media(max-width:768px){.layout{grid-template-columns:1fr}.sb{border-right:none;border-bottom:1px solid var(--bd)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">PSX <span>/</span> Daily Scanner</div>
+  <div class="nav">
+    <a class="nl on" href="daily.html">📊 Daily</a>
+    <a class="nl" href="trend.html">📈 Trend</a>
+    <a class="nl" href="index.html">🧭 MM</a>
+  </div>
+  <div class="hs"></div>
+  <div class="tog" onclick="tog()">
+    <span id="ti">🌙</span>
+    <div class="tt"><div class="tk"></div></div>
+    <span id="tl">Dark</span>
+  </div>
+  <div id="upd">—</div>
+</header>
+
+<div class="layout">
+  <aside class="sb">
+    <div class="cn">
+      <button class="cnb" onclick="pm()">‹</button>
+      <span class="cml" id="cml">—</span>
+      <button class="cnb" onclick="nm()">›</button>
+    </div>
+    <div class="cg" id="cg"></div>
+    <div class="rl">Recent Dates</div>
+    <div id="rl"></div>
+  </aside>
+
+  <main class="mn" id="mn">
+    <div class="es"><div class="bi">📊</div><div>Select a date from the calendar</div><div style="font-size:10px;opacity:.4">Trading days highlighted in blue</div></div>
+  </main>
+</div>
+
+<script>
+let dates=[],sel=null,cY=new Date().getFullYear(),cM=new Date().getMonth();
+
+// Theme
+function tog(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('ti').textContent=d?'☀️':'🌙';document.getElementById('tl').textContent=d?'Light':'Dark';localStorage.setItem('psx-t',d?'light':'dark');}
+(()=>{const s=localStorage.getItem('psx-t');if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('ti').textContent=s==='light'?'☀️':'🌙';document.getElementById('tl').textContent=s==='light'?'Light':'Dark';}})();
+
+// Formatters
+const fv=v=>{if(v>=1e9)return(v/1e9).toFixed(2)+'B';if(v>=1e6)return(v/1e6).toFixed(2)+'M';if(v>=1e3)return(v/1e3).toFixed(1)+'K';return String(v);}
+const fval=v=>{if(v>=1e9)return'PKR '+(v/1e9).toFixed(2)+'B';if(v>=1e6)return'PKR '+(v/1e6).toFixed(1)+'M';return'PKR '+Number(v).toLocaleString();}
+const fd=s=>{try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}catch{return s;}}
+const fs=s=>{try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'});}catch{return s;}}
+const pb=p=>{if(p>0)return`<span class="bg bgu">+${p.toFixed(2)}%</span>`;if(p<0)return`<span class="bg bgd">${p.toFixed(2)}%</span>`;return`<span class="bg bgf">0.00%</span>`;}
+
+// Calendar
+function rCal(){
+  document.getElementById('cml').textContent=new Date(cY,cM,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const grid=document.getElementById('cg');
+  const dows=['Mo','Tu','We','Th','Fr','Sa','Su'];
+  let h=dows.map(d=>`<div class="cdow">${d}</div>`).join('');
+  const first=new Date(cY,cM,1),last=new Date(cY,cM+1,0),today=new Date().toISOString().slice(0,10);
+  const sd=(first.getDay()+6)%7;
+  for(let i=0;i<sd;i++){const d=new Date(cY,cM,1-sd+i);h+=`<div class="cd om">${d.getDate()}</div>`;}
+  for(let d=1;d<=last.getDate();d++){
+    const ds=`${cY}-${String(cM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const has=dates.includes(ds),isTd=ds===today,isSl=ds===sel;
+    let cls='cd'+(has?' hd':'')+(isTd?' td':'')+(isSl?' sl':'');
+    h+=`<div class="${cls}"${has?` onclick="pick('${ds}')"`:''}>${d}</div>`;
+  }
+  grid.innerHTML=h;
+}
+
+function rRecent(){
+  const c=document.getElementById('rl');
+  c.innerHTML=dates.slice(0,25).map(d=>`
+    <div class="rdi${d===sel?' sl':''}" onclick="pick('${d}')">
+      <span class="rdd">${fs(d)}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;opacity:.5">${d.slice(0,4)}</span>
+    </div>`).join('');
+}
+
+function pm(){cM--;if(cM<0){cM=11;cY--;}rCal();}
+function nm(){cM++;if(cM>11){cM=0;cY++;}rCal();}
+
+async function loadIdx(){
+  try{
+    const r=await fetch('daily_data/index.json?t='+Date.now());
+    if(!r.ok)throw new Error('missing');
+    dates=await r.json();dates.sort((a,b)=>b.localeCompare(a));
+    if(dates.length){document.getElementById('upd').textContent='Latest: '+fs(dates[0]);pick(dates[0]);}
+    rCal();rRecent();
+  }catch(e){
+    document.getElementById('mn').innerHTML=`<div class="es"><div class="bi">⚠️</div><div>daily_data/index.json not found</div><div style="font-size:10px;opacity:.5">Run psx_daily_scanner.py to generate data</div></div>`;
+  }
+}
+
+async function pick(date){
+  sel=date;
+  const d=new Date(date+'T00:00:00');cY=d.getFullYear();cM=d.getMonth();
+  rCal();rRecent();
+  const mn=document.getElementById('mn');
+  mn.innerHTML=`<div class="ld"><div class="sp"></div>Loading ${date}…</div>`;
+  try{
+    const r=await fetch(`daily_data/${date}.json?t=`+Date.now());
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    mn.innerHTML=renderDay(await r.json());
+  }catch(e){mn.innerHTML=`<div class="es"><div class="bi">❌</div><div>Could not load data for ${date}</div></div>`;}
+}
+
+// ── Render a full day ─────────────────────────────────────────────────────────
+function renderDay(d){
+  const m=d.market,tot=m.total||1;
+  const gp=Math.round(m.gainers/tot*100),lp=Math.round(m.losers/tot*100),up=100-gp-lp;
+  let h=`<div class="fi">`;
+
+  // Header
+  h+=`<div class="dh"><div><div class="dt">${fd(d.date)}</div><div class="ds">PSX End-of-Day · ${m.total} stocks scanned</div></div></div>`;
+
+  // Market strip
+  h+=`<div class="ms">
+    <div class="mc"><div class="ml">Gainers</div><div class="mv cg2">${m.gainers}</div><div class="msb">${gp}% of market</div></div>
+    <div class="mc"><div class="ml">Losers</div><div class="mv cr">${m.losers}</div><div class="msb">${lp}% of market</div></div>
+    <div class="mc"><div class="ml">Unchanged</div><div class="mv ctx">${m.unchanged}</div></div>
+    <div class="mc"><div class="ml">Total Volume</div><div class="mv ct" style="font-size:15px">${fv(m.total_vol)}</div></div>
+    <div class="mc"><div class="ml">Total Value</div><div class="mv cgo" style="font-size:13px">${fval(m.total_val)}</div></div>
+    <div class="mc"><div class="ml">Breadth</div>
+      <div class="bbar"><div class="bbg" style="width:${gp}%"></div><div class="bbn" style="width:${up}%"></div><div class="bbr" style="width:${lp}%"></div></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txd);margin-top:3px">▲${m.gainers} —${m.unchanged} ▼${m.losers}</div>
+    </div>
+  </div>`;
+
+  // List 1: Momentum Gainers
+  h+=sec('📈','Momentum Gainers','Up 4%+ | Volume ≥ 100K','#1b5e20',d.list1,
+    ['Symbol','Sector','Price','Change','Chg %','Hi / Lo','Volume'],
+    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+        <td>${r.price.toFixed(2)}</td>
+        <td class="up">+${r.change.toFixed(2)}</td>
+        <td>${pb(r.change_pct)}</td>
+        <td class="fl">${r.high.toFixed(2)} / ${r.low.toFixed(2)}</td>
+        <td>${fv(r.volume)}</td>`);
+
+  // List 2: High-Volume
+  h+=sec('🔥','High-Volume Movers','Volume ≥ 9,000,000 — any direction','#bf360c',d.list2,
+    ['Symbol','Sector','Price','Change','Chg %','Hi / Lo','Volume'],
+    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+        <td>${r.price.toFixed(2)}</td>
+        <td class="${r.change>=0?'up':'dn'}">${r.change>=0?'+':''}${r.change.toFixed(2)}</td>
+        <td>${pb(r.change_pct)}</td>
+        <td class="fl">${r.high.toFixed(2)} / ${r.low.toFixed(2)}</td>
+        <td style="color:var(--or);font-weight:600">${fv(r.volume)}</td>`);
+
+  // List 3: Tight Range
+  h+=sec('🔔','Tight Range Watch','|Change| ≤ 0.40% — Consolidating','#4a148c',d.list3,
+    ['Symbol','Sector','Price','Chg %','Hi / Lo','Volume'],
+    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+        <td>${r.price.toFixed(2)}</td>
+        <td>${pb(r.change_pct)}</td>
+        <td class="fl">${r.high.toFixed(2)} / ${r.low.toFixed(2)}</td>
+        <td>${fv(r.volume)}</td>`);
+
+  // List 4: Top Losers
+  h+=sec('📉','Top Losers','Down 4%+ | Volume ≥ 100K','#b71c1c',d.list4,
+    ['Symbol','Sector','Price','Change','Chg %','Hi / Lo','Volume'],
+    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+        <td>${r.price.toFixed(2)}</td>
+        <td class="dn">${r.change.toFixed(2)}</td>
+        <td>${pb(r.change_pct)}</td>
+        <td class="fl">${r.high.toFixed(2)} / ${r.low.toFixed(2)}</td>
+        <td>${fv(r.volume)}</td>`);
+
+  // Sector breakdown
+  h+=`<div class="sh" style="background:#0d2040;margin-top:24px">
+    <span class="sh-ico">🏭</span>
+    <span class="sh-ti">Sector Breakdown</span>
+    <span class="sh-sb">${m.sectors.length} sectors · sorted by volume</span>
+  </div>
+  <div class="tw" style="border-radius:0 0 6px 6px;border-top:1px solid var(--bd);padding:12px">
+  <div class="sgrid">`;
+  for(const s of m.sectors){
+    const sp=Math.round(s.gainers/s.count*100)||0,lp2=Math.round(s.losers/s.count*100)||0,up2=100-sp-lp2;
+    const hc=s.avg_pct>0?'#1b3020':s.avg_pct<0?'#3d1010':'#1a2030';
+    const sign=s.avg_pct>0?'+':'';
+    h+=`<div class="scard">
+      <div class="sch" style="background:${hc}">
+        <div><div class="schn">${s.name}</div><div class="schv">${fv(s.total_vol)} · ${s.count} stocks</div></div>
+        <div class="scha">${sign}${s.avg_pct.toFixed(2)}%</div>
+      </div>
+      <div class="scb">
+        <div class="scbb"><div class="bbg" style="width:${sp}%"></div><div class="bbn" style="width:${up2}%"></div><div class="bbr" style="width:${lp2}%"></div></div>
+        <div class="scbn"><span style="color:var(--gn)">▲${s.gainers}</span><span>—${s.unchanged}</span><span style="color:var(--rd)">▼${s.losers}</span></div>
+      </div>
+      <div class="scst">`;
+    for(const t of s.top3){
+      const tc=t.change_pct>0?'var(--gn)':t.change_pct<0?'var(--rd)':'var(--txd)',ts=t.change_pct>0?'+':'';
+      h+=`<div class="scsr"><span class="scsym">${t.symbol}</span><span class="scprc">${t.price.toFixed(2)}</span><span style="font-size:10px;font-weight:600;color:${tc}">${ts}${t.change_pct.toFixed(2)}%</span><span class="scvol">${fv(t.volume)}</span></div>`;
+    }
+    h+=`</div></div>`;
+  }
+  h+=`</div></div></div>`;
+  return h;
+}
+
+function sec(ico,ti,sb,col,list,heads,rowFn){
+  let h=`<div class="sh" style="background:${col}"><span class="sh-ico">${ico}</span><span class="sh-ti">${ti}</span><span class="sh-co">${list.length}</span><span class="sh-sb">${sb}</span></div><div class="tw">`;
+  if(!list||!list.length){h+=`<div class="nd">No stocks matched this criteria today</div>`;}
+  else{
+    h+=`<table class="st"><thead><tr>`;heads.forEach(hd=>h+=`<th>${hd}</th>`);h+=`</tr></thead><tbody>`;
+    list.forEach(r=>h+=`<tr>${rowFn(r)}</tr>`);
+    h+=`</tbody></table>`;
+  }
+  return h+`</div>`;
+}
+
+loadIdx();
+</script>
+</body>
+</html>
