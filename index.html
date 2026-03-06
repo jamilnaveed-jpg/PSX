@@ -175,7 +175,9 @@
 
   table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
 
-  .col-divider { border-left: 2px solid var(--border2) !important; }
+  .col-divider     { border-left: 2px solid var(--border2) !important; }
+  /* Strong teal divider separating Market Internals from Secondary */
+  .section-divider { border-left: 4px solid var(--teal) !important; }
 
   thead tr.group-row th {
     padding: 7px 8px 5px; font-size: 9px; letter-spacing: 0.1em;
@@ -216,6 +218,10 @@
 
   .ratio-cell { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; display: inline-block; }
   .ma-cell    { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; display: inline-block; min-width: 44px; text-align: center; }
+  /* Light theme MA overrides — dark backgrounds don't work on white */
+  [data-theme="light"] .ma-cell-high { background: #d4f0e0 !important; color: #1a8040 !important; }
+  [data-theme="light"] .ma-cell-mid  { background: #fff3cd !important; color: #856404 !important; }
+  [data-theme="light"] .ma-cell-low  { background: #fde8e8 !important; color: #cc2222 !important; }
   .kse-cell   { font-size: 11px; font-weight: 600; color: var(--teal); }
   .total-cell { color: var(--text-dim); font-size: 10.5px; }
 
@@ -329,7 +335,7 @@
           <th class="col-divider" title="Up 13%+ in last 34 trading days">Up 13%<br>34 Days</th>
           <th title="Down 13%+ in last 34 days">Down 13%<br>34 Days</th>
           <th class="col-divider" title="Total PSX stocks scanned">Total<br>PSX</th>
-          <th class="col-divider" title="% of PSX stocks above their 40-day moving average">T2108<br>(40D MA)</th>
+          <th class="section-divider" title="% of PSX stocks above their 40-day moving average">T2108<br>(40D MA)</th>
           <th title="% of PSX stocks above their 200-day moving average">T2107<br>(200D MA)</th>
           <th class="col-divider" title="KSE-100 Index closing value">KSE-100<br>Index</th>
         </tr>
@@ -400,15 +406,15 @@ function ratioCell(val, divider=false) {
   return `<td${cls}><span class="ratio-cell" style="background:${bg};color:${c};">${val.toFixed(2)}</span></td>`;
 }
 
-function maCell(val, divider=false) {
-  const cls = divider ? ' class="col-divider"' : '';
+function maCell(val, dividerClass='') {
+  const cls = dividerClass ? ` class="${dividerClass}"` : '';
   if (val==null) return `<td${cls}><span style="color:var(--text-muted)">—</span></td>`;
-  let bg,c;
-  if(val>=70){bg='var(--green-dim)';c='var(--green)';}
-  else if(val>=50){bg='#002a10';c='#69f0ae';}
-  else if(val>=30){bg='#2a1500';c='#ff9800';}
-  else{bg='var(--red-dim)';c='var(--red)';}
-  return `<td${cls}><span class="ma-cell" style="background:${bg};color:${c};">${val.toFixed(1)}%</span></td>`;
+  let bg,c,themeCls;
+  if(val>=70){bg='var(--green-dim)';c='var(--green)';themeCls='ma-cell-high';}
+  else if(val>=50){bg='#002a10';c='#69f0ae';themeCls='ma-cell-high';}
+  else if(val>=30){bg='#2a1500';c='#ff9800';themeCls='ma-cell-mid';}
+  else{bg='var(--red-dim)';c='var(--red)';themeCls='ma-cell-low';}
+  return `<td${cls}><span class="ma-cell ${themeCls}" style="background:${bg};color:${c};">${val.toFixed(1)}%</span></td>`;
 }
 
 function kseCell(val) {
@@ -460,9 +466,9 @@ function renderTable(rows) {
     html += barCell(r.up13_34, BAR_MAX.up13_34, '--green', true);
     html += barCell(r.dn13_34, BAR_MAX.dn13_34, '--red');
     html += totalCell(r.total);
-    // Market internals
-    html += maCell(r.t2108, true);
-    html += maCell(r.t2107, false);
+    // Market internals — strong teal divider before T2108
+    html += maCell(r.t2108, 'section-divider');
+    html += maCell(r.t2107, '');
     html += kseCell(r.kse100);
     html += `</tr>`;
   });
