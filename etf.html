@@ -215,7 +215,26 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .ov-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700}
 .ov-sub{font-size:9px;color:var(--txd);margin-top:1px}
 
-@media(max-width:900px){.layout{grid-template-columns:1fr}.sb{border-right:none;border-bottom:1px solid var(--bd)}.rets-grid{grid-template-columns:repeat(4,1fr)}.prof-grid{grid-template-columns:1fr}.etf-grid{grid-template-columns:1fr}}
+/* ── INDEX CARDS ── */
+.idx-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;margin-bottom:30px}
+.idx-card{border:1px solid var(--bd);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s}
+.idx-card:hover{border-color:var(--ac2);transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,196,232,.12)}
+.idx-card.active{border-color:var(--ac);box-shadow:0 0 0 2px rgba(0,196,232,.2),0 4px 20px rgba(0,196,232,.12)}
+.ic-hdr{padding:12px 16px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ic-sym{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:#fff;letter-spacing:.04em}
+.ic-name{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
+.ic-desc{font-size:9px;color:rgba(255,255,255,.4);margin-top:1px}
+.ic-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:#fff;text-align:right;line-height:1.1}
+.ic-chg{font-family:'JetBrains Mono',monospace;font-size:11px;text-align:right;margin-top:2px}
+.ic-stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--sf2)}
+.ic-s{padding:7px 10px;border-right:1px solid var(--bd);border-top:1px solid var(--bd)}
+.ic-s:last-child{border-right:none}
+.ic-sl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd)}
+.ic-sv{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--tx);margin-top:1px}
+.ic-constituents{border-top:1px solid var(--bd);background:var(--sf3);padding:8px 10px;display:flex;flex-wrap:wrap;gap:4px;max-height:52px;overflow:hidden}
+.ic-chip{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;border:1px solid var(--bd);background:var(--sf);white-space:nowrap}
+
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sb{border-right:none;border-bottom:1px solid var(--bd)}.rets-grid{grid-template-columns:repeat(4,1fr)}.prof-grid{grid-template-columns:1fr}.etf-grid{grid-template-columns:1fr}.idx-card-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -269,6 +288,206 @@ const COLORS = {
   JSMFETF:'#1b5020', MZNPETF:'#0d3d80', MIIETF:'#3d1060', ACIETF:'#8b2800',
   NBPGETF:'#004d50', NITGETF:'#1a1a6e', JSGBETF:'#6a0030', UBLPETF:'#8b3400',
 };
+
+// Index card colours
+const ICOLORS = {
+  KSE100:'#0d3d6e', KMI30:'#1a5e20', KSE30:'#4a1942', MII30:'#7b3800',
+};
+
+// ── Render one Index card ─────────────────────────────────────────────────────
+function renderIndexCard(ic){
+  const col = ICOLORS[ic.symbol] || '#1a2a4a';
+  const pcc = ic.change_pct>0?'var(--gn)':ic.change_pct<0?'var(--rd)':'rgba(255,255,255,.5)';
+  const sign = ic.change_pct>0?'+':'';
+  const csign = ic.change>0?'+':'';
+  const n = ic.constituents?.length || 0;
+
+  // Top 5 gainers and top 5 losers for chips preview
+  const sorted = [...(ic.constituents||[])].sort((a,b)=>(b.change_pct||0)-(a.change_pct||0));
+  const chips = sorted.slice(0,8).map(s=>{
+    const cc = (s.change_pct||0)>0?'var(--gn)':(s.change_pct||0)<0?'var(--rd)':'var(--txd)';
+    const ss = (s.change_pct||0)>0?'+':'';
+    return `<span class="ic-chip" style="color:${cc};border-color:${cc}33">${s.symbol} ${ss}${(s.change_pct||0).toFixed(1)}%</span>`;
+  }).join('');
+
+  return `<div class="idx-card" id="icard-${ic.symbol}" onclick="toggleIndexDetail('${ic.symbol}')">
+    <div class="ic-hdr" style="background:${col}">
+      <div style="min-width:0;flex:1">
+        <div class="ic-sym">${ic.symbol}</div>
+        <div class="ic-name">${ic.name}</div>
+        <div class="ic-desc">${ic.desc}</div>
+      </div>
+      <div style="flex-shrink:0;text-align:right">
+        <div class="ic-val">${ic.value!=null?fn(ic.value):'—'}</div>
+        <div class="ic-chg" style="color:${pcc}">${ic.change_pct!=null?sign+ic.change_pct.toFixed(2)+'%':'—'}</div>
+      </div>
+    </div>
+    <div class="ic-stats">
+      <div class="ic-s"><div class="ic-sl">Constituents</div><div class="ic-sv ct">${n}</div></div>
+      <div class="ic-s"><div class="ic-sl">High</div><div class="ic-sv cg2">${ic.high!=null?fn(ic.high):'—'}</div></div>
+      <div class="ic-s"><div class="ic-sl">Low</div><div class="ic-sv cr">${ic.low!=null?fn(ic.low):'—'}</div></div>
+      <div class="ic-s"><div class="ic-sl">Change</div><div class="ic-sv" style="color:${pcc}">${ic.change!=null?csign+ic.change.toFixed(2):'—'}</div></div>
+      <div class="ic-s"><div class="ic-sl">Gainers</div><div class="ic-sv cg2">${(ic.constituents||[]).filter(s=>(s.change_pct||0)>0).length}</div></div>
+      <div class="ic-s"><div class="ic-sl">Losers</div><div class="ic-sv cr">${(ic.constituents||[]).filter(s=>(s.change_pct||0)<0).length}</div></div>
+    </div>
+    ${chips?`<div class="ic-constituents">${chips}</div>`:''}
+  </div>`;
+}
+
+// ── Toggle index detail ───────────────────────────────────────────────────────
+let activeIndex = null;
+function toggleIndexDetail(sym){
+  if(activeIndex === sym){ closeIndexDetail(); return; }
+  activeIndex = sym;
+  document.querySelectorAll('.idx-card').forEach(c=>c.classList.remove('active'));
+  const card = document.getElementById('icard-'+sym);
+  if(card) card.classList.add('active');
+  const ic = (window._dd?.index_cards||[]).find(c=>c.symbol===sym);
+  if(!ic) return;
+  document.getElementById('idp-wrap').innerHTML = renderIndexDetail(ic);
+  setTimeout(()=>document.getElementById('idp-wrap').scrollIntoView({behavior:'smooth',block:'nearest'}),60);
+}
+function closeIndexDetail(){
+  activeIndex = null;
+  document.getElementById('idp-wrap').innerHTML = '';
+  document.querySelectorAll('.idx-card').forEach(c=>c.classList.remove('active'));
+}
+
+// ── Render index detail panel ─────────────────────────────────────────────────
+function renderIndexDetail(ic){
+  const col = ICOLORS[ic.symbol] || '#1a2a4a';
+  const pcc = ic.change_pct>0?'var(--gn)':ic.change_pct<0?'var(--rd)':'rgba(255,255,255,.5)';
+  const sign = ic.change_pct>0?'+':'';
+  const constituents = ic.constituents || [];
+
+  // Sort by change_pct desc (gainers first)
+  const byGain = [...constituents].sort((a,b)=>(b.change_pct||0)-(a.change_pct||0));
+  const gainers = constituents.filter(s=>(s.change_pct||0)>0).length;
+  const losers  = constituents.filter(s=>(s.change_pct||0)<0).length;
+  const flat    = constituents.filter(s=>(s.change_pct||0)===0).length;
+
+  let h = `<div class="dp" id="idp-inner">
+    <div class="dp-hdr" style="background:${col}">
+      <div>
+        <div class="dp-title">${ic.symbol} — ${ic.name}</div>
+        <div class="dp-sub">
+          Value: ${ic.value!=null?fn(ic.value):'—'} &nbsp;·&nbsp;
+          Change: <span style="color:${pcc}">${sign}${ic.change_pct?.toFixed(2)||'—'}%</span> &nbsp;·&nbsp;
+          ${constituents.length} stocks &nbsp;·&nbsp;
+          <span style="color:var(--gn)">${gainers}▲</span>&nbsp;
+          <span style="color:var(--rd)">${losers}▼</span>&nbsp;
+          <span style="color:var(--txd)">${flat}–</span>
+        </div>
+      </div>
+      <button class="dp-x" onclick="closeIndexDetail()">✕</button>
+    </div>
+    <div class="dp-tabs">
+      <div class="dp-tab on"  onclick="itab(this,'isummary')">📋 Summary</div>
+      <div class="dp-tab"     onclick="itab(this,'iconstituents')">📊 All Stocks (${constituents.length})</div>
+      <div class="dp-tab"     onclick="itab(this,'igainers')">▲ Top Gainers</div>
+      <div class="dp-tab"     onclick="itab(this,'ilosers')">▼ Top Losers</div>
+    </div>
+    <div class="dp-body">`;
+
+  // ── TAB: Summary ────────────────────────────────────────────────────────────
+  h += `<div class="dp-sec on" id="tab-isummary">`;
+  h += `<div class="ov-grid">
+    <div class="ov-cell"><div class="ov-lbl">Index Value</div><div class="ov-val ctx" style="font-size:20px">${ic.value!=null?fn(ic.value):'—'}</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Change</div><div class="ov-val" style="font-size:20px;color:${pcc}">${ic.change!=null?(ic.change>0?'+':'')+ic.change.toFixed(2):'—'}</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Change %</div><div class="ov-val" style="font-size:20px;color:${pcc}">${ic.change_pct!=null?sign+ic.change_pct.toFixed(2)+'%':'—'}</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Day High</div><div class="ov-val cg2" style="font-size:16px">${ic.high!=null?fn(ic.high):'—'}</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Day Low</div><div class="ov-val cr" style="font-size:16px">${ic.low!=null?fn(ic.low):'—'}</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Constituents</div><div class="ov-val ct" style="font-size:20px">${constituents.length}</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Gainers</div><div class="ov-val cg2" style="font-size:20px">${gainers}</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Losers</div><div class="ov-val cr" style="font-size:20px">${losers}</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Unchanged</div><div class="ov-val" style="font-size:20px;color:var(--txd)">${flat}</div></div>
+  </div>`;
+
+  // Advance/decline bar
+  if(constituents.length){
+    const gp = (gainers/constituents.length*100).toFixed(0);
+    const lp = (losers/constituents.length*100).toFixed(0);
+    h += `<div style="margin-top:14px">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);margin-bottom:6px">Advance / Decline</div>
+      <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;gap:1px">
+        <div style="background:var(--gn);width:${gp}%;border-radius:4px 0 0 4px;transition:width .5s"></div>
+        <div style="background:var(--txm);flex:1"></div>
+        <div style="background:var(--rd);width:${lp}%;border-radius:0 4px 4px 0;transition:width .5s"></div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:5px;font-family:'JetBrains Mono',monospace;font-size:10px">
+        <span style="color:var(--gn)">▲ ${gainers} (${gp}%)</span>
+        <span style="color:var(--txd)">– ${flat}</span>
+        <span style="color:var(--rd)">▼ ${losers} (${lp}%)</span>
+      </div>
+    </div>`;
+  }
+  h += `</div>`;
+
+  // ── Constituent table helper ─────────────────────────────────────────────────
+  const constTable = (rows) => {
+    if(!rows.length) return `<div class="nd">No constituent data available</div>`;
+    let t = `<table class="tbl"><thead><tr>
+      <th>#</th><th>Symbol</th><th>Name</th>
+      <th class="r">LDCP</th><th class="r">Current</th>
+      <th class="r">Change</th><th class="r">Change %</th>
+      <th class="r">Volume</th>
+    </tr></thead><tbody>`;
+    rows.forEach((s,i)=>{
+      const pc  = s.change_pct||0;
+      const chg = s.change||0;
+      const pcc2 = pc>0?'var(--gn)':pc<0?'var(--rd)':'var(--txd)';
+      const ps  = pc>0?'+':'';
+      const cs  = chg>0?'+':'';
+      const bg  = pc>0?'rgba(0,230,118,.03)':pc<0?'rgba(255,64,64,.03)':'';
+      t += `<tr style="background:${bg}">
+        <td style="color:var(--txd)">${i+1}</td>
+        <td class="sym-link">${s.symbol}</td>
+        <td style="color:var(--tx);max-width:160px;overflow:hidden;text-overflow:ellipsis">${s.name||'—'}</td>
+        <td class="r" style="color:var(--txd)">${s.ldcp!=null?s.ldcp.toFixed(2):'—'}</td>
+        <td class="r" style="font-weight:600">${s.price!=null?s.price.toFixed(2):'—'}</td>
+        <td class="r" style="color:${pcc2}">${cs+chg.toFixed(2)}</td>
+        <td class="r" style="color:${pcc2};font-weight:700">${ps+pc.toFixed(2)}%</td>
+        <td class="r" style="color:var(--txd)">${s.volume!=null?fv(s.volume):'—'}</td>
+      </tr>`;
+    });
+    t += `</tbody></table>`;
+    return t;
+  };
+
+  // ── TAB: All constituents ────────────────────────────────────────────────────
+  h += `<div class="dp-sec" id="tab-iconstituents">`;
+  h += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);margin-bottom:10px">${byGain.length} constituent stocks · sorted by performance</div>`;
+  h += constTable(byGain);
+  h += `</div>`;
+
+  // ── TAB: Top Gainers ─────────────────────────────────────────────────────────
+  h += `<div class="dp-sec" id="tab-igainers">`;
+  const gainList = [...constituents].filter(s=>(s.change_pct||0)>0).sort((a,b)=>(b.change_pct||0)-(a.change_pct||0));
+  h += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gn);margin-bottom:10px">▲ ${gainList.length} gainers</div>`;
+  h += constTable(gainList);
+  h += `</div>`;
+
+  // ── TAB: Top Losers ─────────────────────────────────────────────────────────
+  h += `<div class="dp-sec" id="tab-ilosers">`;
+  const loserList = [...constituents].filter(s=>(s.change_pct||0)<0).sort((a,b)=>(a.change_pct||0)-(b.change_pct||0));
+  h += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--rd);margin-bottom:10px">▼ ${loserList.length} losers</div>`;
+  h += constTable(loserList);
+  h += `</div>`;
+
+  h += `</div></div>`;
+  return h;
+}
+
+// ── Index tab switcher ────────────────────────────────────────────────────────
+function itab(el, name){
+  const dp = document.getElementById('idp-inner');
+  if(!dp) return;
+  dp.querySelectorAll('.dp-tab').forEach(t=>t.classList.remove('on'));
+  dp.querySelectorAll('.dp-sec').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+  const sec = dp.querySelector('#tab-'+name);
+  if(sec) sec.classList.add('on');
+}
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 function tog(){
@@ -370,7 +589,7 @@ function renderDay(d){
     <div class="ds">PSX ETF Monitor · ${d.etfs.length} ETFs tracked · Click any card to expand details</div>
   </div>`;
 
-  // Index strip
+  // Index strip (KMI30, KSE30, MII30 strip values)
   if(d.indexes && Object.keys(d.indexes).length){
     h += `<div class="idx-strip">`;
     for(const [sym,iv] of Object.entries(d.indexes)){
@@ -385,18 +604,25 @@ function renderDay(d){
     h += `</div>`;
   }
 
-  // Section label
+  // ── ETF section ─────────────────────────────────────────────────────────────
   h += `<div class="sec-lbl">ETF Overview — ${d.date}</div>`;
-
-  // ETF cards
   h += `<div class="etf-grid">`;
-  for(const etf of d.etfs){
-    h += renderCard(etf);
-  }
+  for(const etf of d.etfs) h += renderCard(etf);
   h += `</div>`;
 
-  // Detail panel placeholder
+  // ETF detail panel
   h += `<div id="dp-wrap"></div>`;
+
+  // ── Index cards section ─────────────────────────────────────────────────────
+  if(d.index_cards?.length){
+    h += `<div class="sec-lbl" style="margin-top:10px">Market Indices — ${d.date}</div>`;
+    h += `<div class="idx-card-grid">`;
+    for(const ic of d.index_cards) h += renderIndexCard(ic);
+    h += `</div>`;
+  }
+
+  // Index detail panel
+  h += `<div id="idp-wrap"></div>`;
 
   h += `</div>`;
   return h;
