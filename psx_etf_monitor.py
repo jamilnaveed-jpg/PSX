@@ -366,6 +366,7 @@ def diff_holdings(symbol, today, prior_data):
 
 
 def fetch_indexes():
+    """Fetch value + change for the 3 strip indexes (KMI30, KSE30, MII30)."""
     indexes = {}
     for idx in INDEX_SYMBOLS:
         for ep in [f"{TERM_BASE}/api/ticks/IDX/{idx}",
@@ -389,6 +390,125 @@ def fetch_indexes():
             except Exception as e:
                 print(f"  [IDX] {idx}: {e}")
     return indexes
+
+
+# ── Index card definitions ────────────────────────────────────────────────────
+INDEX_CARD_DEFS = [
+    ("KSE100", "KSE 100 Index",           "Top 100 companies by market cap",            "#0d3d6e"),
+    ("KMI30",  "KMI 30 Index",            "Top 30 Shariah-compliant companies",         "#1a5e20"),
+    ("KSE30",  "KSE 30 Index",            "Top 30 companies by free-float market cap",  "#4a1942"),
+    ("MII30",  "Mahaana Islamic Index 30", "Top 30 Shariah-compliant by free-float",     "#7b3800"),
+]
+
+
+def _parse_tick(s):
+    """Normalise a single stock tick dict from any psxterminal response shape."""
+    sym  = (s.get("symbol") or s.get("Symbol") or "").upper().strip()
+    name = (s.get("name") or s.get("companyName") or s.get("company") or "")
+    price = (s.get("current") or s.get("price") or s.get("close") or
+             s.get("last") or s.get("Current"))
+    ldcp  = (s.get("ldcp") or s.get("prevClose") or s.get("LDCP") or
+             s.get("prev_close"))
+    chg   = float(s.get("change", 0) or s.get("Change", 0) or 0)
+    cpct  = float(s.get("changePercent", 0) or s.get("change_pct", 0) or
+                  s.get("ChangePercent", 0) or 0)
+    vol   = s.get("volume") or s.get("Volume") or 0
+    return {
+        "symbol":     sym,
+        "name":       name,
+        "price":      round(float(price), 2) if price else None,
+        "ldcp":       round(float(ldcp),  2) if ldcp  else None,
+        "change":     round(chg,  2),
+        "change_pct": round(cpct, 2),
+        "volume":     int(vol) if vol else None,
+    }
+
+
+def fetch_index_cards():
+    """
+    For KSE100, KMI30, KSE30, MII30 fetch index level + constituent stocks.
+    Tries multiple psxterminal endpoint patterns.
+    Returns list of index card dicts saved under 'index_cards' in JSON.
+    """
+    cards = []
+    for idx_sym, name, desc, color in INDEX_CARD_DEFS:
+        print(f"\n  [INDEX CARD] {idx_sym}")
+        card = {
+            "symbol":       idx_sym,
+            "name":         name,
+            "desc":         desc,
+            "color":        color,
+            "value":        None,
+            "change":       None,
+            "change_pct":   None,
+            "high":         None,
+            "low":          None,
+            "constituents": [],
+        }
+
+        # ── Index level ───────────────────────────────────────────────────────
+        for ep in [f"{TERM_BASE}/api/ticks/IDX/{idx_sym}",
+                   f"{TERM_BASE}/api/ticks/IDX/{idx_sym.lower()}"]:
+            try:
+                r = requests.get(ep, headers=API_HDR, timeout=10)
+                if r.status_code != 200: continue
+                data = r.json()
+                tick = data.get("data", data) if isinstance(data, dict) else {}
+                val  = tick.get("price") or tick.get("close") or tick.get("last")
+                chg  = float(tick.get("change", 0) or 0)
+                cpct = float(tick.get("changePercent",
+                                       tick.get("change_pct", 0)) or 0)
+                if val:
+                    card["value"]      = round(float(val), 2)
+                    card["change"]     = round(chg, 2)
+                    card["change_pct"] = round(cpct, 2)
+                    card["high"] = round(float(tick.get("high") or 0), 2) or None
+                    card["low"]  = round(float(tick.get("low")  or 0), 2) or None
+                    print(f"    value: {card['value']:,.2f}  ({card['change_pct']:+.2f}%)")
+                    break
+            except Exception as e:
+                print(f"    IDX tick error: {e}")
+
+        # ── Constituent stocks ────────────────────────────────────────────────
+        constituents = []
+        candidate_eps = [
+            f"{TERM_BASE}/api/market/REG?index={idx_sym}",
+            f"{TERM_BASE}/api/market/REG?index={idx_sym.lower()}",
+            f"{TERM_BASE}/api/ticks/market/REG?index={idx_sym}",
+            f"{TERM_BASE}/api/index/{idx_sym}/stocks",
+            f"{TERM_BASE}/api/index/{idx_sym.lower()}/stocks",
+            f"{TERM_BASE}/api/index/{idx_sym}/constituents",
+            f"{TERM_BASE}/api/stocks?index={idx_sym}",
+        ]
+        for ep in candidate_eps:
+            try:
+                r = requests.get(ep, headers=API_HDR, timeout=15)
+                if r.status_code != 200: continue
+                data = r.json()
+                raw = (data if isinstance(data, list) else
+                       data.get("data") or data.get("stocks") or
+                       data.get("result") or data.get("ticks") or [])
+                if not isinstance(raw, list): raw = []
+                if not raw: continue
+                for s in raw:
+                    parsed = _parse_tick(s)
+                    if parsed["symbol"]: constituents.append(parsed)
+                if constituents:
+                    print(f"    constituents: {len(constituents)} via {ep.split('/api')[1]}")
+                    break
+            except Exception as e:
+                print(f"    ep failed ({ep.split('/')[-1]}): {e}")
+            time.sleep(0.2)
+
+        if not constituents:
+            print(f"    ⚠  No constituent data found for {idx_sym}")
+
+        constituents.sort(key=lambda x: x.get("change_pct") or 0)
+        card["constituents"] = constituents
+        cards.append(card)
+        time.sleep(1)
+
+    return cards
 
 
 def load_prior():
@@ -440,10 +560,18 @@ def main():
             etfs.append(etf)
         time.sleep(2)
 
-    print("\n[INDEXES]")
+    print("\n[INDEXES — strip values]")
     indexes = fetch_indexes()
 
-    save(date_str, {"date":date_str, "etfs":etfs, "indexes":indexes})
+    print("\n[INDEX CARDS — KSE100 / KMI30 / KSE30 / MII30]")
+    index_cards = fetch_index_cards()
+
+    save(date_str, {
+        "date":        date_str,
+        "etfs":        etfs,
+        "indexes":     indexes,
+        "index_cards": index_cards,
+    })
 
     print(f"\n{'─'*64}")
     for e in etfs:
