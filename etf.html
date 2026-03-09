@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSX ETF Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root,[data-theme="dark"]{
+  --bg:#070b0f;--sf:#0c1118;--sf2:#101820;--sf3:#141e2a;
+  --bd:#1a2840;--bd2:#223050;
+  --tx:#cce0f5;--txd:#3d6080;--txm:#182030;
+  --ac:#00c4e8;--ac2:#006688;
+  --gn:#00e676;--gnbg:#001a0d;--gnmd:#00330f;
+  --rd:#ff4040;--rdbg:#1a0000;--rdmd:#330000;
+  --gd:#ffd040;--gdbg:#1a1200;
+  --pu:#b388ff;--pubg:#180d30;
+  --tl:#26d4e8;--or:#ff9c20;--bl:#4db8ff;
+  --hdr:rgba(7,11,15,0.96);
+  --cal-e:#08090e;--cal-h:#0d1e30;--cal-t:#092015;--cal-s:#0a1e38;
+  --sl:rgba(0,0,0,0.07);
+  --wa:#ff9c20;--wabg:#1a0e00;
+}
+[data-theme="light"]{
+  --bg:#edf2f8;--sf:#ffffff;--sf2:#f4f8fc;--sf3:#eaf0f7;
+  --bd:#c4d4e8;--bd2:#a0bcd4;
+  --tx:#0a1828;--txd:#3060840;--txm:#88aac8;
+  --ac:#0077aa;--ac2:#005588;
+  --gn:#1a7a40;--gnbg:#e4f8ea;--gnmd:#c0ecd0;
+  --rd:#cc2222;--rdbg:#fde4e4;--rdmd:#f8c0c0;
+  --gd:#886000;--gdbg:#fff6d8;
+  --pu:#7b22cc;--pubg:#efe8ff;
+  --tl:#00838f;--or:#c66000;--bl:#1565c0;
+  --hdr:rgba(237,242,248,0.97);
+  --cal-e:#eaf0f7;--cal-h:#d4e8f8;--cal-t:#d0eee0;--cal-s:#c4dcf5;
+  --sl:transparent;
+  --wa:#c66000;--wabg:#fff0d0;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Syne',sans-serif;font-size:13px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--sl) 3px,var(--sl) 4px);pointer-events:none;z-index:9999}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);border-bottom:1px solid var(--bd);backdrop-filter:blur(12px);display:flex;align-items:center;padding:0 20px;gap:12px}
+.logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ac);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.logo span{color:var(--txd);font-weight:400}
+.nav{display:flex;gap:2px}
+.nl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);text-decoration:none;padding:4px 9px;border-radius:4px;border:1px solid transparent;transition:all .15s}
+.nl:hover{color:var(--ac);border-color:var(--bd2)}.nl.on{color:var(--ac);background:rgba(0,196,232,.09);border-color:var(--ac2)}
+.hs{width:1px;height:22px;background:var(--bd);flex-shrink:0}
+.tog{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.tt{width:32px;height:18px;background:var(--bd);border-radius:9px;position:relative;border:1px solid var(--bd2)}
+.tk{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--txd);transition:transform .2s,background .2s}
+[data-theme="light"] .tk{transform:translateX(14px);background:var(--ac)}
+#upd{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:252px 1fr;min-height:calc(100vh - 52px)}
+
+/* ── SIDEBAR ── */
+.sb{border-right:1px solid var(--bd);background:var(--sf);padding:16px 13px;overflow-y:auto}
+.cn{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cnb{background:none;border:1px solid var(--bd);color:var(--txd);cursor:pointer;width:26px;height:26px;border-radius:4px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.cnb:hover{border-color:var(--ac);color:var(--ac)}
+.cml{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx)}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cdow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--txd);padding:2px 0;text-transform:uppercase}
+.cd{height:32px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;transition:all .15s;background:var(--cal-e);color:var(--txm);position:relative;cursor:default}
+.cd.hd{background:var(--cal-h);color:var(--tx);cursor:pointer;border:1px solid var(--bd2)}
+.cd.hd:hover{border-color:var(--ac);color:var(--ac);transform:scale(1.08);z-index:2}
+.cd.td{background:var(--cal-t);color:var(--gn);font-weight:700}
+.cd.sl{background:var(--cal-s)!important;color:var(--ac)!important;border:2px solid var(--ac)!important;box-shadow:0 0 0 2px rgba(0,196,232,.2)}
+.cd.om{opacity:.18}
+.cd.hd::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--ac);opacity:.75}
+.rl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin:16px 0 6px;padding-bottom:3px;border-bottom:1px solid var(--bd)}
+.rdi{display:flex;align-items:center;justify-content:space-between;padding:5px 7px;border-radius:4px;cursor:pointer;transition:background .1s;margin-bottom:2px;border:1px solid transparent}
+.rdi:hover{background:var(--sf2);border-color:var(--bd)}.rdi.sl{background:var(--cal-s);border-color:var(--ac)}
+.rdd{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--tx)}.rdi.sl .rdd{color:var(--ac)}
+
+/* ── MAIN ── */
+.mn{overflow-y:auto;padding:20px 24px}
+.es{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:10px;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center}
+.es .bi{font-size:48px;opacity:.12}
+.ld{display:flex;align-items:center;gap:8px;padding:40px;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px}
+.sp{width:14px;height:14px;border:2px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.fi{animation:fi .3s ease both}
+
+/* ── DATE HEADER ── */
+.dh{border-bottom:1px solid var(--bd);padding-bottom:14px;margin-bottom:18px}
+.dt{font-size:21px;font-weight:800;letter-spacing:-.02em}
+.ds{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+
+/* ── INDEX STRIP ── */
+.idx-strip{display:flex;gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:20px}
+.ic{flex:1;background:var(--sf);padding:10px 14px;transition:background .15s;min-width:0}
+.ic:hover{background:var(--sf2)}
+.il{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin-bottom:2px}
+.iv{font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600}
+.ich{font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:1px}
+.cg2{color:var(--gn)}.cr{color:var(--rd)}.cgo{color:var(--gd)}.ct{color:var(--tl)}.cb{color:var(--bl)}.ctx{color:var(--tx)}
+
+/* ── SECTION LABEL ── */
+.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin:0 0 10px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
+
+/* ── ETF OVERVIEW GRID ── */
+.etf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:30px}
+.etf-card{border:1px solid var(--bd);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s}
+.etf-card:hover{border-color:var(--ac2);transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,196,232,.12)}
+.etf-card.active{border-color:var(--ac);box-shadow:0 0 0 2px rgba(0,196,232,.2),0 4px 20px rgba(0,196,232,.12)}
+
+/* Card header band */
+.ec-hdr{padding:11px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ec-sym{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:#fff;letter-spacing:.04em}
+.ec-name{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.ec-price{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:#fff;text-align:right;line-height:1.1}
+.ec-chg{font-family:'JetBrains Mono',monospace;font-size:11px;text-align:right;margin-top:2px}
+.warn-pill{display:inline-flex;align-items:center;gap:3px;font-family:'JetBrains Mono',monospace;font-size:9px;background:rgba(255,156,32,.18);color:var(--wa);padding:2px 7px;border-radius:8px;border:1px solid rgba(255,156,32,.35);margin-top:5px}
+
+/* Card stat row */
+.ec-stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--sf2)}
+.ec-s{padding:7px 10px;border-right:1px solid var(--bd);border-top:1px solid var(--bd)}
+.ec-s:last-child{border-right:none}
+.ec-sl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd)}
+.ec-sv{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--tx);margin-top:1px}
+
+/* Returns strip inside card */
+.ec-rets{display:flex;border-top:1px solid var(--bd);background:var(--sf3)}
+.ec-r{flex:1;padding:6px 8px;text-align:center;border-right:1px solid var(--bd)}
+.ec-r:last-child{border-right:none}
+.ec-rl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd)}
+.ec-rv{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;margin-top:1px}
+
+/* ── DETAIL PANEL ── */
+.dp{border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:28px;animation:fi .25s ease}
+.dp-hdr{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.dp-title{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.01em}
+.dp-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.55);margin-top:3px}
+.dp-x{background:rgba(255,255,255,.12);border:none;color:#fff;font-size:14px;cursor:pointer;width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dp-x:hover{background:rgba(255,255,255,.22)}
+
+/* Tabs */
+.dp-tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--sf2);overflow-x:auto;scrollbar-width:none}
+.dp-tabs::-webkit-scrollbar{display:none}
+.dp-tab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:10px 16px;cursor:pointer;color:var(--txd);border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+.dp-tab:hover{color:var(--ac)}.dp-tab.on{color:var(--ac);border-bottom-color:var(--ac)}
+
+/* Tab content */
+.dp-body{padding:18px 20px;background:var(--sf)}
+.dp-sec{display:none}.dp-sec.on{display:block}
+
+/* ── TABLES (shared) ── */
+.tbl{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px}
+.tbl thead tr{background:var(--sf3)}
+.tbl thead th{padding:7px 10px;text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);border-bottom:1px solid var(--bd);white-space:nowrap}
+.tbl thead th.r{text-align:right}.tbl td.r{text-align:right}
+.tbl tbody tr{border-bottom:1px solid var(--bd);transition:background .1s}
+.tbl tbody tr:last-child{border-bottom:none}
+.tbl tbody tr:hover{background:var(--sf2)!important}
+.tbl tbody tr:nth-child(even){background:var(--sf3)}
+.tbl td{padding:6px 10px;white-space:nowrap}
+.sym-link{font-weight:700;color:var(--ac)}
+.nd{padding:20px;text-align:center;color:var(--txd);font-size:11px;font-style:italic}
+
+/* Holdings diff badges */
+.badge{display:inline-flex;align-items:center;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:600;gap:3px}
+.b-add{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnmd)}
+.b-rem{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdmd)}
+.b-chg{background:var(--gdbg);color:var(--gd)}
+
+/* Holdings diff alert */
+.diff-box{border:1px solid var(--wa);background:var(--wabg);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-family:'JetBrains Mono',monospace;font-size:11px}
+.diff-box-title{font-size:12px;font-weight:700;color:var(--wa);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.diff-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:3px}
+
+/* Announcements */
+.ann-list{display:flex;flex-direction:column;gap:8px}
+.ann-item{border:1px solid var(--bd);border-radius:6px;padding:10px 14px;transition:border-color .15s}
+.ann-item:hover{border-color:var(--bd2)}
+.ann-item.imp{border-left:3px solid var(--wa)}
+.ann-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.ann-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.cat-pill{font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 7px;border-radius:8px;background:var(--sf3);color:var(--txd)}
+.cat-div{background:var(--gnbg);color:var(--gn)}.cat-fin{background:var(--blbg, var(--sf3));color:var(--bl)}
+.cat-reb{background:var(--wabg);color:var(--wa)}
+.imp-star{font-size:9px;font-family:'JetBrains Mono',monospace;background:var(--wabg);color:var(--wa);padding:1px 6px;border-radius:8px;border:1px solid rgba(255,156,32,.35)}
+.ann-title{font-size:12.5px;color:var(--tx);font-weight:600;line-height:1.4}
+.ann-pdf{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ac);text-decoration:none;margin-top:4px;display:inline-flex;align-items:center;gap:4px}
+.ann-pdf:hover{text-decoration:underline}
+
+/* Payouts */
+.payout-highlight{border-left:3px solid var(--gd)}
+
+/* Returns detail */
+.rets-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+.ret-box{border:1px solid var(--bd);border-radius:6px;padding:14px;text-align:center;background:var(--sf2);transition:border-color .15s}
+.ret-box:hover{border-color:var(--bd2)}
+.ret-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);margin-bottom:5px}
+.ret-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700}
+.ret-note{font-size:9px;color:var(--txd);margin-top:3px}
+
+/* Profile grid */
+.prof-grid{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.pk{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--txd);text-transform:uppercase;padding:9px 12px;background:var(--sf3);border-bottom:1px solid var(--bd);border-right:1px solid var(--bd)}
+.pv{font-size:12px;color:var(--tx);padding:9px 12px;border-bottom:1px solid var(--bd)}
+
+/* Overview tab quick stats */
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px}
+.ov-cell{border:1px solid var(--bd);border-radius:6px;padding:10px 12px;background:var(--sf2)}
+.ov-lbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);margin-bottom:3px}
+.ov-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700}
+.ov-sub{font-size:9px;color:var(--txd);margin-top:1px}
+
+@media(max-width:900px){.layout{grid-template-columns:1fr}.sb{border-right:none;border-bottom:1px solid var(--bd)}.rets-grid{grid-template-columns:repeat(4,1fr)}.prof-grid{grid-template-columns:1fr}.etf-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">PSX <span>/</span> ETF Monitor</div>
+  <div class="nav">
+    <a class="nl" href="daily.html">📊 Daily</a>
+    <a class="nl" href="trend.html">📈 Trend</a>
+    <a class="nl on" href="etf.html">🏦 ETF</a>
+    <a class="nl" href="index.html">🧭 MM</a>
+  </div>
+  <div class="hs"></div>
+  <div class="tog" onclick="tog()">
+    <span id="ti">🌙</span>
+    <div class="tt"><div class="tk"></div></div>
+    <span id="tl">Dark</span>
+  </div>
+  <div id="upd">—</div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sb">
+    <div class="cn">
+      <button class="cnb" onclick="pm()">‹</button>
+      <span class="cml" id="cml">—</span>
+      <button class="cnb" onclick="nm()">›</button>
+    </div>
+    <div class="cg" id="cg"></div>
+    <div class="rl">Recent Dates</div>
+    <div id="rl"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="mn" id="mn">
+    <div class="es">
+      <div class="bi">🏦</div>
+      <div>Select a date from the calendar</div>
+      <div style="font-size:10px;opacity:.4">ETF data updates at 5:30 PM PKT on trading days</div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let dates = [], selDate = null, activeETF = null;
+let cY = new Date().getFullYear(), cM = new Date().getMonth();
+
+// ETF brand colours
+const COLORS = {
+  JSMFETF:'#1b5020', MZNPETF:'#0d3d80', MIIETF:'#3d1060', ACIETF:'#8b2800',
+  NBPGETF:'#004d50', NITGETF:'#1a1a6e', JSGBETF:'#6a0030', UBLPETF:'#8b3400',
+};
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function tog(){
+  const h=document.documentElement, d=h.getAttribute('data-theme')==='dark';
+  h.setAttribute('data-theme', d?'light':'dark');
+  document.getElementById('ti').textContent = d?'☀️':'🌙';
+  document.getElementById('tl').textContent = d?'Light':'Dark';
+  localStorage.setItem('psx-t', d?'light':'dark');
+}
+(()=>{
+  const s=localStorage.getItem('psx-t');
+  if(s){document.documentElement.setAttribute('data-theme',s);
+    document.getElementById('ti').textContent=s==='light'?'☀️':'🌙';
+    document.getElementById('tl').textContent=s==='light'?'Light':'Dark';}
+})();
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+const fv = v => {if(v==null)return'—';if(v>=1e9)return(v/1e9).toFixed(2)+'B';if(v>=1e6)return(v/1e6).toFixed(1)+'M';if(v>=1e3)return(v/1e3).toFixed(1)+'K';return String(v);}
+const fn = v => v!=null ? Number(v).toLocaleString('en-PK',{maximumFractionDigits:2}) : '—';
+const fp = (v,digits=2) => {
+  if(v==null) return '<span style="color:var(--txd)">—</span>';
+  const s=v>0?'+':'', c=v>0?'var(--gn)':v<0?'var(--rd)':'var(--txd)';
+  return `<span style="color:${c};font-weight:600">${s}${v.toFixed(digits)}%</span>`;
+}
+const fd = s=>{try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}catch{return s;}}
+const fs = s=>{try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short'});}catch{return s;}}
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+function rCal(){
+  document.getElementById('cml').textContent =
+    new Date(cY,cM,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const dows=['Mo','Tu','We','Th','Fr','Sa','Su'];
+  let h = dows.map(d=>`<div class="cdow">${d}</div>`).join('');
+  const first=new Date(cY,cM,1), last=new Date(cY,cM+1,0);
+  const today=new Date().toISOString().slice(0,10);
+  const sd=(first.getDay()+6)%7;
+  for(let i=0;i<sd;i++){const d=new Date(cY,cM,1-sd+i);h+=`<div class="cd om">${d.getDate()}</div>`;}
+  for(let d=1;d<=last.getDate();d++){
+    const ds=`${cY}-${String(cM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const has=dates.includes(ds), isTd=ds===today, isSl=ds===selDate;
+    let cls='cd'+(has?' hd':'')+(isTd?' td':'')+(isSl?' sl':'');
+    h+=`<div class="${cls}"${has?` onclick="pick('${ds}')"`:''}>${d}</div>`;
+  }
+  document.getElementById('cg').innerHTML=h;
+}
+function rRecent(){
+  document.getElementById('rl').innerHTML = dates.slice(0,25).map(d=>`
+    <div class="rdi${d===selDate?' sl':''}" onclick="pick('${d}')">
+      <span class="rdd">${fs(d)}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;opacity:.5">${d.slice(0,4)}</span>
+    </div>`).join('');
+}
+function pm(){cM--;if(cM<0){cM=11;cY--;}rCal();}
+function nm(){cM++;if(cM>11){cM=0;cY++;}rCal();}
+
+// ── Load index ────────────────────────────────────────────────────────────────
+async function loadIdx(){
+  try{
+    const r = await fetch('etf_data/index.json?t='+Date.now());
+    if(!r.ok) throw new Error('missing');
+    dates = await r.json();
+    dates.sort((a,b)=>b.localeCompare(a));
+    if(dates.length){
+      document.getElementById('upd').textContent='Latest: '+fs(dates[0]);
+      pick(dates[0]);
+    }
+    rCal(); rRecent();
+  }catch(e){
+    document.getElementById('mn').innerHTML=`<div class="es"><div class="bi">⚠️</div>
+      <div>etf_data/index.json not found</div>
+      <div style="font-size:10px;opacity:.5">Run psx_etf_monitor.py to generate data</div></div>`;
+  }
+}
+
+// ── Pick date ────────────────────────────────────────────────────────────────
+async function pick(date){
+  selDate = date; activeETF = null;
+  const d = new Date(date+'T00:00:00'); cY=d.getFullYear(); cM=d.getMonth();
+  rCal(); rRecent();
+  const mn = document.getElementById('mn');
+  mn.innerHTML = `<div class="ld"><div class="sp"></div>Loading ${date}…</div>`;
+  try{
+    const r = await fetch(`etf_data/${date}.json?t=`+Date.now());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    window._dd = await r.json();
+    mn.innerHTML = renderDay(window._dd);
+  }catch(e){
+    mn.innerHTML=`<div class="es"><div class="bi">❌</div><div>Could not load data for ${date}</div></div>`;
+  }
+}
+
+// ── Render full day ───────────────────────────────────────────────────────────
+function renderDay(d){
+  let h = `<div class="fi">`;
+
+  // Date heading
+  h += `<div class="dh">
+    <div class="dt">${fd(d.date)}</div>
+    <div class="ds">PSX ETF Monitor · ${d.etfs.length} ETFs tracked · Click any card to expand details</div>
+  </div>`;
+
+  // Index strip
+  if(d.indexes && Object.keys(d.indexes).length){
+    h += `<div class="idx-strip">`;
+    for(const [sym,iv] of Object.entries(d.indexes)){
+      const vc = iv.change_pct>0?'cg2':iv.change_pct<0?'cr':'ctx';
+      const sign = iv.change_pct>0?'+':'';
+      h += `<div class="ic">
+        <div class="il">${sym}</div>
+        <div class="iv ctx">${fn(iv.value)}</div>
+        <div class="ich ${vc}">${sign}${iv.change_pct?.toFixed(2)||'—'}%</div>
+      </div>`;
+    }
+    h += `</div>`;
+  }
+
+  // Section label
+  h += `<div class="sec-lbl">ETF Overview — ${d.date}</div>`;
+
+  // ETF cards
+  h += `<div class="etf-grid">`;
+  for(const etf of d.etfs){
+    h += renderCard(etf);
+  }
+  h += `</div>`;
+
+  // Detail panel placeholder
+  h += `<div id="dp-wrap"></div>`;
+
+  h += `</div>`;
+  return h;
+}
+
+// ── Render one ETF card ───────────────────────────────────────────────────────
+function renderCard(etf){
+  const col = COLORS[etf.symbol] || '#1a2a4a';
+  const q = etf.quote || {};
+  const pc = q.change_pct;
+  const pcc = pc>0?'var(--gn)':pc<0?'var(--rd)':'var(--txd)';
+  const sign = pc>0?'+':'';
+  const dif = etf.holdings_diff || {};
+  const hasChg = (dif.added?.length||0)+(dif.removed?.length||0) > 0;
+  const rets = etf.returns || {};
+  const retPeriods = ['1W','1M','3M','6M','1Y'];
+
+  return `<div class="etf-card" id="card-${etf.symbol}" onclick="toggleDetail('${etf.symbol}')">
+    <div class="ec-hdr" style="background:${col}">
+      <div style="min-width:0;flex:1">
+        <div class="ec-sym">${etf.symbol}</div>
+        <div class="ec-name">${etf.name}</div>
+        ${hasChg?`<div class="warn-pill">⚠ Holdings Changed</div>`:''}
+      </div>
+      <div style="flex-shrink:0;text-align:right">
+        <div class="ec-price">${q.price!=null?q.price.toFixed(2):'—'}</div>
+        <div class="ec-chg" style="color:${pcc}">${sign}${pc!=null?pc.toFixed(2)+'%':'—'}</div>
+      </div>
+    </div>
+    <div class="ec-stats">
+      <div class="ec-s"><div class="ec-sl">Volume</div><div class="ec-sv ct">${fv(q.volume)}</div></div>
+      <div class="ec-s"><div class="ec-sl">iNAV</div><div class="ec-sv">${q.inav!=null?q.inav.toFixed(2):'—'}</div></div>
+      <div class="ec-s"><div class="ec-sl">AUM</div><div class="ec-sv cgo">${etf.stats?.aum!=null?'₨'+fv(etf.stats.aum):'—'}</div></div>
+      <div class="ec-s"><div class="ec-sl">Holdings</div><div class="ec-sv">${etf.holdings?.length||0}</div></div>
+      <div class="ec-s"><div class="ec-sl">High / Low</div><div class="ec-sv" style="font-size:10px"><span class="cg2">${q.high!=null?q.high.toFixed(2):'—'}</span> <span style="color:var(--txd)">/</span> <span class="cr">${q.low!=null?q.low.toFixed(2):'—'}</span></div></div>
+      <div class="ec-s"><div class="ec-sl">52-Wk Range</div><div class="ec-sv" style="font-size:9.5px">${q.week52_low!=null?q.week52_low.toFixed(2):'—'} – ${q.week52_high!=null?q.week52_high.toFixed(2):'—'}</div></div>
+    </div>
+    <div class="ec-rets">
+      ${retPeriods.map(p=>{
+        const rv=rets[p];
+        const rc=rv>0?'var(--gn)':rv<0?'var(--rd)':'var(--txd)';
+        const rs=rv>0?'+':'';
+        return `<div class="ec-r"><div class="ec-rl">${p}</div><div class="ec-rv" style="color:${rc}">${rv!=null?rs+rv.toFixed(1)+'%':'—'}</div></div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+// ── Toggle detail panel ───────────────────────────────────────────────────────
+function toggleDetail(sym){
+  if(activeETF === sym){
+    closeDetail(); return;
+  }
+  activeETF = sym;
+  document.querySelectorAll('.etf-card').forEach(c=>c.classList.remove('active'));
+  const card = document.getElementById('card-'+sym);
+  if(card) card.classList.add('active');
+  const etf = (window._dd?.etfs||[]).find(e=>e.symbol===sym);
+  if(!etf) return;
+  document.getElementById('dp-wrap').innerHTML = renderDetail(etf);
+  setTimeout(()=>document.getElementById('dp-wrap').scrollIntoView({behavior:'smooth',block:'nearest'}),60);
+}
+
+function closeDetail(){
+  activeETF = null;
+  document.getElementById('dp-wrap').innerHTML = '';
+  document.querySelectorAll('.etf-card').forEach(c=>c.classList.remove('active'));
+}
+
+// ── Render detail panel ───────────────────────────────────────────────────────
+function renderDetail(etf){
+  const col = COLORS[etf.symbol] || '#1a2a4a';
+  const q = etf.quote || {};
+  const dif = etf.holdings_diff || {};
+  const addedSet   = new Set(dif.added||[]);
+  const removedSet = new Set(dif.removed||[]);
+  const chgMap     = new Map((dif.share_changes||[]).map(c=>[c.symbol,c]));
+
+  let h = `<div class="dp" id="dp-inner">
+    <div class="dp-hdr" style="background:${col}">
+      <div>
+        <div class="dp-title">${etf.symbol} — ${etf.name}</div>
+        <div class="dp-sub">
+          Price: ${q.price?.toFixed(2)||'—'} &nbsp;·&nbsp;
+          iNAV: ${q.inav?.toFixed(2)||'—'} &nbsp;·&nbsp;
+          LDCP: ${q.ldcp?.toFixed(2)||'—'} &nbsp;·&nbsp;
+          AUM: ${etf.stats?.aum!=null?'₨'+fn(etf.stats.aum):'—'}
+        </div>
+      </div>
+      <button class="dp-x" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="dp-tabs">
+      <div class="dp-tab on"  onclick="tab(this,'overview')">📋 Overview</div>
+      <div class="dp-tab"     onclick="tab(this,'holdings')">🧺 Holdings (${etf.holdings?.length||0})</div>
+      <div class="dp-tab"     onclick="tab(this,'returns')">📊 Returns</div>
+      <div class="dp-tab"     onclick="tab(this,'announcements')">📢 Announcements (${etf.announcements?.length||0})</div>
+      <div class="dp-tab"     onclick="tab(this,'payouts')">💰 Payouts</div>
+      <div class="dp-tab"     onclick="tab(this,'profile')">ℹ️ Profile</div>
+    </div>
+    <div class="dp-body">`;
+
+  // ── TAB: Overview ──────────────────────────────────────────────────────────
+  h += `<div class="dp-sec on" id="tab-overview">`;
+  const ov = [
+    ['Price (Last)',  q.price?.toFixed(2)||'—',  ''],
+    ['Change',       q.change!=null?(q.change>0?'+':'')+q.change.toFixed(2):'—', q.change>0?'cg2':q.change<0?'cr':''],
+    ['Change %',     q.change_pct!=null?(q.change_pct>0?'+':'')+q.change_pct.toFixed(2)+'%':'—', q.change_pct>0?'cg2':q.change_pct<0?'cr':''],
+    ['Open',         q.open?.toFixed(2)||'—',    ''],
+    ['High',         q.high?.toFixed(2)||'—',    'cg2'],
+    ['Low',          q.low?.toFixed(2)||'—',     'cr'],
+    ['Volume',       fv(q.volume),               'ct'],
+    ['LDCP',         q.ldcp?.toFixed(2)||'—',    ''],
+    ['iNAV',         q.inav?.toFixed(2)||'—',    ''],
+    ['52-Wk High',   q.week52_high?.toFixed(2)||'—', 'cg2'],
+    ['52-Wk Low',    q.week52_low?.toFixed(2)||'—',  'cr'],
+    ['AUM',          etf.stats?.aum!=null?'₨'+fn(etf.stats.aum):'—', 'cgo'],
+    ['Outstanding Units', etf.stats?.outstanding_units!=null?fn(etf.stats.outstanding_units):'—', ''],
+    ['Market Cap (000s)', etf.stats?.market_cap_000s!=null?'₨'+fn(etf.stats.market_cap_000s*1000):'—', ''],
+  ];
+  h += `<div class="ov-grid">`;
+  ov.forEach(([lbl,val,cls])=>{
+    h += `<div class="ov-cell"><div class="ov-lbl">${lbl}</div><div class="ov-val ${cls}" style="font-size:14px">${val}</div></div>`;
+  });
+  h += `</div>`;
+
+  // Basket note
+  if(etf.basket_as_of){
+    h += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);margin-top:6px">
+      Basket as of: ${etf.basket_as_of} &nbsp;·&nbsp;
+      Cash: ${etf.basket_cash!=null?'₨'+fn(etf.basket_cash):'—'} (${etf.basket_cash_pct||'—'}%)
+    </div>`;
+  }
+  h += `</div>`;
+
+  // ── TAB: Holdings ─────────────────────────────────────────────────────────
+  h += `<div class="dp-sec" id="tab-holdings">`;
+  if((dif.added?.length||0)+(dif.removed?.length||0)+(dif.share_changes?.length||0)>0){
+    h += `<div class="diff-box"><div class="diff-box-title">⚠ Holdings Changed Since Last Session</div>`;
+    if(dif.added?.length)
+      h += `<div style="margin-bottom:4px"><span style="color:var(--txd);font-size:10px">ADDED: </span>
+        <div class="diff-row">${dif.added.map(s=>`<span class="badge b-add">▲ ${s}</span>`).join('')}</div></div>`;
+    if(dif.removed?.length)
+      h += `<div style="margin-bottom:4px"><span style="color:var(--txd);font-size:10px">REMOVED: </span>
+        <div class="diff-row">${dif.removed.map(s=>`<span class="badge b-rem">▼ ${s}</span>`).join('')}</div></div>`;
+    if(dif.share_changes?.length)
+      h += `<div><span style="color:var(--txd);font-size:10px">SHARE CHANGES: </span>
+        <div class="diff-row">${dif.share_changes.map(c=>`<span class="badge b-chg">~ ${c.symbol} ${c.shares_prev}→${c.shares_curr}</span>`).join('')}</div></div>`;
+    h += `</div>`;
+  }
+
+  if(etf.holdings?.length){
+    h += `<table class="tbl"><thead><tr>
+      <th>#</th><th>Symbol</th><th>Name</th><th class="r">Shares</th><th>Status</th>
+    </tr></thead><tbody>`;
+    etf.holdings.forEach((hd,i)=>{
+      const isAdded   = addedSet.has(hd.symbol);
+      const isRemoved = removedSet.has(hd.symbol);
+      const isChgd    = chgMap.has(hd.symbol);
+      const ci        = chgMap.get(hd.symbol);
+      let badge='';
+      if(isAdded)   badge=`<span class="badge b-add">▲ New</span>`;
+      else if(isRemoved) badge=`<span class="badge b-rem">▼ Removed</span>`;
+      else if(isChgd)    badge=`<span class="badge b-chg">~ ${ci.shares_prev}→${ci.shares_curr}</span>`;
+      h += `<tr><td style="color:var(--txd)">${i+1}</td>
+        <td class="sym-link">${hd.symbol}</td>
+        <td style="color:var(--tx)">${hd.name||'—'}</td>
+        <td class="r">${hd.shares!=null?Number(hd.shares).toLocaleString():'—'}</td>
+        <td>${badge}</td></tr>`;
+    });
+    h += `</tbody></table>`;
+  } else {
+    h += `<div class="nd">No holdings data available</div>`;
+  }
+  h += `</div>`;
+
+  // ── TAB: Returns ──────────────────────────────────────────────────────────
+  h += `<div class="dp-sec" id="tab-returns">`;
+  const rets = etf.returns || {};
+  const retDefs = [['1W','1 Week'],['1M','1 Month'],['3M','3 Months'],['6M','6 Months'],['YTD','Year-to-Date'],['1Y','1 Year'],['3Y','3 Years']];
+  h += `<div class="rets-grid">`;
+  retDefs.forEach(([k,lbl])=>{
+    const rv = rets[k];
+    const rc = rv>0?'var(--gn)':rv<0?'var(--rd)':'var(--txd)';
+    const rs = rv>0?'+':'';
+    h += `<div class="ret-box">
+      <div class="ret-lbl">${lbl}</div>
+      <div class="ret-val" style="color:${rc}">${rv!=null?rs+rv.toFixed(2)+'%':'—'}</div>
+      <div class="ret-note">${rv>0?'Gain':rv<0?'Loss':rv===0?'Flat':'N/A'}</div>
+    </div>`;
+  });
+  h += `</div>
+    <div style="margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)">
+      Returns represent ETF NAV % change. Source: dps.psx.com.pk
+    </div></div>`;
+
+  // ── TAB: Announcements ────────────────────────────────────────────────────
+  h += `<div class="dp-sec" id="tab-announcements">`;
+
+  // Important first
+  const impAnns = (etf.announcements||[]).filter(a=>a.important);
+  const otherAnns = (etf.announcements||[]).filter(a=>!a.important);
+  const allAnns = [...impAnns, ...otherAnns];
+
+  if(impAnns.length){
+    h += `<div style="font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--wa);margin-bottom:8px">⭐ Important Announcements (${impAnns.length})</div>`;
+  }
+  if(allAnns.length){
+    h += `<div class="ann-list">`;
+    allAnns.forEach(a=>{
+      const tl = a.title?.toLowerCase()||'';
+      const isDivid = tl.includes('dividend') || tl.includes('payout') || tl.includes('credit of');
+      const isRebal = tl.includes('rebalancing') || tl.includes('rebalance');
+      const isFin   = a.category==='Financial Results';
+      let catPill='';
+      if(isDivid)      catPill=`<span class="cat-pill cat-div">Dividend</span>`;
+      else if(isRebal) catPill=`<span class="cat-pill cat-reb">Rebalancing</span>`;
+      else if(isFin)   catPill=`<span class="cat-pill cat-fin">${a.category}</span>`;
+      else             catPill=`<span class="cat-pill">${a.category||'Others'}</span>`;
+
+      h += `<div class="ann-item${a.important?' imp':''}">
+        <div class="ann-meta">
+          <span class="ann-date">${a.date}</span>
+          ${catPill}
+          ${a.important?`<span class="imp-star">⭐ Important</span>`:''}
+        </div>
+        <div class="ann-title">${a.title}</div>
+        ${a.pdf_url?`<a class="ann-pdf" href="${a.pdf_url}" target="_blank">📄 View PDF →</a>`:''}
+      </div>`;
+    });
+    h += `</div>`;
+  } else {
+    h += `<div class="nd">No announcements available</div>`;
+  }
+  h += `</div>`;
+
+  // ── TAB: Payouts ──────────────────────────────────────────────────────────
+  h += `<div class="dp-sec" id="tab-payouts">`;
+  if(etf.payouts?.length){
+    // Dynamic columns from the actual data
+    const cols = Object.keys(etf.payouts[0]);
+    h += `<table class="tbl"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+    etf.payouts.forEach(p=>{
+      const isDiv = Object.values(p).some(v=>String(v||'').toLowerCase().includes('dividend'));
+      h += `<tr${isDiv?' class="payout-highlight"':''}>`;
+      cols.forEach(c=>{
+        const v=p[c]||'—';
+        const isAmt = c.toLowerCase().includes('rate') || c.toLowerCase().includes('amount');
+        h += `<td${isAmt?' style="color:var(--gn);font-weight:600"':''}>${v}</td>`;
+      });
+      h += `</tr>`;
+    });
+    h += `</tbody></table>`;
+  } else {
+    h += `<div class="nd">No payout history available yet</div>`;
+  }
+  h += `</div>`;
+
+  // ── TAB: Profile ──────────────────────────────────────────────────────────
+  h += `<div class="dp-sec" id="tab-profile">`;
+  const prof = etf.profile || {};
+  // Priority keys in order
+  const priorityKeys = [
+    'Fund Name','Fund Category','Fund Manager','Benchmark','Investment Objective',
+    'Fund Investment Policy','Management Fee','Risk Level','Trustee','Listing',
+    'Auditor','Launch Date','Fiscal Year End','Dividend Distribution Policy',
+  ];
+  const displayed = new Set();
+  let profRows = '';
+  priorityKeys.forEach(k=>{
+    const v=prof[k];
+    if(v){profRows+=`<div class="pk">${k}</div><div class="pv">${v}</div>`;displayed.add(k);}
+  });
+  // Remaining keys
+  Object.entries(prof).forEach(([k,v])=>{
+    if(!displayed.has(k) && v && String(v).length < 400)
+      profRows+=`<div class="pk">${k}</div><div class="pv">${v}</div>`;
+  });
+  if(profRows){
+    h += `<div class="prof-grid">${profRows}</div>`;
+  } else {
+    h += `<div class="nd">Profile information not available</div>`;
+  }
+  h += `</div>`;
+
+  h += `</div></div>`;
+  return h;
+}
+
+// ── Tab switcher ──────────────────────────────────────────────────────────────
+function tab(el, name){
+  const dp = document.getElementById('dp-inner');
+  if(!dp) return;
+  dp.querySelectorAll('.dp-tab').forEach(t=>t.classList.remove('on'));
+  dp.querySelectorAll('.dp-sec').forEach(s=>s.classList.remove('on'));
+  el.classList.add('on');
+  const sec = dp.querySelector('#tab-'+name);
+  if(sec) sec.classList.add('on');
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+loadIdx();
+</script>
+</body>
+</html>
