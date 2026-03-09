@@ -548,23 +548,54 @@ function renderDetail(etf){
   }
 
   if(etf.holdings?.length){
+    // Sort by change_pct descending (gainers first) if prices available
+    const sorted = [...etf.holdings].sort((a,b)=>{
+      if(a.change_pct!=null && b.change_pct!=null) return b.change_pct - a.change_pct;
+      return 0;
+    });
+    h += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);margin-bottom:10px">
+      Basket of ${sorted.length} stocks · per 10,000 ETF units
+      ${etf.basket_as_of?` · as of ${etf.basket_as_of}`:''}
+      ${etf.basket_cash!=null?` · Cash: ₨${etf.basket_cash.toLocaleString()} (${etf.basket_cash_pct||0}%)`:''}
+    </div>`;
     h += `<table class="tbl"><thead><tr>
-      <th>#</th><th>Symbol</th><th>Name</th><th class="r">Shares</th><th>Status</th>
+      <th>#</th>
+      <th>Symbol</th>
+      <th>Name</th>
+      <th class="r">Shares</th>
+      <th class="r">LDCP</th>
+      <th class="r">Current</th>
+      <th class="r">Change</th>
+      <th class="r">Change %</th>
+      <th>Status</th>
     </tr></thead><tbody>`;
-    etf.holdings.forEach((hd,i)=>{
+    sorted.forEach((hd,i)=>{
       const isAdded   = addedSet.has(hd.symbol);
       const isRemoved = removedSet.has(hd.symbol);
       const isChgd    = chgMap.has(hd.symbol);
       const ci        = chgMap.get(hd.symbol);
       let badge='';
-      if(isAdded)   badge=`<span class="badge b-add">▲ New</span>`;
+      if(isAdded)        badge=`<span class="badge b-add">▲ New</span>`;
       else if(isRemoved) badge=`<span class="badge b-rem">▼ Removed</span>`;
       else if(isChgd)    badge=`<span class="badge b-chg">~ ${ci.shares_prev}→${ci.shares_curr}</span>`;
-      h += `<tr><td style="color:var(--txd)">${i+1}</td>
+      const pc  = hd.change_pct;
+      const chg = hd.change;
+      const prc = hd.price;
+      const pcc = pc>0?'var(--gn)':pc<0?'var(--rd)':'var(--txd)';
+      const ps  = pc>0?'+':'';
+      const cs  = chg>0?'+':'';
+      const rowBg = pc>0?'rgba(0,230,118,.04)':pc<0?'rgba(255,64,64,.04)':'';
+      h += `<tr style="background:${rowBg}">
+        <td style="color:var(--txd)">${i+1}</td>
         <td class="sym-link">${hd.symbol}</td>
-        <td style="color:var(--tx)">${hd.name||'—'}</td>
+        <td style="color:var(--tx);max-width:180px;overflow:hidden;text-overflow:ellipsis">${hd.name||'—'}</td>
         <td class="r">${hd.shares!=null?Number(hd.shares).toLocaleString():'—'}</td>
-        <td>${badge}</td></tr>`;
+        <td class="r" style="color:var(--txd)">${hd.ldcp!=null?hd.ldcp.toFixed(2):'—'}</td>
+        <td class="r" style="font-weight:600">${prc!=null?prc.toFixed(2):'—'}</td>
+        <td class="r" style="color:${pcc}">${chg!=null?cs+chg.toFixed(2):'—'}</td>
+        <td class="r" style="color:${pcc};font-weight:700">${pc!=null?ps+pc.toFixed(2)+'%':'—'}</td>
+        <td>${badge}</td>
+      </tr>`;
     });
     h += `</tbody></table>`;
   } else {
