@@ -120,7 +120,8 @@ table.st tbody tr:hover{background:var(--sf2)!important}
 table.st tbody tr:nth-child(even){background:var(--sf3)}
 table.st td{padding:6px 10px;white-space:nowrap}
 table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
-.sy{font-weight:600;font-size:12px;color:var(--tx)}
+.sy{font-weight:700;font-size:12px;color:var(--ac);cursor:pointer;border-bottom:1px dashed var(--ac2);border-radius:3px;padding:1px 4px;transition:color .15s,background .15s;display:inline-block}
+.sy:hover{color:#fff;background:var(--ac);border-bottom-color:transparent}
 .se{font-size:9.5px;color:var(--txd);font-family:'Syne',sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis}
 .up{color:var(--gn);font-weight:600}.dn{color:var(--rd);font-weight:600}
 .bg{display:inline-block;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600}
@@ -169,6 +170,9 @@ table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
 </div>
 
 <script>
+// TradingView chart opener
+function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=PSX:${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
+
 let dates=[],sel=null,cY=new Date().getFullYear(),cM=new Date().getMonth();
 
 function tog(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('ti').textContent=d?'☀️':'🌙';document.getElementById('tl').textContent=d?'Light':'Dark';localStorage.setItem('psx-t',d?'light':'dark');}
@@ -255,7 +259,7 @@ function renderDay(d){
   // List 1: Up 50% / 20 days
   h+=sec('🚀','Up 50%+ in Last 20 Days','Bullish — Strong Uptrend | Avg Vol ≥ 100K','#1b5e20',d.list1,
     ['Symbol','Sector','Price 20d Ago','Price Now','PKR Move','Chg % 20d','Avg Vol 20d','Today Vol'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td class="fl">${r.price_20d_ago.toFixed(2)}</td>
         <td style="font-weight:600">${r.price.toFixed(2)}</td>
         <td class="up">+PKR ${r.pkr_20d.toFixed(2)}</td>
@@ -266,7 +270,7 @@ function renderDay(d){
   // List 2: Down 50% / 20 days
   h+=sec('💥','Down 50%+ in Last 20 Days','Bearish — Strong Downtrend | Avg Vol ≥ 100K','#b71c1c',d.list2,
     ['Symbol','Sector','Price 20d Ago','Price Now','PKR Move','Chg % 20d','Avg Vol 20d','Today Vol'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td class="fl">${r.price_20d_ago.toFixed(2)}</td>
         <td style="font-weight:600">${r.price.toFixed(2)}</td>
         <td class="dn">PKR ${r.pkr_20d.toFixed(2)}</td>
@@ -277,7 +281,7 @@ function renderDay(d){
   // List 3: Up 20% / 5 days
   h+=sec('📈','Up 20%+ in Last 5 Days','Bullish — Short-Term Momentum | Avg Vol ≥ 100K','#2e7d32',d.list3,
     ['Symbol','Sector','Price 5d Ago','Price Now','PKR Move','Chg % 5d','Avg Vol 5d','Today Vol'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td class="fl">${r.price_5d_ago.toFixed(2)}</td>
         <td style="font-weight:600">${r.price.toFixed(2)}</td>
         <td class="up">+PKR ${r.pkr_5d.toFixed(2)}</td>
@@ -288,7 +292,7 @@ function renderDay(d){
   // List 4: Down 20% / 5 days
   h+=sec('📉','Down 20%+ in Last 5 Days','Bearish — Short-Term Breakdown | Avg Vol ≥ 100K','#c62828',d.list4,
     ['Symbol','Sector','Price 5d Ago','Price Now','PKR Move','Chg % 5d','Avg Vol 5d','Today Vol'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td class="fl">${r.price_5d_ago.toFixed(2)}</td>
         <td style="font-weight:600">${r.price.toFixed(2)}</td>
         <td class="dn">PKR ${r.pkr_5d.toFixed(2)}</td>
@@ -299,7 +303,7 @@ function renderDay(d){
   // List 5: Up PKR 20 / 5 days
   h+=sec('💰','Up PKR 20+ in Last 5 Days','Bullish — Absolute Price Gain | Avg Vol ≥ 100K','#1565c0',d.list5,
     ['Symbol','Sector','Price 5d Ago','Price Now','PKR Move','Chg % 5d','Avg Vol 5d','Today Vol'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td class="fl">${r.price_5d_ago.toFixed(2)}</td>
         <td style="font-weight:600">${r.price.toFixed(2)}</td>
         <td>${pkrB(r.pkr_5d)}</td>
@@ -310,7 +314,7 @@ function renderDay(d){
   // List 6: Down PKR 20 / 5 days
   h+=sec('🔻','Down PKR 20+ in Last 5 Days','Bearish — Absolute Price Loss | Avg Vol ≥ 100K','#6a1b9a',d.list6,
     ['Symbol','Sector','Price 5d Ago','Price Now','PKR Move','Chg % 5d','Avg Vol 5d','Today Vol'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td class="fl">${r.price_5d_ago.toFixed(2)}</td>
         <td style="font-weight:600">${r.price.toFixed(2)}</td>
         <td>${pkrB(r.pkr_5d)}</td>
