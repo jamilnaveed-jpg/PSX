@@ -163,7 +163,8 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .tbl tbody tr:hover{background:var(--sf2)!important}
 .tbl tbody tr:nth-child(even){background:var(--sf3)}
 .tbl td{padding:6px 10px;white-space:nowrap}
-.sym-link{font-weight:700;color:var(--ac)}
+.sym-link{font-weight:700;color:var(--ac);cursor:pointer;border-bottom:1px dashed var(--ac2);transition:color .15s,background .15s;border-radius:3px;padding:1px 4px}
+.sym-link:hover{color:#fff;background:var(--ac);border-bottom-color:transparent}
 .nd{padding:20px;text-align:center;color:var(--txd);font-size:11px;font-style:italic}
 
 /* Holdings diff badges */
@@ -279,6 +280,14 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 </div>
 
 <script>
+// ── TradingView chart opener ───────────────────────────────────────────────────
+function openTV(sym) {
+  if (!sym) return;
+  // PSX symbols on TradingView use the PSX: prefix
+  const url = `https://www.tradingview.com/chart/?symbol=PSX:${sym.toUpperCase()}`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 // ── State ─────────────────────────────────────────────────────────────────────
 let dates = [], selDate = null, activeETF = null;
 let cY = new Date().getFullYear(), cM = new Date().getMonth();
@@ -441,7 +450,7 @@ function renderIndexDetail(ic){
       const bg  = pc>0?'rgba(0,230,118,.03)':pc<0?'rgba(255,64,64,.03)':'';
       t += `<tr style="background:${bg}">
         <td style="color:var(--txd)">${i+1}</td>
-        <td class="sym-link">${s.symbol}</td>
+        <td class="sym-link" onclick="openTV('${s.symbol}')" title="Open ${s.symbol} on TradingView">${s.symbol}</td>
         <td style="color:var(--tx);max-width:160px;overflow:hidden;text-overflow:ellipsis">${s.name||'—'}</td>
         <td class="r" style="color:var(--txd)">${s.ldcp!=null?s.ldcp.toFixed(2):'—'}</td>
         <td class="r" style="font-weight:600">${s.price!=null?s.price.toFixed(2):'—'}</td>
@@ -813,7 +822,7 @@ function renderDetail(etf){
       const rowBg = pc>0?'rgba(0,230,118,.04)':pc<0?'rgba(255,64,64,.04)':'';
       h += `<tr style="background:${rowBg}">
         <td style="color:var(--txd)">${i+1}</td>
-        <td class="sym-link">${hd.symbol}</td>
+        <td class="sym-link" onclick="openTV('${hd.symbol}')" title="Open ${hd.symbol} on TradingView">${hd.symbol}</td>
         <td style="color:var(--tx);max-width:180px;overflow:hidden;text-overflow:ellipsis">${hd.name||'—'}</td>
         <td class="r">${hd.shares!=null?Number(hd.shares).toLocaleString():'—'}</td>
         <td class="r" style="color:var(--txd)">${hd.ldcp!=null?hd.ldcp.toFixed(2):'—'}</td>
