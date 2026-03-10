@@ -4,496 +4,392 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PSX Market Monitor</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-  /* ── DARK THEME (default) ────────────────────────────────── */
-  :root, [data-theme="dark"] {
-    --bg:           #0b0f14;
-    --surface:      #111820;
-    --surface2:     #0d141c;
-    --border:       #1e2a38;
-    --border2:      #243040;
-    --text:         #c8d8e8;
-    --text-dim:     #5a7a96;
-    --text-muted:   #2d4560;
-    --accent:       #00c8ff;
-    --accent-dim:   #006680;
-    --green:        #00e676;
-    --green-dim:    #00401c;
-    --red:          #ff4444;
-    --red-dim:      #400000;
-    --gold:         #ffd740;
-    --purple:       #ce93d8;
-    --teal:         #4dd0e1;
-    --hdr-bg:       rgba(11,15,20,0.96);
-    --hdr-primary:  #0d1f30;
-    --hdr-second:   #1a1500;
-    --hdr-extra:    #0d1a2a;
-    --col-bg:       #0e1520;
-    --row-even:     #0d141c;
-    --row-odd:      #111820;
-    --row-latest:   #0d1f18;
-    --row-hover:    #131c28;
-    --scanline:     rgba(0,0,0,0.08);
-    --toggle-bg:    #1e2a38;
-    --toggle-knob:  #5a7a96;
-    --summary-hover:#141e2a;
-  }
+:root,[data-theme="dark"]{
+  --bg:#070b0f;--sf:#0c1118;--sf2:#101820;--sf3:#141e2a;
+  --bd:#1a2840;--bd2:#223050;
+  --tx:#cce0f5;--txd:#3d6080;--txm:#182030;
+  --ac:#00c4e8;--ac2:#006688;
+  --gn:#00e676;--gnbg:#001a0d;--gnmd:#003515;
+  --rd:#ff4040;--rdbg:#1a0000;--rdmd:#330000;
+  --gd:#ffd040;--gdbg:#1a1200;
+  --pu:#b388ff;--pubg:#180d30;
+  --tl:#26d4e8;--or:#ff9c20;--bl:#4db8ff;
+  --hdr:rgba(7,11,15,0.96);
+  --sl:rgba(0,0,0,0.07);
+  --row-latest:#07190f;--row-even:#0a1018;--row-odd:#0c1218;--row-hover:#0f1922;
+  --col-bg:#0a1220;
+}
+[data-theme="light"]{
+  --bg:#edf2f8;--sf:#ffffff;--sf2:#f4f8fc;--sf3:#eaf0f7;
+  --bd:#c4d4e8;--bd2:#a0bcd4;
+  --tx:#0a1828;--txd:#4a6a88;--txm:#88aac8;
+  --ac:#0077aa;--ac2:#005588;
+  --gn:#1a7a40;--gnbg:#e4f8ea;--gnmd:#c0ecd0;
+  --rd:#cc2222;--rdbg:#fde4e4;--rdmd:#f8c0c0;
+  --gd:#886000;--gdbg:#fff6d8;
+  --pu:#7b22cc;--pubg:#efe8ff;
+  --tl:#00838f;--or:#c66000;--bl:#1565c0;
+  --hdr:rgba(237,242,248,0.97);
+  --sl:transparent;
+  --row-latest:#e6f5ec;--row-even:#f7f9fb;--row-odd:#ffffff;--row-hover:#edf4fb;
+  --col-bg:#e8f0f8;
+}
 
-  /* ── LIGHT THEME ─────────────────────────────────────────── */
-  [data-theme="light"] {
-    --bg:           #f0f4f8;
-    --surface:      #ffffff;
-    --surface2:     #f7f9fb;
-    --border:       #d0dae6;
-    --border2:      #b8c8d8;
-    --text:         #1a2a3a;
-    --text-dim:     #4a6a8a;
-    --text-muted:   #8aaac8;
-    --accent:       #0077aa;
-    --accent-dim:   #cce4f0;
-    --green:        #1a8040;
-    --green-dim:    #d4f0e0;
-    --red:          #cc2222;
-    --red-dim:      #fde8e8;
-    --gold:         #996600;
-    --purple:       #7b1fa2;
-    --teal:         #00838f;
-    --hdr-bg:       rgba(240,244,248,0.97);
-    --hdr-primary:  #e0ecf8;
-    --hdr-second:   #fff8e0;
-    --hdr-extra:    #e0f4f8;
-    --col-bg:       #eaf1f8;
-    --row-even:     #f7f9fb;
-    --row-odd:      #ffffff;
-    --row-latest:   #e8f8ee;
-    --row-hover:    #e8f0f8;
-    --scanline:     transparent;
-    --toggle-bg:    #d0dae6;
-    --toggle-knob:  #ffffff;
-    --summary-hover:#f0f8ff;
-  }
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Syne',sans-serif;font-size:13px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s;overflow-x:auto}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--sl) 3px,var(--sl) 4px);pointer-events:none;z-index:9999}
 
-  html { scroll-behavior: smooth; }
+/* HEADER */
+header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);border-bottom:1px solid var(--bd);backdrop-filter:blur(12px);display:flex;align-items:center;padding:0 20px;gap:12px;transition:background .25s}
+.logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ac);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.logo span{color:var(--txd);font-weight:400}
+.nav{display:flex;gap:2px}
+.nl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);text-decoration:none;padding:4px 9px;border-radius:4px;border:1px solid transparent;transition:all .15s;white-space:nowrap}
+.nl:hover{color:var(--ac);border-color:var(--bd2)}
+.nl.on{color:var(--ac);background:rgba(0,196,232,.09);border-color:var(--ac2)}
+.hs{width:1px;height:22px;background:var(--bd);flex-shrink:0}
+.tog{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.tt{width:32px;height:18px;background:var(--bd);border-radius:9px;position:relative;border:1px solid var(--bd2);transition:background .2s}
+.tk{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--txd);transition:transform .2s,background .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+[data-theme="light"] .tk{transform:translateX(14px);background:var(--ac)}
+#upd{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);white-space:nowrap}
+.live-badge{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gn);letter-spacing:.06em}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--gn);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px; line-height: 1.5;
-    min-height: 100vh; overflow-x: auto;
-    transition: background 0.25s, color 0.25s;
-  }
+/* PAGE */
+.page{padding:20px 20px 60px;max-width:2000px;margin:0 auto}
 
-  body::before {
-    content: ''; position: fixed; inset: 0;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, var(--scanline) 2px, var(--scanline) 4px);
-    pointer-events: none; z-index: 9999;
-  }
+/* SUMMARY STRIP */
+.strip{display:flex;gap:1px;background:var(--bd);border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:20px;transition:border-color .25s}
+.sc{flex:1;background:var(--sf);padding:11px 13px;display:flex;flex-direction:column;gap:4px;min-width:100px;transition:background .15s;cursor:default}
+.sc:hover{background:var(--sf2)}
+.sc-lbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd)}
+.sc-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;line-height:1.1}
+.sc-sub{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txd)}
+.c-ac .sc-val{color:var(--ac)}
+.c-gn .sc-val{color:var(--gn)}
+.c-rd .sc-val{color:var(--rd)}
+.c-gd .sc-val{color:var(--gd)}
+.c-tl .sc-val{color:var(--tl)}
+/* T2108/T2107 dynamic colour applied via JS */
+.t-high .sc-val{color:var(--gn)}
+.t-mid  .sc-val{color:var(--or)}
+.t-low  .sc-val{color:var(--rd)}
 
-  /* ── HEADER ─────────────────────────────────────────────── */
-  header {
-    position: sticky; top: 0; z-index: 100; height: 56px;
-    background: var(--hdr-bg); border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(8px);
-    display: flex; align-items: center; padding: 0 24px; gap: 16px;
-    transition: background 0.25s, border-color 0.25s;
-  }
-  .logo {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px; font-weight: 600; color: var(--accent);
-    letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
-  }
-  .logo span { color: var(--text-dim); font-weight: 400; }
-  .header-sep { width: 1px; height: 26px; background: var(--border); }
-  .live-badge {
-    display: flex; align-items: center; gap: 6px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; color: var(--green); letter-spacing: 0.06em;
-  }
-  .live-dot {
-    width: 7px; height: 7px; border-radius: 50%; background: var(--green);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.4;transform:scale(0.7);} }
+/* TABLE */
+.tw{border:1px solid var(--bd);border-radius:8px;overflow:hidden;overflow-x:auto;transition:border-color .25s}
+table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:10.5px}
 
-  #last-updated { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); }
+thead tr.gr th{padding:6px 8px 5px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;text-align:center;border-bottom:1px solid var(--bd2);white-space:nowrap;transition:background .25s,color .25s}
+.gh-p{background:#0d1f30;color:var(--ac);border-right:2px solid var(--bd2)}
+.gh-s{background:#1a1400;color:var(--gd)}
+.gh-m{background:#0d1a2a;color:var(--tl);border-left:2px solid var(--bd2)}
+[data-theme="light"] .gh-p{background:#deeef8;color:var(--ac)}
+[data-theme="light"] .gh-s{background:#fff8e0;color:#886000}
+[data-theme="light"] .gh-m{background:#e0f4f8;color:var(--tl)}
 
-  /* ── THEME TOGGLE ───────────────────────────────────────── */
-  .theme-toggle {
-    display: flex; align-items: center; gap: 7px;
-    cursor: pointer; user-select: none;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; color: var(--text-dim); flex-shrink: 0;
-  }
-  .toggle-track {
-    width: 36px; height: 20px; background: var(--toggle-bg);
-    border-radius: 10px; position: relative;
-    transition: background 0.2s; border: 1px solid var(--border2);
-  }
-  .toggle-knob {
-    position: absolute; top: 2px; left: 2px;
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--toggle-knob);
-    transition: transform 0.2s, background 0.2s;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  }
-  [data-theme="light"] .toggle-knob { transform: translateX(16px); background: var(--accent); }
-  .toggle-icon { font-size: 14px; }
+thead tr.cr th{background:var(--col-bg);color:var(--txd);padding:6px 8px;font-size:9px;letter-spacing:.04em;text-align:center;white-space:nowrap;border-bottom:2px solid var(--bd2);position:sticky;top:52px;transition:background .25s}
+thead tr.cr th.th-date{text-align:left;padding-left:14px;min-width:110px}
 
-  /* ── PAGE ────────────────────────────────────────────────── */
-  .page { padding: 22px 22px 60px; max-width: 1900px; margin: 0 auto; }
+tbody tr{border-bottom:1px solid var(--bd);transition:background .1s;animation:fadein .2s ease both}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--row-hover)!important}
+tbody tr:nth-child(even){background:var(--row-even)}
+tbody tr:nth-child(odd){background:var(--row-odd)}
+tbody tr.rl{background:var(--row-latest)!important;border-left:3px solid var(--gn)}
+tbody td{padding:5px 6px;text-align:center;white-space:nowrap;vertical-align:middle}
+tbody td.td-date{text-align:left;padding-left:14px;color:var(--txd);font-size:10.5px;min-width:110px}
+tbody tr.rl td.td-date{color:var(--gn);font-weight:600}
+tbody tr.rl td.td-date::after{content:' ◀ TODAY';font-size:8px;color:var(--gn);opacity:.6;margin-left:3px}
 
-  /* ── SUMMARY STRIP ──────────────────────────────────────── */
-  .summary-strip {
-    display: flex; gap: 1px; background: var(--border);
-    border: 1px solid var(--border); border-radius: 8px;
-    overflow: hidden; margin-bottom: 22px;
-    transition: border-color 0.25s;
-  }
-  .summary-cell {
-    flex: 1; background: var(--surface);
-    padding: 12px 13px; display: flex; flex-direction: column; gap: 3px;
-    min-width: 95px; transition: background 0.15s;
-    animation: fadein 0.4s ease both;
-  }
-  .summary-cell:hover { background: var(--summary-hover); }
-  .sc-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
-  .sc-value { font-family: 'IBM Plex Mono', monospace; font-size: 19px; font-weight: 600; line-height: 1; }
-  .sc-sub   { font-size: 9px; color: var(--text-dim); }
-  .sc-green  .sc-value { color: var(--green); }
-  .sc-red    .sc-value { color: var(--red); }
-  .sc-gold   .sc-value { color: var(--gold); }
-  .sc-blue   .sc-value { color: var(--accent); }
-  .sc-purple .sc-value { color: var(--purple); }
-  .sc-teal   .sc-value { color: var(--teal); }
+/* column dividers */
+.cd{border-left:2px solid var(--bd2)!important}
+.sd{border-left:3px solid var(--tl)!important}
 
-  /* ── TABLE ───────────────────────────────────────────────── */
-  .table-wrapper { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; overflow-x: auto; transition: border-color 0.25s; }
+/* BAR CELLS — key fix: enough width so bars don't squish dates */
+.bc{display:flex;align-items:center;gap:5px;justify-content:flex-end;min-width:72px}
+.bw{width:50px;height:10px;background:var(--bd);border-radius:2px;overflow:hidden;flex-shrink:0}
+.b{height:100%;border-radius:2px;transition:width .6s cubic-bezier(.4,0,.2,1);min-width:1px}
+.bn{font-size:10px;font-weight:600;min-width:28px;text-align:right}
 
-  table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+/* Ratio / MA badges */
+.rb{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:4px;display:inline-block;min-width:42px;text-align:center}
+.mb{font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;display:inline-block;min-width:58px;text-align:center;white-space:nowrap}
+.mb-cnt{font-size:8.5px;opacity:.75;margin-left:2px;font-weight:400}
 
-  .col-divider     { border-left: 2px solid var(--border2) !important; }
-  /* Strong teal divider separating Market Internals from Secondary */
-  .section-divider { border-left: 4px solid var(--teal) !important; }
+.kc{font-size:10.5px;font-weight:600;color:var(--tl)}
+.tc{color:var(--txd);font-size:10px}
 
-  thead tr.group-row th {
-    padding: 7px 8px 5px; font-size: 9px; letter-spacing: 0.1em;
-    text-transform: uppercase; font-weight: 600; text-align: center;
-    border-bottom: 1px solid var(--border2);
-    transition: background 0.25s, color 0.25s;
-  }
-  .gh-primary   { background: var(--hdr-primary); color: var(--accent);  border-right: 2px solid var(--border2); }
-  .gh-secondary { background: var(--hdr-second);  color: var(--gold); }
-  .gh-extra     { background: var(--hdr-extra);   color: var(--teal);    border-left: 2px solid var(--border2); }
+.st td{padding:40px;text-align:center;color:var(--txd);font-size:12px}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:7px}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  thead tr.col-row th {
-    background: var(--col-bg); color: var(--text-dim);
-    padding: 6px 7px; font-size: 9.5px; letter-spacing: 0.04em;
-    text-align: center; white-space: nowrap;
-    border-bottom: 2px solid var(--border2);
-    position: sticky; top: 56px;
-    transition: background 0.25s;
-  }
-  thead tr.col-row th.col-date { text-align: left; padding-left: 14px; }
+.legend{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px;padding:14px 18px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--txd);line-height:1.8;transition:background .25s,border-color .25s}
+.legend strong{color:var(--tx)}
+.lz{display:inline-flex;align-items:center;gap:3px;margin-left:5px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
 
-  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: var(--row-hover) !important; }
-  tbody tr:nth-child(even) { background: var(--row-even); }
-  tbody tr:nth-child(odd)  { background: var(--row-odd); }
-  tbody tr.row-latest { background: var(--row-latest) !important; border-left: 3px solid var(--green); }
-
-  tbody td { padding: 5px 7px; text-align: center; white-space: nowrap; vertical-align: middle; }
-  tbody td.td-date { text-align: left; padding-left: 14px; color: var(--text-dim); font-size: 11px; }
-  tbody tr.row-latest td.td-date { color: var(--green); font-weight: 600; }
-  tbody tr.row-latest td.td-date::after { content: ' ◀ TODAY'; font-size: 8px; color: var(--green); opacity: 0.7; margin-left: 4px; }
-
-  .bar-cell  { display: flex; align-items: center; justify-content: flex-end; gap: 5px; min-width: 68px; }
-  .bar-wrap  { flex: 1; height: 11px; background: var(--border); border-radius: 2px; overflow: hidden; max-width: 72px; }
-  .bar       { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); min-width: 1px; }
-  .bar-num   { font-size: 10.5px; font-weight: 600; min-width: 26px; text-align: right; }
-
-  .ratio-cell { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; display: inline-block; }
-  .ma-cell    { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; display: inline-block; min-width: 44px; text-align: center; }
-  /* Light theme MA overrides — dark backgrounds don't work on white */
-  [data-theme="light"] .ma-cell-high { background: #d4f0e0 !important; color: #1a8040 !important; }
-  [data-theme="light"] .ma-cell-mid  { background: #fff3cd !important; color: #856404 !important; }
-  [data-theme="light"] .ma-cell-low  { background: #fde8e8 !important; color: #cc2222 !important; }
-  .kse-cell   { font-size: 11px; font-weight: 600; color: var(--teal); }
-  .total-cell { color: var(--text-dim); font-size: 10.5px; }
-
-  .state-row td { padding: 40px; text-align: center; color: var(--text-dim); font-size: 12px; }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .legend {
-    margin-top: 18px; display: flex; flex-wrap: wrap; gap: 14px;
-    padding: 14px 18px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 8px;
-    font-size: 11px; color: var(--text-dim); line-height: 1.8;
-    transition: background 0.25s, border-color 0.25s;
-  }
-  .legend strong { color: var(--text); }
-
-  @keyframes fadein { from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:none;} }
-  tbody tr { animation: fadein 0.2s ease both; }
-
-  @media(max-width:900px) {
-    .page { padding: 12px 8px 40px; }
-    .summary-strip { flex-wrap: wrap; }
-    .summary-cell { min-width: 85px; }
-  }
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(max-width:900px){.page{padding:10px 8px 40px}.strip{flex-wrap:wrap}.sc{min-width:88px}}
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">PSX <span>/</span> Market Monitor</div>
-  <div class="header-sep"></div>
-  <div class="live-badge"><div class="live-dot"></div>DAILY UPDATE</div>
-
-  <div class="theme-toggle" onclick="toggleTheme()" title="Toggle light / dark mode">
-    <span class="toggle-icon" id="toggle-icon">🌙</span>
-    <div class="toggle-track"><div class="toggle-knob"></div></div>
-    <span id="toggle-label">Dark</span>
+  <div class="nav">
+    <a class="nl" href="daily.html">📊 Daily</a>
+    <a class="nl" href="trend.html">📈 Trend</a>
+    <a class="nl" href="etf.html">🏦 ETF</a>
+    <a class="nl on" href="index.html">🧭 MM</a>
   </div>
-
-  <div id="last-updated" style="margin-left:auto;">—</div>
+  <div class="hs"></div>
+  <div class="live-badge"><div class="live-dot"></div>DAILY UPDATE</div>
+  <div class="hs"></div>
+  <div class="tog" onclick="tog()" title="Toggle theme">
+    <span id="ti">🌙</span>
+    <div class="tt"><div class="tk"></div></div>
+    <span id="tl">Dark</span>
+  </div>
+  <div id="upd">—</div>
 </header>
 
 <div class="page">
 
-  <div class="summary-strip">
-    <div class="summary-cell sc-blue">
-      <div class="sc-label">Last Date</div>
-      <div class="sc-value" id="s-date" style="font-size:12px;margin-top:4px;">—</div>
+  <div class="strip">
+    <div class="sc c-ac">
+      <div class="sc-lbl">Last Date</div>
+      <div class="sc-val" id="s-date" style="font-size:11px;margin-top:2px">—</div>
     </div>
-    <div class="summary-cell sc-green">
-      <div class="sc-label">Up 4%+ Today</div>
-      <div class="sc-value" id="s-up4">—</div>
+    <div class="sc c-gn">
+      <div class="sc-lbl">Up 4%+ Today</div>
+      <div class="sc-val" id="s-up4">—</div>
     </div>
-    <div class="summary-cell sc-red">
-      <div class="sc-label">Down 4%+ Today</div>
-      <div class="sc-value" id="s-dn4">—</div>
+    <div class="sc c-rd">
+      <div class="sc-lbl">Down 4%+ Today</div>
+      <div class="sc-val" id="s-dn4">—</div>
     </div>
-    <div class="summary-cell sc-gold">
-      <div class="sc-label">5-Day Ratio</div>
-      <div class="sc-value" id="s-r5">—</div>
+    <div class="sc c-gd">
+      <div class="sc-lbl">5-Day Ratio</div>
+      <div class="sc-val" id="s-r5">—</div>
       <div class="sc-sub">≥1 = Bull bias</div>
     </div>
-    <div class="summary-cell sc-gold">
-      <div class="sc-label">10-Day Ratio</div>
-      <div class="sc-value" id="s-r10">—</div>
+    <div class="sc c-gd">
+      <div class="sc-lbl">10-Day Ratio</div>
+      <div class="sc-val" id="s-r10">—</div>
       <div class="sc-sub">≥1 = Bull bias</div>
     </div>
-    <div class="summary-cell sc-purple">
-      <div class="sc-label">T2108 (40D MA)</div>
-      <div class="sc-value" id="s-t2108">—</div>
-      <div class="sc-sub">% above 40d MA</div>
+    <div class="sc" id="sc-t2108">
+      <div class="sc-lbl">T2108 — 40d MA</div>
+      <div class="sc-val" id="s-t2108">—</div>
+      <div class="sc-sub" id="s-t2108-sub">% above 40d MA</div>
     </div>
-    <div class="summary-cell sc-teal">
-      <div class="sc-label">T2107 (200D MA)</div>
-      <div class="sc-value" id="s-t2107">—</div>
-      <div class="sc-sub">% above 200d MA</div>
+    <div class="sc" id="sc-t2107">
+      <div class="sc-lbl">T2107 — 200d MA</div>
+      <div class="sc-val" id="s-t2107">—</div>
+      <div class="sc-sub" id="s-t2107-sub">% above 200d MA</div>
     </div>
-    <div class="summary-cell sc-teal">
-      <div class="sc-label">KSE-100 Index</div>
-      <div class="sc-value" id="s-kse100" style="font-size:13px;margin-top:3px;">—</div>
+    <div class="sc c-tl">
+      <div class="sc-lbl">KSE-100 Index</div>
+      <div class="sc-val" id="s-kse100" style="font-size:12px;margin-top:2px">—</div>
     </div>
-    <div class="summary-cell sc-blue">
-      <div class="sc-label">Total Stocks</div>
-      <div class="sc-value" id="s-total">—</div>
+    <div class="sc c-ac">
+      <div class="sc-lbl">Total Stocks</div>
+      <div class="sc-val" id="s-total">—</div>
     </div>
   </div>
 
-  <div class="table-wrapper">
+  <div class="tw">
     <table id="mm-table">
       <thead>
-        <tr class="group-row">
-          <th rowspan="2" style="background:var(--col-bg);border-right:1px solid var(--border2);
-                                  text-align:left;padding-left:14px;position:sticky;top:56px;">
+        <tr class="gr">
+          <th rowspan="2" style="background:var(--col-bg);border-right:1px solid var(--bd2);text-align:left;padding-left:14px;position:sticky;top:52px;min-width:115px">
             Date
           </th>
-          <th colspan="4" class="gh-primary">Primary Breadth Indicators</th>
-          <th colspan="9" class="gh-secondary">Secondary Breadth Indicators</th>
-          <th colspan="3" class="gh-extra">Market Internals</th>
+          <th colspan="4" class="gh-p">Primary Breadth Indicators</th>
+          <th colspan="9" class="gh-s">Secondary Breadth Indicators</th>
+          <th colspan="3" class="gh-m">Market Internals</th>
         </tr>
-        <tr class="col-row">
+        <tr class="cr">
           <th title="Stocks up 4%+ today">Up 4%+<br>Today</th>
-          <th title="Stocks down 4%+ today">Down 4%+<br>Today</th>
-          <th class="col-divider" title="5-day rolling: sum(up4) ÷ sum(dn4)">5-Day<br>Ratio</th>
-          <th title="10-day rolling: sum(up4) ÷ sum(dn4)">10-Day<br>Ratio</th>
-          <th class="col-divider" title="Up 25%+ in last quarter (65 trading days)">Up 25%<br>Quarter</th>
-          <th title="Down 25%+ in last quarter">Down 25%<br>Quarter</th>
-          <th class="col-divider" title="Up 25%+ in last month (21 days)">Up 25%<br>Month</th>
-          <th title="Down 25%+ in last month">Down 25%<br>Month</th>
-          <th class="col-divider" title="Up 50%+ in last month">Up 50%<br>Month</th>
-          <th title="Down 50%+ in last month">Down 50%<br>Month</th>
-          <th class="col-divider" title="Up 13%+ in last 34 trading days">Up 13%<br>34 Days</th>
-          <th title="Down 13%+ in last 34 days">Down 13%<br>34 Days</th>
-          <th class="col-divider" title="Total PSX stocks scanned">Total<br>PSX</th>
-          <th class="section-divider" title="% of PSX stocks above their 40-day moving average">T2108<br>(40D MA)</th>
-          <th title="% of PSX stocks above their 200-day moving average">T2107<br>(200D MA)</th>
-          <th class="col-divider" title="KSE-100 Index closing value">KSE-100<br>Index</th>
+          <th title="Stocks down 4%+ today">Dn 4%+<br>Today</th>
+          <th class="cd" title="5-day rolling ratio: sum(up4) ÷ sum(dn4). >1 = bullish">5-Day<br>Ratio</th>
+          <th title="10-day rolling ratio">10-Day<br>Ratio</th>
+          <th class="cd" title="Up 25%+ in last quarter (65 trading days), vol ≥100K">Up 25%<br>Qtr</th>
+          <th title="Down 25%+ in last quarter">Dn 25%<br>Qtr</th>
+          <th class="cd" title="Up 25%+ in last month (21 days)">Up 25%<br>Mo</th>
+          <th title="Down 25%+ in last month">Dn 25%<br>Mo</th>
+          <th class="cd" title="Up 50%+ in last month">Up 50%<br>Mo</th>
+          <th title="Down 50%+ in last month">Dn 50%<br>Mo</th>
+          <th class="cd" title="Up 13%+ in last 34 trading days">Up 13%<br>34d</th>
+          <th title="Down 13%+ in last 34 days">Dn 13%<br>34d</th>
+          <th class="cd" title="Total PSX stocks scanned">Total<br>PSX</th>
+          <th class="sd" title="% of PSX stocks above 40-day MA · count in brackets">T2108<br>40D MA</th>
+          <th title="% of PSX stocks above 200-day MA · count in brackets">T2107<br>200D MA</th>
+          <th class="cd" title="KSE-100 Index closing value">KSE-100<br>Index</th>
         </tr>
       </thead>
       <tbody id="mm-body">
-        <tr class="state-row">
-          <td colspan="17"><span class="spinner"></span> Loading market data…</td>
-        </tr>
+        <tr class="st"><td colspan="17"><span class="spin"></span>Loading market data…</td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="legend">
-    <div><strong>Primary:</strong> Up/Down 4%+ = single-session moves ≥4%. 5/10-Day Ratio = rolling sum of up4 ÷ dn4. Ratio &gt;1 = bullish; &lt;0.5 = extreme bearish.</div>
+    <div><strong>Primary:</strong> Up/Down 4%+ = single-session moves ≥4%. 5/10-Day Ratio = rolling sum(up4) ÷ sum(dn4). Ratio &gt;1 = bullish; &lt;0.5 = extreme bearish.</div>
     <div><strong>Secondary:</strong> Quarter=65 trading days, Month=21 days, 34 Days. All require avg daily vol ≥100K.</div>
-    <div><strong>T2108 (40D MA):</strong> % of stocks above 40-day MA. Below 20% = oversold / potential bottom. Above 80% = extended / overbought.</div>
-    <div><strong>T2107 (200D MA):</strong> % of stocks above 200-day MA. Below 30% = bear market conditions. Above 60% = healthy bull market.</div>
+    <div>
+      <strong>T2108 (40D MA):</strong> % stocks above 40d MA · (n) = count of stocks.
+      <span class="lz"><span class="dot" style="background:var(--rd)"></span>&lt;20% oversold</span>
+      <span class="lz"><span class="dot" style="background:var(--or)"></span>20–50% neutral</span>
+      <span class="lz"><span class="dot" style="background:var(--gn)"></span>&gt;70% extended</span>
+    </div>
+    <div>
+      <strong>T2107 (200D MA):</strong> % stocks above 200d MA · (n) = count of stocks.
+      <span class="lz"><span class="dot" style="background:var(--rd)"></span>&lt;30% bear</span>
+      <span class="lz"><span class="dot" style="background:var(--or)"></span>30–60% neutral</span>
+      <span class="lz"><span class="dot" style="background:var(--gn)"></span>&gt;60% bull</span>
+    </div>
     <div><strong>KSE-100:</strong> Pakistan Stock Exchange benchmark index closing value.</div>
   </div>
 
 </div>
 
 <script>
-const DATA_URL = 'mm_data.json';
-const MAX_ROWS = 120;
-const BAR_MAX  = { up4:150,dn4:150,up25q:300,dn25q:300,up25m:200,dn25m:200,up50m:100,dn50m:100,up13_34:250,dn13_34:250 };
+const DATA_URL='mm_data.json', MAX_ROWS=120;
+const BAR_MAX={up4:150,dn4:150,up25q:300,dn25q:300,up25m:200,dn25m:200,up50m:100,dn50m:100,up13_34:250,dn13_34:250};
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
-function toggleTheme() {
-  const html   = document.documentElement;
-  const isD    = html.getAttribute('data-theme') === 'dark';
-  const next   = isD ? 'light' : 'dark';
-  html.setAttribute('data-theme', next);
-  document.getElementById('toggle-icon').textContent  = isD ? '☀️' : '🌙';
-  document.getElementById('toggle-label').textContent = isD ? 'Light' : 'Dark';
-  localStorage.setItem('psx-mm-theme', next);
+/* Theme */
+function tog(){
+  const h=document.documentElement,d=h.getAttribute('data-theme')==='dark',n=d?'light':'dark';
+  h.setAttribute('data-theme',n);
+  document.getElementById('ti').textContent=d?'☀️':'🌙';
+  document.getElementById('tl').textContent=d?'Light':'Dark';
+  localStorage.setItem('psx-mm-theme',n);
 }
 (function(){
-  const s = localStorage.getItem('psx-mm-theme');
-  if (s) {
-    document.documentElement.setAttribute('data-theme', s);
-    document.getElementById('toggle-icon').textContent  = s==='light' ? '☀️' : '🌙';
-    document.getElementById('toggle-label').textContent = s==='light' ? 'Light' : 'Dark';
-  }
+  const s=localStorage.getItem('psx-mm-theme');
+  if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('ti').textContent=s==='light'?'☀️':'🌙';document.getElementById('tl').textContent=s==='light'?'Light':'Dark';}
 })();
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const clamp = (v,mn,mx) => Math.max(mn, Math.min(mx, v));
+/* Helpers */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function fmtDate(s){try{return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}catch{return s;}}
 
-function barCell(val, max, cvar, divider=false) {
-  const cls = divider ? ' class="col-divider"' : '';
-  if (val==null) return `<td${cls}><span style="color:var(--text-muted)">—</span></td>`;
-  const pct = clamp(val/max*100,0,100).toFixed(1), c=`var(${cvar})`;
-  return `<td${cls}><div class="bar-cell">
-    <div class="bar-wrap"><div class="bar" style="width:${pct}%;background:${c};box-shadow:0 0 5px ${c}35;"></div></div>
-    <span class="bar-num" style="color:${c};">${val}</span>
-  </div></td>`;
+function barCell(val,max,cvar,div=false){
+  if(val==null)return`<td${div?' class="cd"':''}><span style="color:var(--txm)">—</span></td>`;
+  const pct=clamp(val/max*100,0,100).toFixed(1),c=`var(${cvar})`;
+  return`<td${div?' class="cd"':''}><div class="bc"><div class="bw"><div class="b" style="width:${pct}%;background:${c};box-shadow:0 0 4px ${c}40"></div></div><span class="bn" style="color:${c}">${val}</span></div></td>`;
 }
 
-function ratioCell(val, divider=false) {
-  const cls = divider ? ' class="col-divider"' : '';
-  if (val==null) return `<td${cls}><span style="color:var(--text-muted)">—</span></td>`;
+function ratioCell(val,div=false){
+  if(val==null)return`<td${div?' class="cd"':''}><span style="color:var(--txm)">—</span></td>`;
   let bg,c;
-  if(val>=2.0){bg='var(--green-dim)';c='var(--green)';}
-  else if(val>=1.0){bg='#002a15';c='#00c853';}
-  else if(val>=0.5){bg='#2a1500';c='#ff9800';}
-  else{bg='var(--red-dim)';c='var(--red)';}
-  return `<td${cls}><span class="ratio-cell" style="background:${bg};color:${c};">${val.toFixed(2)}</span></td>`;
+  if(val>=2.0){bg='var(--gnbg)';c='var(--gn)';}
+  else if(val>=1.0){bg='#00260e';c='#00c853';}
+  else if(val>=0.5){bg='#261400';c='#ff9800';}
+  else{bg='var(--rdbg)';c='var(--rd)';}
+  return`<td${div?' class="cd"':''}><span class="rb" style="background:${bg};color:${c}">${val.toFixed(2)}</span></td>`;
 }
 
-function maCell(val, dividerClass='') {
-  const cls = dividerClass ? ` class="${dividerClass}"` : '';
-  if (val==null) return `<td${cls}><span style="color:var(--text-muted)">—</span></td>`;
-  let bg,c,themeCls;
-  if(val>=70){bg='var(--green-dim)';c='var(--green)';themeCls='ma-cell-high';}
-  else if(val>=50){bg='#002a10';c='#69f0ae';themeCls='ma-cell-high';}
-  else if(val>=30){bg='#2a1500';c='#ff9800';themeCls='ma-cell-mid';}
-  else{bg='var(--red-dim)';c='var(--red)';themeCls='ma-cell-low';}
-  return `<td${cls}><span class="ma-cell ${themeCls}" style="background:${bg};color:${c};">${val.toFixed(1)}%</span></td>`;
+function t2108Style(v){
+  if(v>=70)return{bg:'var(--gnbg)',c:'var(--gn)',cls:'t-high'};
+  if(v>=50)return{bg:'#002a10',c:'#69f0ae',cls:'t-high'};
+  if(v>=20)return{bg:'#261400',c:'var(--or)',cls:'t-mid'};
+  return{bg:'var(--rdbg)',c:'var(--rd)',cls:'t-low'};
+}
+function t2107Style(v){
+  if(v>=60)return{bg:'var(--gnbg)',c:'var(--gn)',cls:'t-high'};
+  if(v>=30)return{bg:'#261400',c:'var(--or)',cls:'t-mid'};
+  return{bg:'var(--rdbg)',c:'var(--rd)',cls:'t-low'};
 }
 
-function kseCell(val) {
-  if (val==null) return `<td class="col-divider"><span style="color:var(--text-muted)">—</span></td>`;
-  return `<td class="col-divider"><span class="kse-cell">${Number(val).toLocaleString('en-PK',{maximumFractionDigits:0})}</span></td>`;
+function maCell(val,n,divClass,styleFn){
+  const dc=divClass?` class="${divClass}"`:' ';
+  if(val==null)return`<td${dc}><span style="color:var(--txm)">—</span></td>`;
+  const st=styleFn(val);
+  const cnt=n!=null?`<span class="mb-cnt">(${n})</span>`:'';
+  return`<td${dc}><span class="mb" style="background:${st.bg};color:${st.c}">${val.toFixed(1)}% ${cnt}</span></td>`;
 }
 
-function totalCell(val) {
-  return `<td class="total-cell col-divider">${val??'—'}</td>`;
+function kseCell(val){
+  if(val==null)return`<td class="cd"><span style="color:var(--txm)">—</span></td>`;
+  return`<td class="cd"><span class="kc">${Number(val).toLocaleString('en-PK',{maximumFractionDigits:0})}</span></td>`;
 }
 
-function fmtDate(s) {
-  try { return new Date(s+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
-  catch { return s; }
+/* Update summary strip T2108/T2107 with correct colour + count */
+function setMA(valId,scId,subId,val,n,styleFn,subTxt){
+  const sc=document.getElementById(scId);
+  const vel=document.getElementById(valId);
+  const sub=document.getElementById(subId);
+  if(val==null){vel.textContent='—';return;}
+  const st=styleFn(val);
+  vel.textContent=val.toFixed(1)+'%';
+  // Remove old colour class, apply new
+  sc.className='sc '+st.cls;
+  if(sub) sub.textContent=(n!=null?n+' stocks · ':'')+subTxt;
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function renderTable(rows) {
-  const latest = rows[rows.length-1];
-  document.getElementById('s-date').textContent   = fmtDate(latest.date);
-  document.getElementById('s-up4').textContent    = latest.up4  ?? '—';
-  document.getElementById('s-dn4').textContent    = latest.dn4  ?? '—';
-  document.getElementById('s-r5').textContent     = latest.r5   !=null ? latest.r5.toFixed(2)  : '—';
-  document.getElementById('s-r10').textContent    = latest.r10  !=null ? latest.r10.toFixed(2) : '—';
-  document.getElementById('s-t2108').textContent  = latest.t2108!=null ? latest.t2108.toFixed(1)+'%' : '—';
-  document.getElementById('s-t2107').textContent  = latest.t2107!=null ? latest.t2107.toFixed(1)+'%' : '—';
-  document.getElementById('s-kse100').textContent = latest.kse100!=null
-    ? Number(latest.kse100).toLocaleString('en-PK',{maximumFractionDigits:0}) : '—';
-  document.getElementById('s-total').textContent  = latest.total ?? '—';
-  document.getElementById('last-updated').textContent = 'Updated: '+fmtDate(latest.date);
+/* Render */
+function render(rows){
+  const lat=rows[rows.length-1];
+  document.getElementById('s-date').textContent=fmtDate(lat.date);
+  document.getElementById('s-up4').textContent=lat.up4??'—';
+  document.getElementById('s-dn4').textContent=lat.dn4??'—';
+  document.getElementById('s-r5').textContent=lat.r5!=null?lat.r5.toFixed(2):'—';
+  document.getElementById('s-r10').textContent=lat.r10!=null?lat.r10.toFixed(2):'—';
+  document.getElementById('s-kse100').textContent=lat.kse100!=null?Number(lat.kse100).toLocaleString('en-PK',{maximumFractionDigits:0}):'—';
+  document.getElementById('s-total').textContent=lat.total??'—';
+  document.getElementById('upd').textContent='Latest: '+fmtDate(lat.date);
 
-  const display = [...rows].reverse().slice(0, MAX_ROWS);
-  let html = '';
-  display.forEach((r,i) => {
-    html += `<tr class="${i===0?'row-latest':''}">`;
-    html += `<td class="td-date">${fmtDate(r.date)}</td>`;
-    // Primary
-    html += barCell(r.up4,  BAR_MAX.up4,  '--green');
-    html += barCell(r.dn4,  BAR_MAX.dn4,  '--red');
-    html += ratioCell(r.r5,  true);
-    html += ratioCell(r.r10, false);
-    // Secondary
-    html += barCell(r.up25q,   BAR_MAX.up25q,   '--green', true);
-    html += barCell(r.dn25q,   BAR_MAX.dn25q,   '--red');
-    html += barCell(r.up25m,   BAR_MAX.up25m,   '--green', true);
-    html += barCell(r.dn25m,   BAR_MAX.dn25m,   '--red');
-    html += barCell(r.up50m,   BAR_MAX.up50m,   '--green', true);
-    html += barCell(r.dn50m,   BAR_MAX.dn50m,   '--red');
-    html += barCell(r.up13_34, BAR_MAX.up13_34, '--green', true);
-    html += barCell(r.dn13_34, BAR_MAX.dn13_34, '--red');
-    html += totalCell(r.total);
-    // Market internals — strong teal divider before T2108
-    html += maCell(r.t2108, 'section-divider');
-    html += maCell(r.t2107, '');
-    html += kseCell(r.kse100);
-    html += `</tr>`;
+  setMA('s-t2108','sc-t2108','s-t2108-sub',lat.t2108,lat.t2108_n??null,t2108Style,'above 40d MA');
+  setMA('s-t2107','sc-t2107','s-t2107-sub',lat.t2107,lat.t2107_n??null,t2107Style,'above 200d MA');
+
+  const display=[...rows].reverse().slice(0,MAX_ROWS);
+  let h='';
+  display.forEach((r,i)=>{
+    h+=`<tr class="${i===0?'rl':''}">`;
+    h+=`<td class="td-date">${fmtDate(r.date)}</td>`;
+    h+=barCell(r.up4,  BAR_MAX.up4,  '--gn');
+    h+=barCell(r.dn4,  BAR_MAX.dn4,  '--rd');
+    h+=ratioCell(r.r5,  true);
+    h+=ratioCell(r.r10, false);
+    h+=barCell(r.up25q,   BAR_MAX.up25q,   '--gn',true);
+    h+=barCell(r.dn25q,   BAR_MAX.dn25q,   '--rd');
+    h+=barCell(r.up25m,   BAR_MAX.up25m,   '--gn',true);
+    h+=barCell(r.dn25m,   BAR_MAX.dn25m,   '--rd');
+    h+=barCell(r.up50m,   BAR_MAX.up50m,   '--gn',true);
+    h+=barCell(r.dn50m,   BAR_MAX.dn50m,   '--rd');
+    h+=barCell(r.up13_34, BAR_MAX.up13_34, '--gn',true);
+    h+=barCell(r.dn13_34, BAR_MAX.dn13_34, '--rd');
+    h+=`<td class="tc cd">${r.total??'—'}</td>`;
+    h+=maCell(r.t2108,r.t2108_n??null,'sd',t2108Style);
+    h+=maCell(r.t2107,r.t2107_n??null,'',t2107Style);
+    h+=kseCell(r.kse100);
+    h+='</tr>';
   });
-  document.getElementById('mm-body').innerHTML = html;
+  document.getElementById('mm-body').innerHTML=h;
 }
 
-function showError(msg) {
-  document.getElementById('mm-body').innerHTML =
-    `<tr class="state-row"><td colspan="17" style="color:var(--red);">⚠ ${msg}</td></tr>`;
+function showErr(msg){
+  document.getElementById('mm-body').innerHTML=`<tr class="st"><td colspan="17" style="color:var(--rd)">⚠ ${msg}</td></tr>`;
 }
 
-async function loadData() {
-  try {
-    const resp = await fetch(DATA_URL+'?t='+Date.now());
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const rows = await resp.json();
-    if (!Array.isArray(rows)||rows.length===0) {
-      showError('No data yet — run psx_mm_updater.py to populate mm_data.json.'); return;
-    }
-    renderTable(rows);
-  } catch(err) {
-    showError('Could not load mm_data.json — '+err.message);
-  }
+async function load(){
+  try{
+    const res=await fetch(DATA_URL+'?t='+Date.now());
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const rows=await res.json();
+    if(!Array.isArray(rows)||!rows.length){showErr('No data yet — run psx_mm_updater.py to populate mm_data.json.');return;}
+    render(rows);
+  }catch(e){showErr('Could not load mm_data.json — '+e.message);}
 }
-loadData();
+load();
 </script>
 </body>
 </html>
