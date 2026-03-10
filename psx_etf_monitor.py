@@ -70,7 +70,7 @@ ETF_INDEX_MAP = {
     "UBLPETF": "UPP9",
 }
 
-INDEX_SYMBOLS = ["KMI30", "KSE30", "MII30"]
+INDEX_SYMBOLS = ["KSE100", "KMI30", "KSE30", "MII30"]
 
 IMPORTANT_KW = [
     "dividend", "interim dividend", "rebalancing", "book closure",
@@ -314,32 +314,89 @@ def scrape_etf(symbol):
     return res
 
 
+def _get_tick(sym):
+    """Fetch a single tick from psxterminal. Returns normalised dict or None."""
+    try:
+        r = requests.get(f"{TERM_BASE}/api/ticks/REG/{sym}",
+                         headers=API_HDR, timeout=8)
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        tick = data.get("data", data) if isinstance(data, dict) else {}
+        if not isinstance(tick, dict):
+            return None
+        price = tick.get("price") or tick.get("close") or tick.get("last")
+        if not price:
+            return None
+        # Per psx_daily_scanner.py: changePercent is a decimal fraction (0.07 = 7%)
+        cpct  = float(tick.get("changePercent", tick.get("change_pct", 0)) or 0) * 100
+        chg   = float(tick.get("change", 0) or 0)
+        ldcp  = tick.get("ldcp") or tick.get("prevClose")
+        return {
+            "price":      round(float(price), 2),
+            "change":     round(chg, 2),
+            "change_pct": round(cpct, 2),
+            "ldcp":       round(float(ldcp), 2) if ldcp else None,
+            "volume":     int(tick.get("volume", 0) or 0),
+            "high":       round(float(tick.get("high", 0) or 0), 2) or None,
+            "low":        round(float(tick.get("low",  0) or 0), 2) or None,
+            "inav":       round(float(tick.get("inav") or tick.get("iNav") or 0), 2) or None,
+        }
+    except Exception:
+        return None
+
+
+def _fix_etf_price(raw, psx_scraped):
+    """
+    psxterminal returns some ETF prices in paisa (100x Rs value).
+    Detect by comparing with the PSX-scraped price and divide if ~100x off.
+    """
+    if not raw:
+        return raw
+    p = float(raw)
+    if psx_scraped and psx_scraped > 0:
+        ratio = p / float(psx_scraped)
+        if 80 < ratio < 120:           # psxterminal is ~100x → in paisa
+            return round(p / 100, 2)
+    return round(p, 2)
+
+
+def enrich_etf_quote(etf_data):
+    """Enrich ETF quote with live psxterminal tick, handling paisa/rupee scale."""
+    sym = etf_data.get("symbol", "")
+    psx_price = etf_data.get("quote", {}).get("price")   # from PSX scrape (correct)
+    tick = _get_tick(sym)
+    if not tick:
+        return
+    q = etf_data.setdefault("quote", {})
+    q["price"]  = _fix_etf_price(tick["price"],  psx_price)
+    q["ldcp"]   = _fix_etf_price(tick["ldcp"],   psx_price)
+    q["high"]   = _fix_etf_price(tick["high"],   psx_price)
+    q["low"]    = _fix_etf_price(tick["low"],    psx_price)
+    q["inav"]   = _fix_etf_price(tick["inav"],   psx_price)
+    q["change_pct"] = tick["change_pct"]
+    # Recalculate change from corrected price and ldcp
+    if q.get("ldcp") and q.get("price"):
+        q["change"] = round(q["price"] - q["ldcp"], 2)
+    if tick["volume"]:
+        q["volume"] = tick["volume"]
+    print(f"  [{sym}] price: {q['price']}  chg: {q['change_pct']:+.2f}%  "
+          f"vol: {q.get('volume',0):,}")
+
+
 def enrich_prices(holdings):
-    """Fetch live LDCP/price/change/change_pct for each holding from psxterminal."""
+    """Fetch live LDCP/price/change_pct for each holding stock from psxterminal."""
     if not holdings: return
     print(f"    Fetching prices for {len(holdings)} holdings...")
     for h in holdings:
-        sym = h.get("symbol","")
+        sym = h.get("symbol", "")
         if not sym: continue
-        try:
-            r = requests.get(f"{TERM_BASE}/api/ticks/REG/{sym}",
-                             headers=API_HDR, timeout=8)
-            if r.status_code == 200:
-                data = r.json()
-                tick = data.get("data", data) if isinstance(data, dict) else {}
-                if isinstance(tick, dict):
-                    price = tick.get("price") or tick.get("close") or tick.get("last")
-                    chg   = float(tick.get("change", 0) or 0)
-                    cpct  = float(tick.get("changePercent",
-                                           tick.get("change_pct", 0)) or 0)
-                    ldcp  = tick.get("ldcp") or tick.get("prevClose")
-                    if price:
-                        h["price"]      = round(float(price), 2)
-                        h["change"]     = round(chg, 2)
-                        h["change_pct"] = round(cpct*100 if abs(cpct)<10 else cpct, 2)
-                        h["ldcp"]       = round(float(ldcp), 2) if ldcp else None
-        except Exception:
-            pass
+        tick = _get_tick(sym)
+        if tick:
+            h["price"]      = tick["price"]
+            h["change"]     = tick["change"]
+            h["change_pct"] = tick["change_pct"]
+            h["ldcp"]       = tick["ldcp"]
         time.sleep(0.12)
 
 
@@ -392,58 +449,134 @@ def fetch_indexes():
     return indexes
 
 
-# ── Index card definitions ────────────────────────────────────────────────────
+# ── Index card definitions & hardcoded constituent lists ─────────────────────
+# Constituents sourced from ksestocks.com (PSX official index composition).
+# These change only at quarterly rebalancing — update as needed.
 INDEX_CARD_DEFS = [
-    ("KSE100", "KSE 100 Index",           "Top 100 companies by market cap",            "#0d3d6e"),
-    ("KMI30",  "KMI 30 Index",            "Top 30 Shariah-compliant companies",         "#1a5e20"),
-    ("KSE30",  "KSE 30 Index",            "Top 30 companies by free-float market cap",  "#4a1942"),
-    ("MII30",  "Mahaana Islamic Index 30", "Top 30 Shariah-compliant by free-float",     "#7b3800"),
+    ("KSE100", "KSE 100 Index",            "Top 100 companies by market cap",            "#0d3d6e"),
+    ("KMI30",  "KMI 30 Index",             "Top 30 Shariah-compliant companies",         "#1a5e20"),
+    ("KSE30",  "KSE 30 Index",             "Top 30 companies by free-float market cap",  "#4a1942"),
+    ("MII30",  "Mahaana Islamic Index 30",  "Top 30 Shariah-compliant by free-float",     "#7b3800"),
 ]
 
+# KSE-100 constituents (100 symbols)
+KSE100_SYMS = [
+    "KEL","HUBC","KAPCO","SPWL",                          # Power
+    "OGDC","PPL","POL","MARI",                            # Oil & Gas Exploration
+    "SCBPL","BOP","NBP","MEBL","BAFL","FABL","HBL",
+    "AKBL","UBL","MCB","ABL","BAHL","HMB",               # Banks
+    "PTC","TRG","SYS",                                    # Tech
+    "FCCL","MLCF","DGKC","LUCK","PIOC","KOHC","CHCC",    # Cement
+    "DCR",                                                # REIT
+    "FATIMA","EFERT","FFBL","FFC","ENGRO",                # Fertilizer
+    "PIBTL",                                              # Transport
+    "LOTCHEM","EPCL","COLG","ARPL",                       # Chemical
+    "UNITY","NATF","NESTLE","MUREB",                      # Food
+    "HASCOL","SSGC","SNGP","PSO","SHEL","APL",           # Oil & Gas Marketing
+    "ILP","GATM","ANL","FML","NML","KTML","NCL",          # Textile
+    "PAEL",                                               # Cables
+    "GHGL",                                               # Glass
+    "PSX","OLPL",                                         # Investment
+    "ISL","INIL",                                         # Engineering
+    "SEARL","GLAXO","AGP","ABOT","HINOON",                # Pharma
+    "AICL","EFUG","JLICL",                                # Insurance
+    "IBFL",                                               # Synthetic
+    "HGFA",                                               # Mutual Fund
+    "PAKT","PMPK",                                        # Tobacco
+    "FHAM",                                               # Modarabas
+    "HCAR","MTL","ATLH","PSMC","INDU",                    # Autos
+    "MLPL",                                               # Leasing
+    "TELE","NETSOL","AVN","WTL",                          # IT
+    "PNSC","DNFL",                                        # Transport
+    "ATRL","PARCO","NRL","BYCO",                          # Refinery
+    "LUCK","SAPPH","TPPL",                                # Other
+    "SRVI","KFCH",                                        # Misc
+]
+# Remove duplicates while preserving order
+_seen = set(); KSE100_SYMS = [s for s in KSE100_SYMS if not (_seen.add(s) or s in _seen)]
 
-def _parse_tick(s):
-    """Normalise a single stock tick dict from any psxterminal response shape."""
-    sym  = (s.get("symbol") or s.get("Symbol") or "").upper().strip()
-    name = (s.get("name") or s.get("companyName") or s.get("company") or "")
-    price = (s.get("current") or s.get("price") or s.get("close") or
-             s.get("last") or s.get("Current"))
-    ldcp  = (s.get("ldcp") or s.get("prevClose") or s.get("LDCP") or
-             s.get("prev_close"))
-    chg   = float(s.get("change", 0) or s.get("Change", 0) or 0)
-    cpct  = float(s.get("changePercent", 0) or s.get("change_pct", 0) or
-                  s.get("ChangePercent", 0) or 0)
-    vol   = s.get("volume") or s.get("Volume") or 0
-    return {
-        "symbol":     sym,
-        "name":       name,
-        "price":      round(float(price), 2) if price else None,
-        "ldcp":       round(float(ldcp),  2) if ldcp  else None,
-        "change":     round(chg,  2),
-        "change_pct": round(cpct, 2),
-        "volume":     int(vol) if vol else None,
-    }
+# KMI-30 (top 30 Shariah-compliant by market cap)
+KMI30_SYMS = [
+    "OGDC","PPL","LUCK","ENGRO","POL","MARI","FFC","EFERT",
+    "HUBC","MCB","HBL","UBL","MEBL","NBP","BAFL","BAHL",
+    "PSO","SNGP","NML","PAEL","ISL","SEARL","DGKC","FCCL",
+    "TRG","MLCF","CHCC","EPCL","LOTCHEM","SSGC",
+]
+
+# KSE-30 (top 30 by free-float market cap)
+KSE30_SYMS = [
+    "OGDC","PPL","POL","MARI",                            # Oil exploration
+    "BOP","NBP","MEBL","BAFL","HBL","UBL","MCB","BAHL",   # Banks
+    "FCCL","MLCF","DGKC","LUCK","CHCC",                   # Cement
+    "EFERT","FFC","ENGRO",                                 # Fertilizer
+    "HUBC",                                               # Power
+    "UNITY",                                              # Food
+    "HASCOL","SNGP","PSO",                                # Oil marketing
+    "PAEL",                                               # Cables
+    "TRG",                                                # Tech
+    "ISL",                                                # Engineering
+    "SEARL",                                              # Pharma
+    "NML",                                                # Textile
+]
+
+# MII-30 (Mahaana Islamic Index 30 — Shariah-compliant free-float)
+MII30_SYMS = [
+    "OGDC","PPL","LUCK","ENGRO","POL","MARI","FFC","EFERT",
+    "HUBC","MCB","HBL","UBL","MEBL","BAFL","BAHL",
+    "PSO","SNGP","NML","PAEL","ISL","SEARL","DGKC","FCCL",
+    "TRG","MLCF","CHCC","EPCL","LOTCHEM","SSGC","HUBC",
+]
+_seen2 = set(); MII30_SYMS = [s for s in MII30_SYMS if not (_seen2.add(s) or s in _seen2)]
+
+INDEX_MEMBERS = {
+    "KSE100": KSE100_SYMS,
+    "KMI30":  KMI30_SYMS,
+    "KSE30":  KSE30_SYMS,
+    "MII30":  MII30_SYMS,
+}
+
+# Company names for display (common ones — others fall back to symbol)
+COMPANY_NAMES = {
+    "OGDC":"Oil & Gas Dev Co","PPL":"Pakistan Petroleum","POL":"Pakistan Oilfields",
+    "MARI":"Mari Petroleum","KEL":"K-Electric","HUBC":"Hub Power","KAPCO":"KAPCO",
+    "BOP":"Bank of Punjab","NBP":"Natl Bank Pakistan","MEBL":"Meezan Bank",
+    "BAFL":"Bank Alfalah","HBL":"Habib Bank","UBL":"United Bank","MCB":"MCB Bank",
+    "ABL":"Allied Bank","BAHL":"Bank Al-Habib","FABL":"Faysal Bank","AKBL":"Askari Bank",
+    "HMB":"Habib Metro Bank","SCBPL":"Standard Chartered",
+    "FCCL":"Fauji Cement","MLCF":"Maple Leaf Cement","DGKC":"DG Khan Cement",
+    "LUCK":"Lucky Cement","PIOC":"Pioneer Cement","KOHC":"Kohat Cement","CHCC":"Cherat Cement",
+    "EFERT":"Engro Fertilizers","FFC":"Fauji Fertilizer","FFBL":"FFBL","ENGRO":"Engro Corp",
+    "FATIMA":"Fatima Fertilizer","PSO":"Pakistan State Oil","SSGC":"Sui Southern Gas",
+    "SNGP":"Sui Northern Gas","SHEL":"Shell Pakistan","APL":"Attock Petroleum","HASCOL":"Hascol",
+    "NML":"Nishat Mills","ILP":"Interloop","GATM":"Gul Ahmed Textile","FML":"Feroze1888",
+    "NCL":"Nishat Chunian","KTML":"Kohinoor Textile","ANL":"Azgard Nine",
+    "PAEL":"Pak Elektron","TRG":"TRG Pakistan","SYS":"Systems Ltd","PTC":"PTCL",
+    "SEARL":"The Searle Co","GLAXO":"GlaxoSmithKline","AGP":"AGP Ltd","ABOT":"Abbott Pakistan",
+    "ISL":"Intl Steels","INIL":"Intl Industries","LOTCHEM":"Lotte Chemical","EPCL":"Engro Polymer",
+    "COLG":"Colgate Palmolive","UNITY":"Unity Foods","NATF":"National Foods",
+    "DCR":"Dolmen City REIT","PSX":"Pakistan Stock Exchange","GHGL":"Ghani Glass",
+    "PAKT":"Pakistan Tobacco","PMPK":"Philip Morris","AICL":"Adamjee Insurance",
+    "EFUG":"EFU General","JLICL":"Jubilee Life","PIBTL":"PIBT","IBFL":"Ibrahim Fibre",
+    "HGFA":"HBL Growth Fund","HCAR":"Honda Atlas","MTL":"Millat Tractors",
+    "ATLH":"Atlas Honda","ATRL":"Attock Refinery","PARCO":"PARCO","NRL":"Natl Refinery",
+    "BYCO":"Byco Petroleum",
+}
 
 
 def fetch_index_cards():
     """
-    For KSE100, KMI30, KSE30, MII30 fetch index level + constituent stocks.
-    Tries multiple psxterminal endpoint patterns.
-    Returns list of index card dicts saved under 'index_cards' in JSON.
+    For KSE100, KMI30, KSE30, MII30:
+      1. Fetch index level from psxterminal IDX tick
+      2. Fetch individual stock ticks for each hardcoded constituent
+    Returns list of index card dicts.
     """
     cards = []
     for idx_sym, name, desc, color in INDEX_CARD_DEFS:
         print(f"\n  [INDEX CARD] {idx_sym}")
         card = {
-            "symbol":       idx_sym,
-            "name":         name,
-            "desc":         desc,
-            "color":        color,
-            "value":        None,
-            "change":       None,
-            "change_pct":   None,
-            "high":         None,
-            "low":          None,
-            "constituents": [],
+            "symbol": idx_sym, "name": name, "desc": desc, "color": color,
+            "value": None, "change": None, "change_pct": None,
+            "high": None, "low": None, "constituents": [],
         }
 
         # ── Index level ───────────────────────────────────────────────────────
@@ -455,54 +588,47 @@ def fetch_index_cards():
                 data = r.json()
                 tick = data.get("data", data) if isinstance(data, dict) else {}
                 val  = tick.get("price") or tick.get("close") or tick.get("last")
-                chg  = float(tick.get("change", 0) or 0)
-                cpct = float(tick.get("changePercent",
-                                       tick.get("change_pct", 0)) or 0)
                 if val:
+                    cpct = float(tick.get("changePercent",
+                                          tick.get("change_pct", 0)) or 0) * 100
                     card["value"]      = round(float(val), 2)
-                    card["change"]     = round(chg, 2)
+                    card["change"]     = round(float(tick.get("change", 0) or 0), 2)
                     card["change_pct"] = round(cpct, 2)
-                    card["high"] = round(float(tick.get("high") or 0), 2) or None
-                    card["low"]  = round(float(tick.get("low")  or 0), 2) or None
+                    card["high"]  = round(float(tick.get("high", 0) or 0), 2) or None
+                    card["low"]   = round(float(tick.get("low",  0) or 0), 2) or None
                     print(f"    value: {card['value']:,.2f}  ({card['change_pct']:+.2f}%)")
                     break
             except Exception as e:
-                print(f"    IDX tick error: {e}")
+                print(f"    IDX tick err: {e}")
 
-        # ── Constituent stocks ────────────────────────────────────────────────
+        # ── Fetch tick for each constituent symbol ────────────────────────────
+        syms = INDEX_MEMBERS.get(idx_sym, [])
+        print(f"    Fetching {len(syms)} constituent ticks...")
         constituents = []
-        candidate_eps = [
-            f"{TERM_BASE}/api/market/REG?index={idx_sym}",
-            f"{TERM_BASE}/api/market/REG?index={idx_sym.lower()}",
-            f"{TERM_BASE}/api/ticks/market/REG?index={idx_sym}",
-            f"{TERM_BASE}/api/index/{idx_sym}/stocks",
-            f"{TERM_BASE}/api/index/{idx_sym.lower()}/stocks",
-            f"{TERM_BASE}/api/index/{idx_sym}/constituents",
-            f"{TERM_BASE}/api/stocks?index={idx_sym}",
-        ]
-        for ep in candidate_eps:
-            try:
-                r = requests.get(ep, headers=API_HDR, timeout=15)
-                if r.status_code != 200: continue
-                data = r.json()
-                raw = (data if isinstance(data, list) else
-                       data.get("data") or data.get("stocks") or
-                       data.get("result") or data.get("ticks") or [])
-                if not isinstance(raw, list): raw = []
-                if not raw: continue
-                for s in raw:
-                    parsed = _parse_tick(s)
-                    if parsed["symbol"]: constituents.append(parsed)
-                if constituents:
-                    print(f"    constituents: {len(constituents)} via {ep.split('/api')[1]}")
-                    break
-            except Exception as e:
-                print(f"    ep failed ({ep.split('/')[-1]}): {e}")
-            time.sleep(0.2)
+        for i, sym in enumerate(syms):
+            tick = _get_tick(sym)
+            if tick:
+                constituents.append({
+                    "symbol":     sym,
+                    "name":       COMPANY_NAMES.get(sym, sym),
+                    "price":      tick["price"],
+                    "ldcp":       tick["ldcp"],
+                    "change":     tick["change"],
+                    "change_pct": tick["change_pct"],
+                    "volume":     tick["volume"],
+                })
+            else:
+                constituents.append({
+                    "symbol": sym, "name": COMPANY_NAMES.get(sym, sym),
+                    "price": None, "ldcp": None,
+                    "change": 0, "change_pct": 0, "volume": None,
+                })
+            if (i+1) % 20 == 0:
+                print(f"      {i+1}/{len(syms)} done")
+            time.sleep(0.15)
 
-        if not constituents:
-            print(f"    ⚠  No constituent data found for {idx_sym}")
-
+        found = sum(1 for c in constituents if c["price"])
+        print(f"    ✓ {found}/{len(syms)} prices fetched")
         constituents.sort(key=lambda x: x.get("change_pct") or 0)
         card["constituents"] = constituents
         cards.append(card)
@@ -553,6 +679,7 @@ def main():
         etf = scrape_etf(sym)
         if etf:
             etf["holdings_diff"] = diff_holdings(sym, etf.get("holdings",[]), prior)
+            enrich_etf_quote(etf)          # ← fix ETF price scale (paisa→Rs)
             enrich_prices(etf.get("holdings",[]))
             dif = etf["holdings_diff"]
             if dif["added"] or dif["removed"]:
