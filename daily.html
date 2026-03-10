@@ -128,7 +128,8 @@ table.st tbody tr:hover{background:var(--sf2)!important}
 table.st tbody tr:nth-child(even){background:var(--sf3)}
 table.st td{padding:6px 10px;white-space:nowrap}
 table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
-.sy{font-weight:600;font-size:12px;color:var(--tx)}
+.sy{font-weight:700;font-size:12px;color:var(--ac);cursor:pointer;border-bottom:1px dashed var(--ac2);border-radius:3px;padding:1px 4px;transition:color .15s,background .15s;display:inline-block}
+.sy:hover{color:#fff;background:var(--ac);border-bottom-color:transparent}
 .se{font-size:9.5px;color:var(--txd);font-family:'Syne',sans-serif;max-width:130px;overflow:hidden;text-overflow:ellipsis}
 .up{color:var(--gn);font-weight:600}.dn{color:var(--rd);font-weight:600}.fl{color:var(--txd)}
 .bg{display:inline-block;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600}
@@ -148,7 +149,8 @@ table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
 .scbn{display:flex;gap:8px;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txd)}
 .scst{background:var(--sf)}
 .scsr{display:flex;align-items:center;justify-content:space-between;padding:4px 12px;border-top:1px solid var(--bd);font-family:'JetBrains Mono',monospace}
-.scsym{font-size:11px;font-weight:600;color:var(--tx)}
+.scsym{font-size:11px;font-weight:700;color:var(--ac);cursor:pointer;border-bottom:1px dashed var(--ac2);border-radius:3px;padding:1px 4px;transition:color .15s,background .15s}
+.scsym:hover{color:#fff;background:var(--ac);border-bottom-color:transparent}
 .scprc{font-size:10px;color:var(--txd)}
 .scvol{font-size:9px;color:var(--txd)}
 
@@ -193,6 +195,9 @@ table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
 </div>
 
 <script>
+// TradingView chart opener
+function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=PSX:${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
+
 let dates=[],sel=null,cY=new Date().getFullYear(),cM=new Date().getMonth();
 
 // Theme
@@ -286,7 +291,7 @@ function renderDay(d){
   // List 1: Momentum Gainers
   h+=sec('📈','Momentum Gainers','Up 4%+ | Volume ≥ 100K','#1b5e20',d.list1,
     ['Symbol','Sector','Price','Change','Chg %','Hi / Lo','Volume'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td>${r.price.toFixed(2)}</td>
         <td class="up">+${r.change.toFixed(2)}</td>
         <td>${pb(r.change_pct)}</td>
@@ -296,7 +301,7 @@ function renderDay(d){
   // List 2: High-Volume
   h+=sec('🔥','High-Volume Movers','Volume ≥ 9,000,000 — any direction','#bf360c',d.list2,
     ['Symbol','Sector','Price','Change','Chg %','Hi / Lo','Volume'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td>${r.price.toFixed(2)}</td>
         <td class="${r.change>=0?'up':'dn'}">${r.change>=0?'+':''}${r.change.toFixed(2)}</td>
         <td>${pb(r.change_pct)}</td>
@@ -306,7 +311,7 @@ function renderDay(d){
   // List 3: Tight Range
   h+=sec('🔔','Tight Range Watch','|Change| ≤ 0.40% — Consolidating','#4a148c',d.list3,
     ['Symbol','Sector','Price','Chg %','Hi / Lo','Volume'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td>${r.price.toFixed(2)}</td>
         <td>${pb(r.change_pct)}</td>
         <td class="fl">${r.high.toFixed(2)} / ${r.low.toFixed(2)}</td>
@@ -315,7 +320,7 @@ function renderDay(d){
   // List 4: Top Losers
   h+=sec('📉','Top Losers','Down 4%+ | Volume ≥ 100K','#b71c1c',d.list4,
     ['Symbol','Sector','Price','Change','Chg %','Hi / Lo','Volume'],
-    r=>`<td class="sy">${r.symbol}</td><td class="se">${r.sector}</td>
+    r=>`<td class="sy" onclick="openTV('${r.symbol}')" title="Open on TradingView">${r.symbol}</td><td class="se">${r.sector}</td>
         <td>${r.price.toFixed(2)}</td>
         <td class="dn">${r.change.toFixed(2)}</td>
         <td>${pb(r.change_pct)}</td>
@@ -346,7 +351,7 @@ function renderDay(d){
       <div class="scst">`;
     for(const t of s.top3){
       const tc=t.change_pct>0?'var(--gn)':t.change_pct<0?'var(--rd)':'var(--txd)',ts=t.change_pct>0?'+':'';
-      h+=`<div class="scsr"><span class="scsym">${t.symbol}</span><span class="scprc">${t.price.toFixed(2)}</span><span style="font-size:10px;font-weight:600;color:${tc}">${ts}${t.change_pct.toFixed(2)}%</span><span class="scvol">${fv(t.volume)}</span></div>`;
+      h+=`<div class="scsr"><span class="scsym" onclick="openTV('${t.symbol}')" title="Open on TradingView">${t.symbol}</span><span class="scprc">${t.price.toFixed(2)}</span><span style="font-size:10px;font-weight:600;color:${tc}">${ts}${t.change_pct.toFixed(2)}%</span><span class="scvol">${fv(t.volume)}</span></div>`;
     }
     h+=`</div></div>`;
   }
