@@ -449,9 +449,7 @@ def fetch_indexes():
     return indexes
 
 
-# ── Index card definitions & hardcoded constituent lists ─────────────────────
-# Constituents sourced from ksestocks.com (PSX official index composition).
-# These change only at quarterly rebalancing — update as needed.
+# ── Index card definitions ────────────────────────────────────────────────────
 INDEX_CARD_DEFS = [
     ("KSE100", "KSE 100 Index",            "Top 100 companies by market cap",            "#0d3d6e"),
     ("KMI30",  "KMI 30 Index",             "Top 30 Shariah-compliant companies",         "#1a5e20"),
@@ -459,116 +457,129 @@ INDEX_CARD_DEFS = [
     ("MII30",  "Mahaana Islamic Index 30",  "Top 30 Shariah-compliant by free-float",     "#7b3800"),
 ]
 
-# KSE-100 constituents (100 symbols)
-KSE100_SYMS = [
-    "KEL","HUBC","KAPCO","SPWL",                          # Power
-    "OGDC","PPL","POL","MARI",                            # Oil & Gas Exploration
-    "SCBPL","BOP","NBP","MEBL","BAFL","FABL","HBL",
-    "AKBL","UBL","MCB","ABL","BAHL","HMB",               # Banks
-    "PTC","TRG","SYS",                                    # Tech
-    "FCCL","MLCF","DGKC","LUCK","PIOC","KOHC","CHCC",    # Cement
-    "DCR",                                                # REIT
-    "FATIMA","EFERT","FFBL","FFC","ENGRO",                # Fertilizer
-    "PIBTL",                                              # Transport
-    "LOTCHEM","EPCL","COLG","ARPL",                       # Chemical
-    "UNITY","NATF","NESTLE","MUREB",                      # Food
-    "HASCOL","SSGC","SNGP","PSO","SHEL","APL",           # Oil & Gas Marketing
-    "ILP","GATM","ANL","FML","NML","KTML","NCL",          # Textile
-    "PAEL",                                               # Cables
-    "GHGL",                                               # Glass
-    "PSX","OLPL",                                         # Investment
-    "ISL","INIL",                                         # Engineering
-    "SEARL","GLAXO","AGP","ABOT","HINOON",                # Pharma
-    "AICL","EFUG","JLICL",                                # Insurance
-    "IBFL",                                               # Synthetic
-    "HGFA",                                               # Mutual Fund
-    "PAKT","PMPK",                                        # Tobacco
-    "FHAM",                                               # Modarabas
-    "HCAR","MTL","ATLH","PSMC","INDU",                    # Autos
-    "MLPL",                                               # Leasing
-    "TELE","NETSOL","AVN","WTL",                          # IT
-    "PNSC","DNFL",                                        # Transport
-    "ATRL","PARCO","NRL","BYCO",                          # Refinery
-    "LUCK","SAPPH","TPPL",                                # Other
-    "SRVI","KFCH",                                        # Misc
-]
-# Remove duplicates while preserving order
-_seen = set(); KSE100_SYMS = [s for s in KSE100_SYMS if not (_seen.add(s) or s in _seen)]
 
-# KMI-30 (top 30 Shariah-compliant by market cap)
-KMI30_SYMS = [
-    "OGDC","PPL","LUCK","ENGRO","POL","MARI","FFC","EFERT",
-    "HUBC","MCB","HBL","UBL","MEBL","NBP","BAFL","BAHL",
-    "PSO","SNGP","NML","PAEL","ISL","SEARL","DGKC","FCCL",
-    "TRG","MLCF","CHCC","EPCL","LOTCHEM","SSGC",
-]
+def scrape_index_constituents(idx_sym):
+    """
+    Scrape live constituent data directly from dps.psx.com.pk/indices/{IDX}.
+    The page renders an HTML table with columns:
+      SYMBOL | NAME | LDCP | CURRENT | CHANGE | CHANGE (%) | IDX WTG (%) | ... | VOLUME
+    Returns list of constituent dicts with symbol/name/ldcp/price/change/change_pct/volume.
+    Falls back to empty list on any error.
+    """
+    url = f"{PSX_BASE}/indices/{idx_sym}"
+    print(f"    Scraping {url}")
+    try:
+        r = requests.get(url, headers=SCRAPE_HDR, timeout=25)
+        r.raise_for_status()
+    except Exception as e:
+        print(f"    ✗ fetch failed: {e}")
+        return []
 
-# KSE-30 (top 30 by free-float market cap)
-KSE30_SYMS = [
-    "OGDC","PPL","POL","MARI",                            # Oil exploration
-    "BOP","NBP","MEBL","BAFL","HBL","UBL","MCB","BAHL",   # Banks
-    "FCCL","MLCF","DGKC","LUCK","CHCC",                   # Cement
-    "EFERT","FFC","ENGRO",                                 # Fertilizer
-    "HUBC",                                               # Power
-    "UNITY",                                              # Food
-    "HASCOL","SNGP","PSO",                                # Oil marketing
-    "PAEL",                                               # Cables
-    "TRG",                                                # Tech
-    "ISL",                                                # Engineering
-    "SEARL",                                              # Pharma
-    "NML",                                                # Textile
-]
+    soup  = BeautifulSoup(r.text, "html.parser")
+    table = soup.find("table")
+    if not table:
+        print(f"    ✗ no table found in {url}")
+        return []
 
-# MII-30 (Mahaana Islamic Index 30 — Shariah-compliant free-float)
-MII30_SYMS = [
-    "OGDC","PPL","LUCK","ENGRO","POL","MARI","FFC","EFERT",
-    "HUBC","MCB","HBL","UBL","MEBL","BAFL","BAHL",
-    "PSO","SNGP","NML","PAEL","ISL","SEARL","DGKC","FCCL",
-    "TRG","MLCF","CHCC","EPCL","LOTCHEM","SSGC","HUBC",
-]
-_seen2 = set(); MII30_SYMS = [s for s in MII30_SYMS if not (_seen2.add(s) or s in _seen2)]
+    # Identify column positions from header row
+    headers = []
+    thead = table.find("thead") or table
+    for th in thead.find_all("th"):
+        headers.append(th.get_text(strip=True).upper())
 
-INDEX_MEMBERS = {
-    "KSE100": KSE100_SYMS,
-    "KMI30":  KMI30_SYMS,
-    "KSE30":  KSE30_SYMS,
-    "MII30":  MII30_SYMS,
-}
+    # Map column names → indices (flexible — handle extra/missing cols)
+    def col(names):
+        for n in names:
+            for i, h in enumerate(headers):
+                if n in h:
+                    return i
+        return None
 
-# Company names for display (common ones — others fall back to symbol)
-COMPANY_NAMES = {
-    "OGDC":"Oil & Gas Dev Co","PPL":"Pakistan Petroleum","POL":"Pakistan Oilfields",
-    "MARI":"Mari Petroleum","KEL":"K-Electric","HUBC":"Hub Power","KAPCO":"KAPCO",
-    "BOP":"Bank of Punjab","NBP":"Natl Bank Pakistan","MEBL":"Meezan Bank",
-    "BAFL":"Bank Alfalah","HBL":"Habib Bank","UBL":"United Bank","MCB":"MCB Bank",
-    "ABL":"Allied Bank","BAHL":"Bank Al-Habib","FABL":"Faysal Bank","AKBL":"Askari Bank",
-    "HMB":"Habib Metro Bank","SCBPL":"Standard Chartered",
-    "FCCL":"Fauji Cement","MLCF":"Maple Leaf Cement","DGKC":"DG Khan Cement",
-    "LUCK":"Lucky Cement","PIOC":"Pioneer Cement","KOHC":"Kohat Cement","CHCC":"Cherat Cement",
-    "EFERT":"Engro Fertilizers","FFC":"Fauji Fertilizer","FFBL":"FFBL","ENGRO":"Engro Corp",
-    "FATIMA":"Fatima Fertilizer","PSO":"Pakistan State Oil","SSGC":"Sui Southern Gas",
-    "SNGP":"Sui Northern Gas","SHEL":"Shell Pakistan","APL":"Attock Petroleum","HASCOL":"Hascol",
-    "NML":"Nishat Mills","ILP":"Interloop","GATM":"Gul Ahmed Textile","FML":"Feroze1888",
-    "NCL":"Nishat Chunian","KTML":"Kohinoor Textile","ANL":"Azgard Nine",
-    "PAEL":"Pak Elektron","TRG":"TRG Pakistan","SYS":"Systems Ltd","PTC":"PTCL",
-    "SEARL":"The Searle Co","GLAXO":"GlaxoSmithKline","AGP":"AGP Ltd","ABOT":"Abbott Pakistan",
-    "ISL":"Intl Steels","INIL":"Intl Industries","LOTCHEM":"Lotte Chemical","EPCL":"Engro Polymer",
-    "COLG":"Colgate Palmolive","UNITY":"Unity Foods","NATF":"National Foods",
-    "DCR":"Dolmen City REIT","PSX":"Pakistan Stock Exchange","GHGL":"Ghani Glass",
-    "PAKT":"Pakistan Tobacco","PMPK":"Philip Morris","AICL":"Adamjee Insurance",
-    "EFUG":"EFU General","JLICL":"Jubilee Life","PIBTL":"PIBT","IBFL":"Ibrahim Fibre",
-    "HGFA":"HBL Growth Fund","HCAR":"Honda Atlas","MTL":"Millat Tractors",
-    "ATLH":"Atlas Honda","ATRL":"Attock Refinery","PARCO":"PARCO","NRL":"Natl Refinery",
-    "BYCO":"Byco Petroleum",
-}
+    i_sym  = col(["SYMBOL"])
+    i_name = col(["NAME"])
+    i_ldcp = col(["LDCP"])
+    i_cur  = col(["CURRENT"])
+    i_chg  = col(["CHANGE (", "CHANGE("])   # CHANGE (%) before CHANGE
+    i_abs  = col(["CHANGE"])                 # plain CHANGE (absolute)
+    i_vol  = col(["VOLUME"])
+
+    # Re-resolve: CHANGE (%) and CHANGE may swap depending on col order
+    # Find precise indices by checking ALL headers
+    i_chgpct = None
+    i_chgabs = None
+    for i, h in enumerate(headers):
+        if "CHANGE (%)" in h or "CHANGE(%)" in h:
+            i_chgpct = i
+        elif "CHANGE" in h and i_chgpct != i:
+            i_chgabs = i
+
+    constituents = []
+    tbody = table.find("tbody") or table
+    for row in tbody.find_all("tr"):
+        cells = row.find_all(["td","th"])
+        if len(cells) < 3:
+            continue
+
+        def cell(i):
+            if i is None or i >= len(cells):
+                return ""
+            return cells[i].get_text(strip=True).replace(",","").replace("%","")
+
+        # Symbol — prefer anchor href like /company/ABL
+        sym = ""
+        if i_sym is not None and i_sym < len(cells):
+            a = cells[i_sym].find("a", href=re.compile(r"/company/", re.I))
+            if a:
+                sym = a.get_text(strip=True).upper()
+            else:
+                sym = cells[i_sym].get_text(strip=True).upper()
+        if not sym or sym == "SYMBOL":
+            continue
+
+        name = cell(i_name) if i_name is not None else ""
+
+        def safe_float(s):
+            try:
+                return round(float(s.replace("+","")), 2)
+            except Exception:
+                return None
+
+        ldcp       = safe_float(cell(i_ldcp))
+        price      = safe_float(cell(i_cur))
+        change     = safe_float(cell(i_chgabs)) if i_chgabs is not None else None
+        change_pct = safe_float(cell(i_chgpct)) if i_chgpct is not None else None
+        volume_raw = cell(i_vol)
+        try:
+            volume = int(float(volume_raw)) if volume_raw else None
+        except Exception:
+            volume = None
+
+        # Derive missing values
+        if change is None and price is not None and ldcp is not None:
+            change = round(price - ldcp, 2)
+        if change_pct is None and change is not None and ldcp and ldcp != 0:
+            change_pct = round(change / ldcp * 100, 2)
+
+        constituents.append({
+            "symbol":     sym,
+            "name":       name,
+            "ldcp":       ldcp,
+            "price":      price,
+            "change":     change or 0,
+            "change_pct": change_pct or 0,
+            "volume":     volume,
+        })
+
+    print(f"    ✓ {len(constituents)} constituents scraped from PSX")
+    return constituents
 
 
 def fetch_index_cards():
     """
     For KSE100, KMI30, KSE30, MII30:
       1. Fetch index level from psxterminal IDX tick
-      2. Fetch individual stock ticks for each hardcoded constituent
-    Returns list of index card dicts.
+      2. Scrape live constituent table from dps.psx.com.pk/indices/{IDX}
+    Returns list of index card dicts saved under 'index_cards' in JSON.
     """
     cards = []
     for idx_sym, name, desc, color in INDEX_CARD_DEFS:
@@ -579,7 +590,7 @@ def fetch_index_cards():
             "high": None, "low": None, "constituents": [],
         }
 
-        # ── Index level ───────────────────────────────────────────────────────
+        # ── Index level from psxterminal ──────────────────────────────────────
         for ep in [f"{TERM_BASE}/api/ticks/IDX/{idx_sym}",
                    f"{TERM_BASE}/api/ticks/IDX/{idx_sym.lower()}"]:
             try:
@@ -601,38 +612,12 @@ def fetch_index_cards():
             except Exception as e:
                 print(f"    IDX tick err: {e}")
 
-        # ── Fetch tick for each constituent symbol ────────────────────────────
-        syms = INDEX_MEMBERS.get(idx_sym, [])
-        print(f"    Fetching {len(syms)} constituent ticks...")
-        constituents = []
-        for i, sym in enumerate(syms):
-            tick = _get_tick(sym)
-            if tick:
-                constituents.append({
-                    "symbol":     sym,
-                    "name":       COMPANY_NAMES.get(sym, sym),
-                    "price":      tick["price"],
-                    "ldcp":       tick["ldcp"],
-                    "change":     tick["change"],
-                    "change_pct": tick["change_pct"],
-                    "volume":     tick["volume"],
-                })
-            else:
-                constituents.append({
-                    "symbol": sym, "name": COMPANY_NAMES.get(sym, sym),
-                    "price": None, "ldcp": None,
-                    "change": 0, "change_pct": 0, "volume": None,
-                })
-            if (i+1) % 20 == 0:
-                print(f"      {i+1}/{len(syms)} done")
-            time.sleep(0.15)
-
-        found = sum(1 for c in constituents if c["price"])
-        print(f"    ✓ {found}/{len(syms)} prices fetched")
+        # ── Constituent stocks from PSX website ───────────────────────────────
+        constituents = scrape_index_constituents(idx_sym)
         constituents.sort(key=lambda x: x.get("change_pct") or 0)
         card["constituents"] = constituents
         cards.append(card)
-        time.sleep(1)
+        time.sleep(2)
 
     return cards
 
