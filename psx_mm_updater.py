@@ -262,8 +262,10 @@ def compute_row(results, date_str, kse100_val):
             if r["above_200ma"]:
                 above200_count += 1
 
-    t2108 = round(above40_count  / above40_total  * 100, 1) if above40_total  > 0 else None
-    t2107 = round(above200_count / above200_total * 100, 1) if above200_total > 0 else None
+    t2108   = round(above40_count  / above40_total  * 100, 1) if above40_total  > 0 else None
+    t2107   = round(above200_count / above200_total * 100, 1) if above200_total > 0 else None
+    t2108_n = above40_count  if above40_total  > 0 else None
+    t2107_n = above200_count if above200_total > 0 else None
 
     return {
         "date":    date_str,
@@ -282,6 +284,8 @@ def compute_row(results, date_str, kse100_val):
         "total":   total,
         "t2108":   t2108,
         "t2107":   t2107,
+        "t2108_n": t2108_n,
+        "t2107_n": t2107_n,
         "kse100":  kse100_val,
     }
 
