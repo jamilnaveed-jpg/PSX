@@ -264,6 +264,87 @@ td.nu{color:var(--txd)}
 //  AI note: Anthropic claude-sonnet-4-20250514
 // ══════════════════════════════════════════════════════════════════════════
 
+// New add from Google 
+
+// CONFIGURATION: Replace these with your free API keys
+const FINNHUB_KEY = 'd6pgn01r01qo88aj4negd6pgn01r01qo88aj4nf0'; // Get at finnhub.io
+const MARKETAUX_KEY = 'MHYnUE41mpwSPXGhYfWQwnTzLcML2LAKjeE5LlPG'; // Get at marketaux.com
+
+async function searchTicker() {
+  const sym = document.getElementById('tickerInput').value.toUpperCase();
+  const box = document.getElementById('displayBox');
+  
+  if(!sym) return;
+  box.innerHTML = `<div class="loading">Analyzing ${sym} for Magna53 criteria...</div>`;
+
+  try {
+    // 1. Fetch Fundamental & Earnings Data (M & A Criteria)
+    const finUrl = `https://finnhub.io/api/v1/stock/earnings?symbol=${sym}&token=${FINNHUB_KEY}`;
+    const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${sym}&token=${FINNHUB_KEY}`;
+    
+    // 2. Fetch News & Sentiment (N Criteria)
+    const newsUrl = `https://api.marketaux.com/v1/news/all?symbols=${sym}&filter_entities=true&language=en&api_token=${MARKETAUX_KEY}`;
+
+    const [epsRes, profRes, newsRes] = await Promise.all([
+      fetch(finUrl),
+      fetch(profileUrl),
+      fetch(newsUrl)
+    ]);
+
+    const epsData = await epsRes.json();
+    const profData = await profRes.json();
+    const newsData = await newsRes.json();
+
+    renderMagnaDashboard(sym, epsData, profData, newsData);
+  } catch (err) {
+    box.innerHTML = `<div class="error">Connection Failed. Check your API Keys.</div>`;
+    console.error(err);
+  }
+}
+
+function renderMagnaDashboard(sym, eps, profile, news) {
+  const latest = eps[0] || { actual: 0, estimate: 0, surprise: 0 };
+  const articles = news.data || [];
+  
+  // Magna53 Logic Checks
+  const hasSurprise = latest.surprise > 10; // "M" - Massive Surprise > 10%
+  const marketCap = (profile.marketCapitalization / 1000).toFixed(2); // "Cap 10" Check
+  
+  document.getElementById('displayBox').innerHTML = `
+    <div class="magna-card">
+      <div class="card-header">
+        <h2>${sym} — ${profile.name || 'Stock Data'}</h2>
+        <span class="cap-tag">${marketCap}B Market Cap</span>
+      </div>
+      
+      <div class="metrics-grid">
+        <div class="metric ${hasSurprise ? 'pos' : ''}">
+          <label>M: EPS Surprise</label>
+          <span>${latest.surprise.toFixed(2)}%</span>
+        </div>
+        <div class="metric">
+          <label>A: Actual EPS</label>
+          <span>$${latest.actual}</span>
+        </div>
+        <div class="metric">
+          <label>N: Sentiment</label>
+          <span>${articles[0]?.entities[0]?.sentiment_score?.toFixed(2) || 'N/A'}</span>
+        </div>
+      </div>
+
+      <div class="news-feed">
+        <h4>Latest News (N - News/Neglect)</h4>
+        ${articles.slice(0, 3).map(a => `
+          <div class="news-item">
+            <a href="${a.url}" target="_blank">${a.title}</a>
+            <small>${new Date(a.published_at).toLocaleDateString()} via ${a.source}</small>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
 // ── Theme ──────────────────────────────────────────────────────────────────
 function tog(){
   const h=document.documentElement,d=h.getAttribute('data-theme')==='dark',n=d?'light':'dark';
