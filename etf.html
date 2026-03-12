@@ -285,8 +285,6 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 <script>
 // ── TradingView chart opener ───────────────────────────────────────────────────
 function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let dates = [], selDate = null, activeETF = null;
