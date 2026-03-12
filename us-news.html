@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta http-equiv="X-Content-Type-Options" content="nosniff">
-<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
 <title>PSX · US News</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -36,8 +34,6 @@
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--tx);font-family:'Syne',sans-serif;font-size:13px;line-height:1.5;min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--sl) 3px,var(--sl) 4px);pointer-events:none;z-index:9999}
-
-/* NAV */
 header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);border-bottom:1px solid var(--bd);backdrop-filter:blur(16px);display:flex;align-items:center;padding:0 18px;gap:8px}
 .logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ac);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .logo span{color:var(--txd);font-weight:400}
@@ -51,13 +47,9 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .tt{width:32px;height:18px;background:var(--bd);border-radius:9px;position:relative;border:1px solid var(--bd2)}
 .tk{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--txd);transition:transform .2s,background .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 [data-theme="light"] .tk{transform:translateX(14px);background:var(--ac)}
-
-/* LAYOUT */
 .layout{display:grid;grid-template-columns:1fr 440px;min-height:calc(100vh - 52px)}
 .left{overflow-y:auto;padding:16px 18px 60px;min-width:0}
 .right{border-left:1px solid var(--bd);position:sticky;top:52px;height:calc(100vh - 52px);display:flex;flex-direction:column}
-
-/* SEARCH */
 .search-wrap{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
 .sym-inp{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;background:var(--sf);border:2px solid var(--bd2);border-radius:8px;color:var(--tx);padding:10px 14px;width:180px;text-transform:uppercase;letter-spacing:.06em;transition:border-color .2s,box-shadow .2s;flex-shrink:0}
 .sym-inp:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px var(--ac3)}
@@ -71,13 +63,9 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .rc:hover{background:var(--ac3);border-color:var(--ac)}
 .rc-x{font-size:8px;color:var(--txm);margin-left:3px;vertical-align:middle}
 .rc:hover .rc-x{color:var(--rd)}
-
-/* SECTION HEADERS */
 .sh{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--txd);margin:18px 0 10px;display:flex;align-items:center;gap:8px}
 .sh::after{content:'';flex:1;height:1px;background:var(--bd)}
 .sh span{white-space:nowrap}
-
-/* STAT CARDS */
 .grid{display:grid;gap:8px;margin-bottom:12px}
 .g4{grid-template-columns:repeat(4,1fr)}
 .g3{grid-template-columns:repeat(3,1fr)}
@@ -87,8 +75,6 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .sc-v{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--tx);line-height:1.2}
 .sc-s{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);margin-top:1px}
 .v-up{color:var(--gn)}.v-dn{color:var(--rd)}.v-ac{color:var(--ac)}.v-gd{color:var(--gd)}.v-pu{color:var(--pu)}.v-or{color:var(--or)}.v-nu{color:var(--txd)}
-
-/* TABLES */
 table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:10.5px;margin-bottom:12px;border-radius:7px;overflow:hidden;border:1px solid var(--bd)}
 th{background:var(--sf2);padding:6px 10px;text-align:left;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);border-bottom:1px solid var(--bd2)}
 td{padding:7px 10px;border-bottom:1px solid var(--bd);vertical-align:middle}
@@ -99,8 +85,6 @@ td.pos{color:var(--gn);font-weight:700}
 td.neg{color:var(--rd);font-weight:700}
 td.est{color:var(--gd)}
 td.nu{color:var(--txd)}
-
-/* BADGES */
 .badge{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.05em;display:inline-block}
 .bg-gn{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbr)}
 .bg-rd{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbr)}
@@ -108,8 +92,6 @@ td.nu{color:var(--txd)}
 .bg-or{background:var(--orbg);color:var(--or);border:1px solid var(--orbr)}
 .bg-pu{background:var(--pubg);color:var(--pu);border:1px solid var(--pubr)}
 .bg-gd{background:var(--gdbg);color:var(--gd);border:1px solid var(--gdbr)}
-
-/* NEWS ITEMS */
 .news-feed{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
 .ni{background:var(--sf);border:1px solid var(--bd);border-radius:7px;padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s;display:flex;gap:10px;align-items:flex-start;text-decoration:none}
 .ni:hover{border-color:var(--bd2);background:var(--sf2)}
@@ -118,36 +100,22 @@ td.nu{color:var(--txd)}
 .ni-body{flex:1;min-width:0}
 .ni-title{font-size:12px;color:var(--tx);line-height:1.45;font-weight:500}
 .ni:hover .ni-title{color:var(--ac)}
-.ni-meta{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txd);margin-top:3px;display:flex;gap:8px}
+.ni-meta{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txd);margin-top:3px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .ni-src{color:var(--ac)}
-
-/* SPLIT NOTICE */
-.split-box{background:var(--gdbg);border:1px solid var(--gdbr);border-radius:8px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
-.split-box.rs{background:var(--rdbg);border-color:var(--rdbr)}
-.split-ico{font-size:20px;flex-shrink:0}
-.split-info strong{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gd);display:block;margin-bottom:2px}
-.split-box.rs .split-info strong{color:var(--rd)}
-.split-info span{font-size:11.5px;color:var(--txd);line-height:1.6}
-
-/* SHORT INTEREST BAR */
+.ni-sent{font-size:7.5px;padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-weight:700}
+.sent-pos{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnbr)}
+.sent-neg{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdbr)}
+.sent-neu{background:var(--sf3);color:var(--txd);border:1px solid var(--bd)}
 .si-bar{background:var(--bd);border-radius:3px;height:5px;margin-top:3px;overflow:hidden}
-.si-bar-f{height:100%;border-radius:3px;background:var(--rd);transition:width .5s ease}
-
-/* PROGRESS BAR (ownership) */
+.si-bar-f{height:100%;border-radius:3px;transition:width .5s ease}
 .pbar{background:var(--bd);border-radius:3px;height:5px;margin-top:3px;overflow:hidden}
 .pbar-f{height:100%;border-radius:3px;transition:width .5s ease}
-
-/* EXT LINKS */
 .ext-row{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
 .el{font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 10px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;text-decoration:none;transition:all .15s}
 .el:hover{color:var(--ac);border-color:var(--ac)}
 .el.tv{background:var(--ac3);color:var(--ac);border-color:var(--ac2)}
 .el.tv:hover{background:var(--ac);color:#fff}
-
-/* COMPANY BLURB */
 .blurb{font-size:11.5px;color:var(--txd);line-height:1.65;padding:10px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:7px;margin-bottom:12px}
-
-/* AI BOX */
 .ai-box{background:var(--sf);border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:16px}
 .ai-hdr{padding:8px 14px;background:var(--sf3);border-bottom:1px solid var(--bd);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--ac);display:flex;align-items:center;gap:8px}
 .ai-body{padding:14px 16px;font-size:12px;line-height:1.75;color:var(--tx)}
@@ -156,8 +124,6 @@ td.nu{color:var(--txd)}
 .ai-thinking{padding:12px 16px;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:10px;display:flex;align-items:center;gap:8px}
 @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
 .dots span{animation:blink 1.2s ease infinite}.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
-
-/* CHART RIGHT PANEL */
 .cp-hdr{padding:9px 12px;border-bottom:1px solid var(--bd);background:var(--sf2);display:flex;align-items:center;gap:8px;flex-shrink:0}
 .cp-sym{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;color:var(--ac);cursor:pointer}
 .cp-sym:hover{text-decoration:underline}
@@ -168,23 +134,18 @@ td.nu{color:var(--txd)}
 .cp-body iframe{width:100%;height:100%;border:none;display:block}
 .cp-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center;padding:20px}
 .cp-empty-ico{font-size:36px;opacity:.25}
-
-/* LOADING / STATES */
 .empty{padding:60px 20px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txd)}
 .empty-ico{font-size:40px;display:block;margin-bottom:14px;opacity:.25}
 .empty-title{font-size:13px;color:var(--txd);margin-bottom:6px}
 .empty-sub{font-size:10px;color:var(--txm);line-height:1.7}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
-@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
 .lbar{width:180px;height:3px;background:var(--bd);border-radius:2px;margin:10px auto 0;overflow:hidden}
 .lbar-f{height:100%;background:var(--ac);border-radius:2px;animation:lbara 1.4s ease-in-out infinite}
 @keyframes lbara{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
 @keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .fin{animation:fadein .3s ease both}
 .err-box{background:var(--rdbg);border:1px solid var(--rdbr);border-radius:8px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--rd);margin-bottom:14px}
-
-/* RESPONSIVE */
 @media(max-width:1140px){.layout{grid-template-columns:1fr}.right{position:static;height:420px;border-left:none;border-top:1px solid var(--bd)}.g4{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:640px){.g4,.g3{grid-template-columns:repeat(2,1fr)}}
 </style>
@@ -209,11 +170,7 @@ td.nu{color:var(--txd)}
 </header>
 
 <div class="layout">
-
-  <!-- LEFT: data panels -->
   <div class="left" id="left">
-
-    <!-- Search -->
     <div class="search-wrap">
       <input class="sym-inp" id="sym-inp" type="text" maxlength="8"
         placeholder="Symbol e.g. NVDA"
@@ -221,27 +178,21 @@ td.nu{color:var(--txd)}
         onkeydown="if(event.key==='Enter')go()">
       <button class="lookup-btn" id="lbtn" onclick="go()">🔍 Lookup</button>
     </div>
-    <div class="recent-row" id="recent-row">
-      <span class="rc-lbl">Recent:</span>
-    </div>
-
-    <!-- Results -->
+    <div class="recent-row" id="recent-row"><span class="rc-lbl">Recent:</span></div>
     <div id="results">
       <div class="empty">
         <span class="empty-ico">📰</span>
         <div class="empty-title">US Stock Intelligence</div>
         <div class="empty-sub">
           Enter any US ticker to load:<br>
-          Analyst upgrades · Earnings history &amp; next date · EPS &amp; Revenue estimates<br>
-          Short interest · Float &amp; shares outstanding · Institutional ownership<br>
-          Insider transactions · Stock splits · Market cap &amp; sector · Latest news
+          Real-time quote &amp; company profile · Analyst ratings &amp; price targets<br>
+          Earnings history &amp; estimates · Key metrics · Insider transactions<br>
+          Sentiment-tagged news feed via Marketaux
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- RIGHT: TradingView chart (always visible, auto-updates on lookup) -->
   <div class="right">
     <div class="cp-hdr">
       <span class="cp-sym" id="cp-sym" onclick="openTV(cpSym)" title="Open on TradingView">—</span>
@@ -255,14 +206,23 @@ td.nu{color:var(--txd)}
       </div>
     </div>
   </div>
-
 </div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════
-//  PSX · US-News  |  Data: Yahoo Finance (via corsproxy.io)
-//  AI note: Anthropic claude-sonnet-4-20250514
+//  PSX · US-News  |  Finnhub (quote/fundamentals) + Marketaux (news)
+//
+//  API keys are INJECTED AT BUILD TIME by GitHub Actions using:
+//    sed -i 's/%%FINNHUB_KEY%%/${{ secrets.FINNHUB_KEY }}/g' us-news.html
+//    sed -i 's/%%MARKETAUX_KEY%%/${{ secrets.MARKETAUX_KEY }}/g' us-news.html
+//
+//  DO NOT commit real keys here — always use the %%PLACEHOLDER%% format.
 // ══════════════════════════════════════════════════════════════════════════
+
+const FH_KEY = '%%FINNHUB_KEY%%';
+const MX_KEY = '%%MARKETAUX_KEY%%';
+const FH_BASE = 'https://finnhub.io/api/v1';
+const MX_BASE = 'https://api.marketaux.com/v1';
 
 // ── Theme ──────────────────────────────────────────────────────────────────
 function tog(){
@@ -271,36 +231,34 @@ function tog(){
   document.getElementById('ti').textContent=d?'☀️':'🌙';
   document.getElementById('tl').textContent=d?'Light':'Dark';
   ls('psx-mm-theme',n);
-  // Re-render chart in new theme
   if(cpSym) setChart(cpSym);
 }
 (()=>{
   const s=lg('psx-mm-theme');
-  if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('ti').textContent=s==='light'?'☀️':'🌙';document.getElementById('tl').textContent=s==='light'?'Light':'Dark';}
+  if(s){
+    document.documentElement.setAttribute('data-theme',s);
+    document.getElementById('ti').textContent=s==='light'?'☀️':'🌙';
+    document.getElementById('tl').textContent=s==='light'?'Light':'Dark';
+  }
 })();
 
-// ── localStorage ───────────────────────────────────────────────────────────
+// ── Storage helpers ────────────────────────────────────────────────────────
 function lg(k){try{return localStorage.getItem(k);}catch{return null;}}
 function ls(k,v){try{localStorage.setItem(k,v);}catch{}}
 function lgJ(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}
 function lsJ(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 
-// ── openTV — default: opens TradingView for any symbol ─────────────────────
-function openTV(sym){
-  if(!sym||sym==='—')return;
-  window.open('https://www.tradingview.com/chart/?symbol='+sym.toUpperCase(),'_blank','noopener,noreferrer');
-}
-
-// ── Formatters ─────────────────────────────────────────────────────────────
+// ── Utilities ──────────────────────────────────────────────────────────────
+function openTV(sym){if(!sym||sym==='—')return;window.open('https://www.tradingview.com/chart/?symbol='+sym.toUpperCase(),'_blank','noopener,noreferrer');}
 const fc=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2});
 const fn=new Intl.NumberFormat('en-US');
 function fv(v,d=2){if(v==null||isNaN(v))return'—';return Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
 function fb(v){if(v==null||isNaN(v))return'—';const a=Math.abs(v);if(a>=1e12)return'$'+(v/1e12).toFixed(2)+'T';if(a>=1e9)return'$'+(v/1e9).toFixed(2)+'B';if(a>=1e6)return'$'+(v/1e6).toFixed(1)+'M';if(a>=1e3)return'$'+(v/1e3).toFixed(0)+'K';return'$'+fv(v);}
-function fp(v,x=100){if(v==null||isNaN(v))return'—';const n=v*x;return(n>0?'+':'')+fv(n)+'%';}
-function fd(ts){if(!ts)return'—';try{return new Date(ts*1000).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});}catch{return'—';}}
+function fp(v,m=1){if(v==null||isNaN(v))return'—';return(v>0?'+':'')+fv(v,1)+'%';}
+function fd(s){if(!s)return'—';try{const d=new Date(s);return isNaN(d.getTime())?String(s):d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});}catch{return String(s||'—');}}
 function pc(v){return v>0?'v-up':v<0?'v-dn':'v-nu';}
-function ago(ts){if(!ts)return'';const s=Date.now()/1000-ts;if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
-function raw(o,...ks){try{let v=o;for(const k of ks)v=v[k];return v?.raw??v;}catch{return null;}}
+function ago(s){if(!s)return'';const sec=(Date.now()-new Date(s).getTime())/1000;if(sec<3600)return Math.floor(sec/60)+'m ago';if(sec<86400)return Math.floor(sec/3600)+'h ago';return Math.floor(sec/86400)+'d ago';}
+function isoDate(d){return d.toISOString().slice(0,10);}
 
 // ── Recent symbols ─────────────────────────────────────────────────────────
 let recent=lgJ('usnews_recent',[]);
@@ -312,7 +270,7 @@ function renderRecent(){
     recent.map(s=>`<span class="rc" onclick="go('${s}')">${s}<span class="rc-x" onclick="event.stopPropagation();removeRecent('${s}')">✕</span></span>`).join('');
 }
 
-// ── TradingView chart ──────────────────────────────────────────────────────
+// ── TradingView chart panel ────────────────────────────────────────────────
 let cpSym='';
 function setChart(sym){
   cpSym=sym;
@@ -321,128 +279,68 @@ function setChart(sym){
   document.getElementById('cp-name').textContent=sym+' — TradingView';
   document.getElementById('cp-open').onclick=()=>openTV(sym);
   document.getElementById('cp-empty').style.display='none';
-
-  // Use TradingView's free embeddable widget iframe (no JS library needed)
   document.getElementById('cp-body').innerHTML=
-    `<iframe src="https://www.tradingview.com/widgetembed/?frameElementId=tv1&symbol=${encodeURIComponent(sym)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=${theme==='light'?'f8f9fb':'0f1720'}&studies=RSI%40tv-basicstudies%1FMA%40tv-basicstudies&theme=${theme}&style=1&timezone=America%2FNew_York&locale=en&utm_source=localhost&withdateranges=1&showpopupbutton=1" style="width:100%;height:100%;border:none" allowfullscreen></iframe>`;
+    `<iframe src="https://www.tradingview.com/widgetembed/?frameElementId=tv1&symbol=${encodeURIComponent(sym)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=${theme==='light'?'f8f9fb':'0f1720'}&studies=RSI%40tv-basicstudies%1FMA%40tv-basicstudies&theme=${theme}&style=1&timezone=America%2FNew_York&locale=en&withdateranges=1&showpopupbutton=1" style="width:100%;height:100%;border:none" allowfullscreen></iframe>`;
 }
 
-// ── Yahoo Finance — direct browser fetch (no proxy, no crumb needed) ──────
-// Yahoo Finance v7/quote and v8/chart both have open CORS from any origin.
-// v10/quoteSummary needs a crumb — we get it from Yahoo's own getcrumb endpoint.
-// Strategy: try v7+v8 (always works), then try v10 with crumb (needs Yahoo session).
+// ══════════════════════════════════════════════════════════════════════════
+//  FINNHUB API — https://finnhub.io/api/v1
+//  Full CORS support, auth via ?token= query param.
+//  Free tier: 60 req/min. Endpoints used:
+//    /quote                       → realtime price
+//    /stock/profile2              → company info
+//    /stock/metric?metric=all     → 100+ financial metrics
+//    /stock/recommendation        → analyst buy/hold/sell breakdown
+//    /stock/price-target          → consensus price targets
+//    /stock/earnings              → historical EPS surprises
+//    /stock/eps-estimate          → forward EPS & revenue estimates
+//    /stock/insider-transactions  → Form 3/4/5 insider data
+// ══════════════════════════════════════════════════════════════════════════
+async function fh(path, params={}){
+  const p = new URLSearchParams({...params, token:FH_KEY});
+  const r = await fetch(`${FH_BASE}${path}?${p}`);
+  if(!r.ok) throw new Error(`Finnhub ${path} HTTP ${r.status}`);
+  return r.json();
+}
 
-const Q1 = 'https://query1.finance.yahoo.com';
-const Q2 = 'https://query2.finance.yahoo.com';
-
-// ── Get session crumb (needed for v10 only) ────────────────────────────────
-let _crumb = null;
-async function getCrumb(){
-  if(_crumb !== null) return _crumb;
+// ══════════════════════════════════════════════════════════════════════════
+//  MARKETAUX API — https://api.marketaux.com/v1
+//  Full CORS support, auth via ?api_token= query param.
+//  Free tier: 100 req/day.
+//  /news/all — news with NLP entity tagging & sentiment per article.
+// ══════════════════════════════════════════════════════════════════════════
+async function mxNews(sym){
   try{
-    // Try both hosts — whichever responds first
-    for(const h of [Q2,Q1]){
-      try{
-        const r = await fetch(h+'/v1/test/getcrumb',{
-          credentials:'include', cache:'no-store',
-          headers:{'Accept':'text/plain,*/*'},
-        });
-        if(r.ok){
-          const t = (await r.text()).trim();
-          // Valid crumb: short plain text, no HTML
-          if(t && t.length<40 && !t.startsWith('<') && !t.startsWith('{')){
-            _crumb = t; return _crumb;
-          }
-        }
-      }catch{}
-    }
-  }catch{}
-  _crumb = ''; return _crumb;  // empty = crumb unavailable
+    const p=new URLSearchParams({symbols:sym,filter_entities:'true',language:'en',limit:'20',api_token:MX_KEY});
+    const r=await fetch(`${MX_BASE}/news/all?${p}`);
+    if(!r.ok)return[];
+    const j=await r.json();
+    return j?.data||[];
+  }catch{return[];}
 }
 
-// ── v7 quote — price, market cap, 52W range, volume, PE etc. (no crumb) ──
-async function yfV7(sym){
-  for(const h of [Q1,Q2]){
-    try{
-      const r = await fetch(
-        `${h}/v7/finance/quote?symbols=${sym}&lang=en-US&region=US&corsDomain=finance.yahoo.com`,
-        {credentials:'include'}
-      );
-      if(r.ok){
-        const j = await r.json();
-        const q = j?.quoteResponse?.result?.[0];
-        if(q) return q;
-      }
-    }catch{}
-  }
-  return null;
-}
-
-// ── v8 chart — OHLCV meta (most reliable, always CORS-open) ───────────────
-async function yfV8(sym){
-  for(const h of [Q1,Q2]){
-    try{
-      const r = await fetch(
-        `${h}/v8/finance/chart/${sym}?interval=1d&range=5d&corsDomain=finance.yahoo.com`,
-        {credentials:'include'}
-      );
-      if(r.ok){
-        const j = await r.json();
-        const m = j?.chart?.result?.[0]?.meta;
-        if(m) return m;
-      }
-    }catch{}
-  }
-  return null;
-}
-
-// ── v10 quoteSummary — fundamentals (needs crumb, may fail without session) 
-async function yfV10(sym, modules){
-  const crumb = await getCrumb();
-  const cp = crumb ? `&crumb=${encodeURIComponent(crumb)}` : '';
-  for(const h of [Q2,Q1]){
-    try{
-      const url = `${h}/v10/finance/quoteSummary/${sym}?modules=${modules.join(',')}&corsDomain=finance.yahoo.com${cp}`;
-      const r = await fetch(url, {credentials:'include'});
-      if(r.ok){
-        const j = await r.json();
-        if(j?.quoteSummary?.result?.[0]) return j.quoteSummary.result[0];
-      }
-    }catch{}
-  }
-  return {};  // graceful empty — v7 already has the important stuff
-}
-
-// ── News search ───────────────────────────────────────────────────────────
-async function yfNews(sym){
-  for(const h of [Q1,Q2]){
-    try{
-      const r = await fetch(
-        `${h}/v1/finance/search?q=${sym}&newsCount=20&quotesCount=1&corsDomain=finance.yahoo.com`,
-        {credentials:'include'}
-      );
-      if(r.ok){
-        const j = await r.json();
-        if(j?.news) return j.news;
-      }
-    }catch{}
-  }
-  return [];
-}
-
-// ── Main lookup ────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════
+//  MAIN LOOKUP
+// ══════════════════════════════════════════════════════════════════════════
 let busy=false;
 async function go(sym){
   sym=(sym||document.getElementById('sym-inp').value).trim().toUpperCase().replace(/[^A-Z0-9.]/g,'');
   if(!sym||busy)return;
+
+  // Guard: keys must be injected by GitHub Actions
+  if(FH_KEY==='%%FINNHUB_KEY%%'){
+    document.getElementById('results').innerHTML=`
+      <div class="err-box">⚠ API keys not injected yet.<br><br>
+      The GitHub Actions workflow must replace <code>%%FINNHUB_KEY%%</code> and <code>%%MARKETAUX_KEY%%</code>
+      with your repo secrets before deploying. See the workflow file below.</div>`;
+    return;
+  }
+
   busy=true;
   document.getElementById('sym-inp').value=sym;
   const btn=document.getElementById('lbtn');
   btn.disabled=true; btn.textContent='⏳ Loading…';
-
-  // Chart loads instantly — no waiting for data
   setChart(sym);
-
   document.getElementById('results').innerHTML=`
     <div class="empty">
       <span class="spinner"></span>Loading <b style="color:var(--ac);font-family:'JetBrains Mono',monospace">${sym}</b>…
@@ -450,42 +348,38 @@ async function go(sym){
     </div>`;
 
   try{
-    // Kick off crumb fetch in background (used by v10)
-    getCrumb();
-
-    // v7 quote and v8 chart are CORS-open, always work
-    // v10 modules may silently return {} if no Yahoo session — that's OK
-    const [q7, q8, d1, d2, newsArr] = await Promise.all([
-      yfV7(sym),
-      yfV8(sym),
-      yfV10(sym,['summaryProfile','summaryDetail','financialData','defaultKeyStatistics',
-                  'calendarEvents','earnings','earningsTrend','recommendationTrend',
-                  'upgradeDowngradeHistory','institutionOwnership','majorHoldersBreakdown',
-                  'netSharePurchaseActivity','incomeStatementHistoryQuarterly']),
-      yfV10(sym,['earningsHistory','insiderTransactions']),
-      yfNews(sym),
+    // All 8 Finnhub calls + Marketaux news fired in parallel
+    const [quote, profile, metrics, recTrend, priceTarget,
+           earnings, epsEst, insiderTx, newsArr] = await Promise.all([
+      fh('/quote',                        {symbol:sym}),
+      fh('/stock/profile2',               {symbol:sym}),
+      fh('/stock/metric',                 {symbol:sym, metric:'all'}),
+      fh('/stock/recommendation',         {symbol:sym}),
+      fh('/stock/price-target',           {symbol:sym}),
+      fh('/stock/earnings',               {symbol:sym, limit:8}),
+      fh('/stock/eps-estimate',           {symbol:sym, freq:'quarterly'}),
+      fh('/stock/insider-transactions',   {symbol:sym}),
+      mxNews(sym),
     ]);
 
-    // q7 has price, mktCap, PE, 52W range — if even this is null, symbol is bad
-    if(!q7 && !q8){
-      throw new Error(`"${sym}" not found on Yahoo Finance. Check the ticker is a valid US stock.`);
+    // Validate — a zero price on an unknown symbol returns {c:0,d:0,...}
+    if(!quote?.c && !profile?.name){
+      throw new Error(`"${sym}" not found on Finnhub. Check the ticker is a valid US stock symbol.`);
     }
 
     addRecent(sym);
-    render(sym, q7||{}, q8||{}, d1||{}, d2||{}, newsArr||[]);
-    renderAI(sym, q7||{}, d1||{}, d2||{});
+    render(sym, quote, profile, metrics, recTrend, priceTarget, earnings, epsEst, insiderTx, newsArr);
+    renderAI(sym, quote, profile, metrics, recTrend, priceTarget, earnings);
 
   }catch(e){
     document.getElementById('results').innerHTML=`
-      <div class="err-box">⚠ ${e.message}</div>
+      <div class="err-box">⚠ ${e.message||'Fetch error — check console for details'}</div>
       <div class="empty"><span class="empty-ico">🔍</span>
         <div class="empty-title">Tips</div>
         <div class="empty-sub">
-          • Use exact Yahoo Finance tickers: <b>AAPL</b>, <b>CRM</b>, <b>NVDA</b>, <b>META</b><br>
-          • For richer data (fundamentals, insider data): open
-            <a href="https://finance.yahoo.com" target="_blank" style="color:var(--ac)">finance.yahoo.com</a>
-            in another tab first (sets a session cookie), then retry<br>
-          • Price &amp; chart data always works — fundamentals need a Yahoo session
+          • Use exact US tickers: <b>AAPL</b>, <b>NVDA</b>, <b>CRM</b>, <b>META</b>, <b>TSLA</b><br>
+          • Finnhub free tier allows 60 API calls/minute — wait a moment if rate-limited<br>
+          • Open browser console (F12) for the exact error message
         </div>
       </div>`;
   }finally{
@@ -494,637 +388,267 @@ async function go(sym){
   }
 }
 
-// ── Render all sections ────────────────────────────────────────────────────
-function render(sym, q7, q8, d1, d2, news){
-  // q7 = Yahoo v7 quote object (price, mktCap, PE, 52W, volume etc.)
-  // q8 = Yahoo v8 chart meta (price, prevClose, longName)
-  // d1 = v10 quoteSummary result (fundamentals, may be {} if no session)
-  // d2 = v10 earningsHistory + insiderTransactions (may be {})
+// ══════════════════════════════════════════════════════════════════════════
+//  RENDER  — maps API responses to HTML sections
+// ══════════════════════════════════════════════════════════════════════════
+function render(sym, Q, P, M, RT, PT, EH, EE, TX, NEWS){
+  /*
+    Q   = /quote           {c,d,dp,h,l,o,pc,t}
+    P   = /stock/profile2  {name,exchange,marketCapitalization,finnhubIndustry,logo,weburl,country,ipo,shareOutstanding,currency}
+    M   = /stock/metric    {metric:{...100+ fields...}}
+    RT  = /stock/recommendation  [{period,strongBuy,buy,hold,sell,strongSell}]
+    PT  = /stock/price-target    {targetHigh,targetLow,targetMean,targetMedian,lastUpdated}
+    EH  = /stock/earnings        [{actual,estimate,period,quarter,surprise,surprisePercent,symbol,year}]
+    EE  = /stock/eps-estimate    {data:[{epsAvg,epsHigh,epsLow,revenueAvg,revenueHigh,revenueLow,period,year,quarter}]}
+    TX  = /stock/insider-transactions  {data:[{name,share,change,transactionDate,transactionCode,transactionPrice,filingDate}]}
+    NEWS= Marketaux /news/all    [{title,url,source,published_at,entities:[{symbol,sentiment_score}],snippet}]
+  */
+  const met    = M?.metric||{};
+  const price  = Q?.c;
+  const chgP   = Q?.dp;
+  const name   = P?.name||sym;
+  const mktCap = P?.marketCapitalization ? P.marketCapitalization*1e6 : null;
+  const upside = price&&PT?.targetMean ? ((PT.targetMean-price)/price*100) : null;
 
-  const P  = d1.summaryProfile||{};
-  const D  = d1.summaryDetail||{};
-  const F  = d1.financialData||{};
-  const K  = d1.defaultKeyStatistics||{};
-  const CAL= d1.calendarEvents?.earnings||{};
-  const ET = d1.earningsTrend?.trend||[];
-  const RT = d1.recommendationTrend?.trend||[];
-  const UH = d1.upgradeDowngradeHistory?.history||[];
-  const INST=d1.institutionOwnership?.ownershipList||[];
-  const MAJ= d1.majorHoldersBreakdown||{};
-  const NSP= d1.netSharePurchaseActivity||{};
-  const IQ = d1.incomeStatementHistoryQuarterly?.incomeStatementHistory||[];
-  const EH = d2.earningsHistory?.history||[];
-  const TX = d2.insiderTransactions?.transactions||[];
-
-  // Price: v7 is most accurate (real-time), fallback to v8 meta
-  const price    = q7.regularMarketPrice      ?? q8.regularMarketPrice;
-  const prevClose= q7.regularMarketPreviousClose ?? q8.chartPreviousClose;
-  const chg      = price&&prevClose ? ((price-prevClose)/prevClose*100) : null;
-  const name     = q7.longName||q7.shortName||q8.longName||q8.shortName||sym;
-
-  // Market cap: v7 has it directly
-  const mktCap   = q7.marketCap ?? raw(D,'marketCap') ?? raw(K,'marketCap');
-
-  // Price targets: v7 has them
-  const tgtMean  = q7.targetMeanPrice  ?? raw(F,'targetMeanPrice');
-  const tgtHigh  = q7.targetHighPrice  ?? raw(F,'targetHighPrice');
-  const tgtLow   = q7.targetLowPrice   ?? raw(F,'targetLowPrice');
-  const upside   = price&&tgtMean ? ((tgtMean-price)/price*100) : null;
-
-  // Update chart panel name
   document.getElementById('cp-name').textContent=name;
 
   let h=`<div class="fin">`;
   h+=`<div id="ai-box"></div>`;
 
-  // ══ §1 OVERVIEW ══════════════════════════════════════════════════════════
+  // ══ §1  OVERVIEW ════════════════════════════════════════════════════════
   h+=`<div class="sh"><span>§1 · Overview — ${sym}</span></div>`;
 
-  // Use v7 fields for the 4 stat cards (always available)
-  const w52h = q7.fiftyTwoWeekHigh   ?? raw(D,'fiftyTwoWeekHigh');
-  const w52l = q7.fiftyTwoWeekLow    ?? raw(D,'fiftyTwoWeekLow');
-  const ma50 = q7.fiftyDayAverage    ?? raw(D,'fiftyDayAverage');
-  const peV  = q7.trailingPE         ?? raw(D,'trailingPE');
-  const fpeV = q7.forwardPE          ?? raw(D,'forwardPE');
+  const w52h  = met['52WeekHigh'];
+  const w52l  = met['52WeekLow'];
+  const ma50  = met['50DayMA'];
+  const peN   = met['peNormalizedAnnual'];
+  const peFwd = met['peForwardAnnual']||met['peForwardDiluted'];
 
   h+=`<div class="grid g4">
     <div class="sc"><div class="sc-l">Price</div>
-      <div class="sc-v ${pc(chg||0)}">${price?fc.format(price):'—'}</div>
-      <div class="sc-s">${chg!=null?(chg>0?'+':'')+fv(chg)+'% today':'—'}</div>
+      <div class="sc-v ${pc(chgP||0)}">${price?fc.format(price):'—'}</div>
+      <div class="sc-s">${chgP!=null?(chgP>0?'+':'')+fv(chgP)+'% today':'—'}${Q?.d!=null?' ('+fc.format(Q.d)+')':''}</div>
     </div>
     <div class="sc"><div class="sc-l">Market Cap</div>
       <div class="sc-v v-ac">${fb(mktCap)}</div>
-      <div class="sc-s">${q7.quoteType||P.sector||'—'} · ${q7.exchange||'—'}</div>
+      <div class="sc-s">${P?.exchange||'—'} · ${P?.currency||'USD'}</div>
     </div>
     <div class="sc"><div class="sc-l">52-Week Range</div>
       <div class="sc-v v-nu" style="font-size:11px">${w52l?'$'+fv(w52l):'—'} – ${w52h?'$'+fv(w52h):'—'}</div>
-      <div class="sc-s">50d avg: ${ma50?'$'+fv(ma50):'—'}</div>
+      <div class="sc-s">50d MA: ${ma50?'$'+fv(ma50):'—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">P/E (TTM / Fwd)</div>
-      <div class="sc-v v-gd">${peV!=null?fv(peV,1):'—'}</div>
-      <div class="sc-s">Fwd: ${fpeV!=null?fv(fpeV,1):'—'}</div>
+    <div class="sc"><div class="sc-l">P/E (Norm / Fwd)</div>
+      <div class="sc-v v-gd">${peN!=null?fv(peN,1):'—'}</div>
+      <div class="sc-s">Fwd P/E: ${peFwd!=null?fv(peFwd,1):'—'}</div>
     </div>
   </div>`;
 
   // Company blurb
-  const sector   = P.sector   || q7.sector   || '—';
-  const industry = P.industry || q7.industry || '—';
-  const country  = P.country  || q7.country  || '—';
-  const employees= P.fullTimeEmployees;
-  h+=`<div class="blurb">
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-      ${sector!=='—'?`<span class="badge bg-ac">${sector}</span>`:''}
-      ${industry!=='—'?`<span class="badge bg-pu">${industry}</span>`:''}
-      ${country!=='—'?`<span class="badge bg-or">${country}</span>`:''}
-      ${employees?`<span class="badge bg-gn">${fn.format(employees)} employees</span>`:''}
+  const logoHtml=P?.logo?`<img src="${P.logo}" style="width:34px;height:34px;border-radius:6px;object-fit:contain;background:#fff;padding:2px;flex-shrink:0" onerror="this.style.display='none'">`:''
+  h+=`<div class="blurb" style="display:flex;gap:10px;align-items:flex-start">
+    ${logoHtml}
+    <div style="flex:1">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">
+        ${P?.finnhubIndustry?`<span class="badge bg-ac">${P.finnhubIndustry}</span>`:''}
+        ${P?.country?`<span class="badge bg-or">${P.country.toUpperCase()}</span>`:''}
+        ${P?.exchange?`<span class="badge bg-pu">${P.exchange}</span>`:''}
+        ${P?.ipo?`<span class="badge bg-gn">IPO ${P.ipo}</span>`:''}
+      </div>
+      <span style="color:var(--tx);font-weight:600">${name}</span>
+      ${P?.weburl?` · <a href="${P.weburl}" target="_blank" rel="noopener" style="color:var(--ac);font-size:10px;font-family:'JetBrains Mono',monospace">${P.weburl.replace(/^https?:\/\//,'')}</a>`:''}
+      ${P?.shareOutstanding?`<br><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd)">Shares outstanding: ${fb(P.shareOutstanding*1e6)?.replace('$','')}</span>`:''}
     </div>
-    ${P.longBusinessSummary?P.longBusinessSummary.slice(0,340)+(P.longBusinessSummary.length>340?'…'):'No description available. (Visit finance.yahoo.com once to unlock full data.)'}
   </div>
   <div class="ext-row">
-    <span class="el tv" onclick="openTV('${sym}')">📈 TradingView Chart</span>
-    <a class="el" href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener">Yahoo Finance</a>
+    <span class="el tv" onclick="openTV('${sym}')">📈 TradingView</span>
     <a class="el" href="https://finviz.com/quote.ashx?t=${sym}" target="_blank" rel="noopener">Finviz</a>
     <a class="el" href="https://www.marketbeat.com/stocks/NASDAQ/${sym}/" target="_blank" rel="noopener">MarketBeat</a>
     <a class="el" href="https://earningswhispers.com/stocks/${sym.toLowerCase()}" target="_blank" rel="noopener">Earnings Whispers</a>
     <a class="el" href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${sym}&type=4&owner=include&count=20" target="_blank" rel="noopener">SEC Form 4</a>
+    ${P?.weburl?`<a class="el" href="${P.weburl}" target="_blank" rel="noopener">IR Site</a>`:''}
   </div>`;
 
-  // ══ §2 ANALYST RATINGS ════════════════════════════════════════════════════
+  // ══ §2  ANALYST RATINGS & PRICE TARGETS ═════════════════════════════════
   h+=`<div class="sh"><span>§2 · Analyst Ratings &amp; Price Targets</span></div>`;
-  // v7 has analyst data directly
-  const recKey  = (q7.recommendationKey||F.recommendationKey||'').toLowerCase();
-  const recMean = q7.averageAnalystRating||null;
-  const analystN= q7.numberOfAnalystOpinions ?? raw(F,'numberOfAnalystOpinions');
-  const recLbl  = {strongbuy:'Strong Buy',buy:'Buy',hold:'Hold',sell:'Sell',strongsell:'Strong Sell'}[recKey]||recKey||'—';
-  const recCls  = recKey.includes('buy')?'bg-gn':recKey==='hold'?'bg-or':(recKey.includes('sell')?'bg-rd':'bg-ac');
-  const recNow  = RT[0]||{};
-  const totAn   = (raw(recNow,'strongBuy')||0)+(raw(recNow,'buy')||0)+(raw(recNow,'hold')||0)+(raw(recNow,'sell')||0)+(raw(recNow,'strongSell')||0);
+
+  const rec0   = RT?.[0]||{};
+  const totAn  = (rec0.strongBuy||0)+(rec0.buy||0)+(rec0.hold||0)+(rec0.sell||0)+(rec0.strongSell||0);
+  const bullPct= totAn?Math.round(((rec0.strongBuy||0)+(rec0.buy||0))/totAn*100):null;
+  const consens= bullPct!=null?(bullPct>=60?'Strong Buy':bullPct>=45?'Buy':bullPct>=30?'Hold':'Sell'):'—';
+  const conCls = consens==='Strong Buy'||consens==='Buy'?'bg-gn':consens==='Hold'?'bg-or':consens==='Sell'?'bg-rd':'bg-ac';
 
   h+=`<div class="grid g4">
     <div class="sc"><div class="sc-l">Consensus</div>
-      <div class="sc-v" style="font-size:12px"><span class="badge ${recCls}">${recLbl}</span></div>
-      <div class="sc-s">${analystN?analystN+' analysts':'—'}${recMean?' · '+recMean:''}</div>
+      <div class="sc-v" style="font-size:12px"><span class="badge ${conCls}">${consens}</span></div>
+      <div class="sc-s">${totAn?totAn+' analysts · '+bullPct+'% bullish':'No data'}${rec0.period?' · '+rec0.period:''}</div>
     </div>
     <div class="sc"><div class="sc-l">Price Target (Mean)</div>
-      <div class="sc-v ${upside!=null?pc(upside):'v-nu'}">${tgtMean?fc.format(tgtMean):'—'}</div>
-      <div class="sc-s">${upside!=null?(upside>0?'+':'')+fv(upside)+'% upside':'—'}</div>
+      <div class="sc-v ${upside!=null?pc(upside):'v-nu'}">${PT?.targetMean?fc.format(PT.targetMean):'—'}</div>
+      <div class="sc-s">${upside!=null?(upside>0?'+':'')+fv(upside)+'% upside vs current':'—'}</div>
     </div>
     <div class="sc"><div class="sc-l">PT High (Bull)</div>
-      <div class="sc-v v-up">${tgtHigh?fc.format(tgtHigh):'—'}</div>
-      <div class="sc-s">Best-case target</div>
+      <div class="sc-v v-up">${PT?.targetHigh?fc.format(PT.targetHigh):'—'}</div>
+      <div class="sc-s">Median: ${PT?.targetMedian?fc.format(PT.targetMedian):'—'}</div>
     </div>
     <div class="sc"><div class="sc-l">PT Low (Bear)</div>
-      <div class="sc-v v-dn">${tgtLow?fc.format(tgtLow):'—'}</div>
-      <div class="sc-s">Worst-case target</div>
+      <div class="sc-v v-dn">${PT?.targetLow?fc.format(PT.targetLow):'—'}</div>
+      <div class="sc-s">Updated: ${fd(PT?.lastUpdated)}</div>
     </div>
   </div>`;
 
   if(totAn>0){
-    const sb=raw(recNow,'strongBuy')||0,b=raw(recNow,'buy')||0,hh=raw(recNow,'hold')||0,
-          s=raw(recNow,'sell')||0,ss=raw(recNow,'strongSell')||0;
+    const sb=rec0.strongBuy||0,b=rec0.buy||0,hh=rec0.hold||0,s=rec0.sell||0,ss=rec0.strongSell||0;
+    const minibar=(n,c)=>`<div style="height:4px;background:var(--bd);border-radius:2px;margin-top:3px;overflow:hidden"><div style="width:${totAn?Math.round(n/totAn*100):0}%;height:100%;background:${c};border-radius:2px"></div></div>`;
     h+=`<div class="grid g3" style="margin-bottom:4px">
-      <div class="sc"><div class="sc-l">Strong Buy / Buy</div><div class="sc-v v-up">${sb+b} <span style="font-size:9px;color:var(--txd)">(${sb} SB · ${b} B)</span></div></div>
-      <div class="sc"><div class="sc-l">Hold</div><div class="sc-v v-or">${hh}</div></div>
-      <div class="sc"><div class="sc-l">Sell / Strong Sell</div><div class="sc-v v-dn">${s+ss} <span style="font-size:9px;color:var(--txd)">(${s} S · ${ss} SS)</span></div></div>
+      <div class="sc"><div class="sc-l">Strong Buy / Buy</div>
+        <div class="sc-v v-up">${sb+b}</div>
+        <div class="sc-s">${sb} SB · ${b} B${minibar(sb+b,'var(--gn)')}</div>
+      </div>
+      <div class="sc"><div class="sc-l">Hold</div>
+        <div class="sc-v v-or">${hh}</div>
+        <div class="sc-s">${hh} neutral${minibar(hh,'var(--or)')}</div>
+      </div>
+      <div class="sc"><div class="sc-l">Sell / Strong Sell</div>
+        <div class="sc-v v-dn">${s+ss}</div>
+        <div class="sc-s">${s} S · ${ss} SS${minibar(s+ss,'var(--rd)')}</div>
+      </div>
     </div>`;
   }
 
-  if(UH.length){
-    h+=`<table><thead><tr><th>Date</th><th>Firm</th><th>Action</th><th>From</th><th>To</th><th>Target</th></tr></thead><tbody>`;
-    UH.slice(0,15).forEach(u=>{
-      const a=(u.action||'').toLowerCase();
-      const acls=a==='up'||a==='init'||a==='up_r'?'pos':a==='down'?'neg':'nu';
-      const albl={up:'⬆ Upgrade',down:'⬇ Downgrade',init:'★ Initiate',reit:'→ Reiterate',main:'→ Maintain',up_r:'⬆ Upgrade',down_r:'⬇ Downgrade'}[a]||u.action||'—';
-      h+=`<tr><td class="nu">${fd(u.epochGradeDate)}</td><td style="font-weight:600;color:var(--tx)">${u.firm||'—'}</td><td class="${acls}">${albl}</td><td class="nu">${u.fromGrade||'—'}</td><td style="color:var(--tx)">${u.toGrade||'—'}</td><td class="est">${u.priceTarget?.raw?fc.format(u.priceTarget.raw):'—'}</td></tr>`;
+  // Trend across last 4 periods
+  if(Array.isArray(RT)&&RT.length>1){
+    h+=`<table><thead><tr><th>Period</th><th>Strong Buy</th><th>Buy</th><th>Hold</th><th>Sell</th><th>Strong Sell</th></tr></thead><tbody>`;
+    RT.slice(0,4).forEach(r=>{
+      h+=`<tr><td style="color:var(--ac)">${r.period}</td>
+        <td class="pos">${r.strongBuy||0}</td><td class="pos">${r.buy||0}</td>
+        <td class="est">${r.hold||0}</td>
+        <td class="neg">${r.sell||0}</td><td class="neg">${r.strongSell||0}</td></tr>`;
     });
     h+=`</tbody></table>`;
-  }else{
-    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No upgrade/downgrade history (visit finance.yahoo.com once for full data)</div>`;
   }
 
-  // ══ §3 EARNINGS CALENDAR ══════════════════════════════════════════════════
-  h+=`<div class="sh"><span>§3 · Earnings Calendar — Next &amp; History</span></div>`;
-  // v7 has earningsTimestamp
-  const nextEarnTs = q7.earningsTimestamp;
-  const nextStr    = nextEarnTs ? fd(nextEarnTs) : (CAL.earningsDate?.[0]?.raw ? fd(CAL.earningsDate[0].raw) : 'Not scheduled');
-  const q0=ET.find(t=>t?.period==='0q');
-  const nextEPS =raw(q0,'earningsEstimate','avg');
-  const nextRev =raw(q0,'revenueEstimate','avg');
-  const nextEPSL=raw(q0,'earningsEstimate','low');
-  const nextEPSH=raw(q0,'earningsEstimate','high');
-  const nextRevL=raw(q0,'revenueEstimate','low');
-  const nextRevH=raw(q0,'revenueEstimate','high');
+  // ══ §3  EARNINGS ════════════════════════════════════════════════════════
+  h+=`<div class="sh"><span>§3 · Earnings — History &amp; Forward Estimates</span></div>`;
 
-  // v7 has epsTrailingTwelveMonths and epsForward  
-  const epsActV7 = q7.epsTrailingTwelveMonths;
-  const epsFwdV7 = q7.epsForward;
+  const nextEst = EE?.data?.[0];
+  const eps3y   = met['epsGrowth3Y'];
+  const eps5y   = met['epsGrowth5Y'];
 
   h+=`<div class="grid g3">
-    <div class="sc"><div class="sc-l">Next Earnings Date</div>
-      <div class="sc-v v-pu" style="font-size:12px">${nextStr}</div>
-      <div class="sc-s">${q7.earningsTimestampStart&&q7.earningsTimestampEnd?fd(q7.earningsTimestampStart)+' – '+fd(q7.earningsTimestampEnd):''}</div>
+    <div class="sc"><div class="sc-l">Next Q — EPS Est.</div>
+      <div class="sc-v est">${nextEst?.epsAvg!=null?'$'+fv(nextEst.epsAvg):'—'}</div>
+      <div class="sc-s">${nextEst?.epsLow!=null?'Range: $'+fv(nextEst.epsLow)+' – $'+fv(nextEst.epsHigh):nextEst?.period||'—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">EPS Estimate (Next Q)</div>
-      <div class="sc-v est">${nextEPS!=null?'$'+fv(nextEPS):epsFwdV7!=null?'$'+fv(epsFwdV7):'—'}</div>
-      <div class="sc-s">${nextEPSL!=null?'Range: $'+fv(nextEPSL)+' – $'+fv(nextEPSH||0):'—'}</div>
+    <div class="sc"><div class="sc-l">Next Q — Rev. Est.</div>
+      <div class="sc-v est">${nextEst?.revenueAvg!=null?fb(nextEst.revenueAvg):'—'}</div>
+      <div class="sc-s">${nextEst?.period||'Next quarter'}</div>
     </div>
-    <div class="sc"><div class="sc-l">Revenue Estimate (Next Q)</div>
-      <div class="sc-v est">${nextRev!=null?fb(nextRev):'—'}</div>
-      <div class="sc-s">${nextRevL!=null?'Range: '+fb(nextRevL)+' – '+fb(nextRevH||0):'—'}</div>
+    <div class="sc"><div class="sc-l">EPS CAGR</div>
+      <div class="sc-v v-ac">${eps3y!=null?fp(eps3y):'—'}</div>
+      <div class="sc-s">3yr${eps5y!=null?' · 5yr: '+fp(eps5y):''}</div>
     </div>
   </div>`;
 
-  if(EH.length){
-    h+=`<table><thead><tr><th>Quarter</th><th>EPS Actual</th><th>EPS Est</th><th>Surprise %</th><th>Revenue</th></tr></thead><tbody>`;
+  if(Array.isArray(EH)&&EH.length){
+    h+=`<table><thead><tr><th>Period</th><th>EPS Actual</th><th>EPS Est.</th><th>Surprise</th><th>Surprise %</th></tr></thead><tbody>`;
     EH.slice(0,8).forEach(q=>{
-      const ea=raw(q,'epsActual'),ee=raw(q,'epsEstimated');
-      const surp=ea!=null&&ee!=null&&ee!==0?((ea-ee)/Math.abs(ee)*100):null;
-      const qts=raw(q,'quarter');
-      let rev=null;
-      for(const iq of IQ){if(qts&&Math.abs((raw(iq,'endDate')||0)-qts)<8e6){rev=raw(iq,'totalRevenue');break;}}
+      const surp=q.surprise, surpP=q.surprisePercent;
       h+=`<tr>
-        <td style="color:var(--ac);font-weight:700">${q.quarter?.fmt||'—'}</td>
-        <td class="${ea!=null?(ea>=0?'pos':'neg'):''}">${ea!=null?'$'+fv(ea):'—'}</td>
-        <td class="est">${ee!=null?'$'+fv(ee):'—'}</td>
-        <td class="${surp!=null?(surp>=0?'pos':'neg'):''}">${surp!=null?(surp>0?'+':'')+fv(surp)+'%':'—'}</td>
-        <td class="nu">${rev!=null?fb(rev):'—'}</td>
+        <td style="color:var(--ac);font-weight:700">${q.year||''}${q.quarter?' Q'+q.quarter:q.period?(' '+q.period):''}</td>
+        <td class="${q.actual!=null?(q.actual>=0?'pos':'neg'):''}">${q.actual!=null?'$'+fv(q.actual):'—'}</td>
+        <td class="est">${q.estimate!=null?'$'+fv(q.estimate):'—'}</td>
+        <td class="${surp!=null?(surp>=0?'pos':'neg'):''}">${surp!=null?'$'+(surp>0?'+':'')+fv(surp):'—'}</td>
+        <td class="${surpP!=null?(surpP>=0?'pos':'neg'):''}">${surpP!=null?(surpP>0?'+':'')+fv(surpP)+'%':'—'}</td>
       </tr>`;
     });
     h+=`</tbody></table>`;
-  }else if(epsActV7!=null){
-    h+=`<div class="grid g2" style="margin-bottom:12px">
-      <div class="sc"><div class="sc-l">EPS (TTM)</div><div class="sc-v ${epsActV7>=0?'v-up':'v-dn'}">$${fv(epsActV7)}</div><div class="sc-s">Trailing 12 months</div></div>
-      <div class="sc"><div class="sc-l">EPS (Forward)</div><div class="sc-v est">${epsFwdV7!=null?'$'+fv(epsFwdV7):'—'}</div><div class="sc-s">Next 12 months est.</div></div>
-    </div>`;
   }
 
-  // ══ §4 SHORT INTEREST & FLOAT ═════════════════════════════════════════════
-  h+=`<div class="sh"><span>§4 · Short Interest, Float &amp; Shares</span></div>`;
-  const sharesOut  = q7.sharesOutstanding  ?? raw(K,'sharesOutstanding');
-  const floatSh    = q7.floatShares        ?? raw(K,'floatShares');
-  const sharesShort= raw(K,'sharesShort');
-  const shortPrior = raw(K,'sharesShortPriorMonth');
-  const siFloat    = raw(K,'shortPercentOfFloat');
-  const dtc        = raw(K,'shortRatio');
-  const siPct      = siFloat!=null?siFloat*100:null;
+  // ══ §4  KEY METRICS & FINANCIALS ════════════════════════════════════════
+  h+=`<div class="sh"><span>§4 · Key Metrics &amp; Financials (Finnhub)</span></div>`;
+
+  const epsTTM  = met['epsTTM'];
+  const ps      = met['psAnnual']||met['psTTM'];
+  const pb      = met['pbAnnual'];
+  const grossM  = met['grossMarginTTM'];
+  const netM    = met['netProfitMarginTTM'];
+  const roe     = met['roeRfy']||met['roe5Y'];
+  const roa     = met['roaRfy']||met['roa5Y'];
+  const d2e     = met['totalDebt/totalEquityAnnual'];
+  const currR   = met['currentRatioAnnual'];
+  const revGrow = met['revenueGrowth3Y']||met['revenueGrowth5Y'];
+  const fcf     = met['freeCashFlowAnnual'];    // in millions
+  const divYld  = met['dividendYieldIndicatedAnnual'];
+  const divRate = met['dividendsPerShareAnnual'];
+  const beta    = met['beta'];
+  const avgVol  = met['10DayAverageTradingVolume'];
 
   h+=`<div class="grid g4">
-    <div class="sc"><div class="sc-l">Shares Outstanding</div>
-      <div class="sc-v v-ac">${fb(sharesOut)?.replace('$','')}</div>
-      <div class="sc-s">Total issued</div>
+    <div class="sc"><div class="sc-l">Gross / Net Margin</div>
+      <div class="sc-v ${grossM>50?'v-up':grossM>0?'v-nu':'v-dn'}">${grossM!=null?fv(grossM,1)+'%':'—'}</div>
+      <div class="sc-s">Net: ${netM!=null?fv(netM,1)+'%':'—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">Float</div>
-      <div class="sc-v v-ac">${fb(floatSh)?.replace('$','')}</div>
-      <div class="sc-s">${sharesOut&&floatSh?fv(floatSh/sharesOut*100,1)+'% of outstanding':'—'}</div>
+    <div class="sc"><div class="sc-l">ROE / ROA</div>
+      <div class="sc-v ${roe>15?'v-up':roe>0?'v-nu':'v-dn'}">${roe!=null?fv(roe,1)+'%':'—'}</div>
+      <div class="sc-s">ROA: ${roa!=null?fv(roa,1)+'%':'—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">Shares Short</div>
-      <div class="sc-v ${siPct!=null?(siPct>20?'v-dn':siPct>10?'v-or':'v-nu'):'v-nu'}">${sharesShort!=null?fb(sharesShort)?.replace('$',''):'—'}</div>
-      <div class="sc-s">${siPct!=null?fv(siPct,1)+'% of float':'—'}<div class="si-bar"><div class="si-bar-f" style="width:${Math.min(siPct||0,50)*2}%"></div></div></div>
+    <div class="sc"><div class="sc-l">Revenue Growth</div>
+      <div class="sc-v v-ac">${revGrow!=null?fp(revGrow):'—'}</div>
+      <div class="sc-s">3yr CAGR</div>
     </div>
-    <div class="sc"><div class="sc-l">Days to Cover</div>
-      <div class="sc-v ${dtc!=null?(dtc>5?'v-dn':dtc>2?'v-or':'v-nu'):'v-nu'}">${dtc!=null?fv(dtc,1):'—'}</div>
-      <div class="sc-s">${shortPrior!=null?'Prior mo: '+fb(shortPrior)?.replace('$',''):'Short ratio'}</div>
+    <div class="sc"><div class="sc-l">Free Cash Flow</div>
+      <div class="sc-v ${fcf!=null?(fcf>0?'v-up':'v-dn'):'v-nu'}">${fcf!=null?fb(fcf*1e6):'—'}</div>
+      <div class="sc-s">Annual (last FY)</div>
     </div>
-  </div>`;
-
-  // ══ §5 INSTITUTIONAL OWNERSHIP ════════════════════════════════════════════
-  h+=`<div class="sh"><span>§5 · Institutional &amp; Fund Ownership</span></div>`;
-  const instPct    = raw(MAJ,'institutionsPercentHeld');
-  const instFloatP = raw(MAJ,'institutionsFloatPercentHeld');
-  const insiderPct = raw(MAJ,'insidersPercentHeld');
-  const netInfo    = raw(NSP,'netInfoCount');
-
-  h+=`<div class="grid g3">
-    <div class="sc"><div class="sc-l">Institutional %</div>
-      <div class="sc-v v-ac">${instPct!=null?fv(instPct*100,1)+'%':'—'}</div>
-      <div class="sc-s">Of outstanding<div class="pbar"><div class="pbar-f" style="width:${Math.min((instPct||0)*100,100)}%;background:var(--ac)"></div></div></div>
-    </div>
-    <div class="sc"><div class="sc-l">Fund Float %</div>
-      <div class="sc-v v-pu">${instFloatP!=null?fv(instFloatP*100,1)+'%':'—'}</div>
-      <div class="sc-s">Float held by funds<div class="pbar"><div class="pbar-f" style="width:${Math.min((instFloatP||0)*100,100)}%;background:var(--pu)"></div></div></div>
-    </div>
-    <div class="sc"><div class="sc-l">Insider %</div>
-      <div class="sc-v v-gd">${insiderPct!=null?fv(insiderPct*100,1)+'%':'—'}</div>
-      <div class="sc-s">${netInfo!=null?(netInfo>0?'<span class="badge bg-gn">Net Buying</span>':'<span class="badge bg-rd">Net Selling</span>'):'—'}</div>
-    </div>
-  </div>`;
-
-  if(INST.length){
-    h+=`<table><thead><tr><th>Institution</th><th>Shares</th><th>% Out</th><th>Value</th><th>Date</th></tr></thead><tbody>`;
-    INST.slice(0,10).forEach(i=>{
-      const pct=raw(i,'pctHeld'),val=raw(i,'value'),pos=raw(i,'position');
-      h+=`<tr><td style="font-weight:600;color:var(--tx)">${i.organization||'—'}</td><td>${fb(pos)?.replace('$','')}</td><td style="color:var(--ac)">${pct!=null?fv(pct*100,2)+'%':'—'}</td><td style="color:var(--gd)">${val?fb(val):'—'}</td><td class="nu">${fd(raw(i,'reportDate'))}</td></tr>`;
-    });
-    h+=`</tbody></table>`;
-  }
-
-  // ══ §6 INSIDER TRANSACTIONS ═══════════════════════════════════════════════
-  h+=`<div class="sh"><span>§6 · Insider Transactions (SEC Form 4)</span></div>`;
-  if(TX.length){
-    h+=`<table><thead><tr><th>Date</th><th>Name</th><th>Title</th><th>Type</th><th>Shares</th><th>Value</th></tr></thead><tbody>`;
-    TX.slice(0,15).forEach(t=>{
-      const desc=(t.transactionDescription||'').toLowerCase();
-      const isBuy=desc.includes('buy')||desc.includes('purchase')||desc.includes('acqui');
-      const isSell=desc.includes('sale')||desc.includes('sell');
-      h+=`<tr><td class="nu">${fd(raw(t,'startDate'))}</td><td style="font-weight:600;color:var(--tx)">${t.filerName||'—'}</td><td class="nu" style="font-size:9.5px">${t.filerRelation||'—'}</td><td class="${isBuy?'pos':isSell?'neg':''}">${t.transactionDescription||'—'}</td><td>${fb(raw(t,'shares'))?.replace('$','')}</td><td class="est">${raw(t,'value')!=null?fb(raw(t,'value')):'—'}</td></tr>`;
-    });
-    h+=`</tbody></table>`;
-  }else{
-    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">Insider data requires a Yahoo Finance session — <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" style="color:var(--ac)">open in Yahoo</a> first then retry</div>`;
-  }
-
-  // ══ §7 STOCK SPLIT & DIVIDENDS ════════════════════════════════════════════
-  h+=`<div class="sh"><span>§7 · Stock Split &amp; Corporate Actions</span></div>`;
-  const splitF  = K.lastSplitFactor;
-  const splitD  = raw(K,'lastSplitDate');
-  // v7 has dividend data directly
-  const divYld  = q7.dividendYield   ?? raw(D,'dividendYield');
-  const divRate = q7.dividendRate    ?? raw(D,'dividendRate');
-  const exDiv   = q7.dividendDate    ?? raw(D,'exDividendDate');
-  const payDate = raw(D,'dividendDate')||raw(D,'payoutDate');
-  const payRatio= raw(D,'payoutRatio');
-
-  if(splitF&&splitF!=='1:1'){
-    const parts=String(splitF).split(':').map(Number);
-    const isReverse=parts.length===2&&parts[0]<parts[1];
-    h+=`<div class="split-box${isReverse?' rs'}"><div class="split-ico">${isReverse?'⬇':'⬆'}</div>
-      <div class="split-info"><strong>${isReverse?'Reverse Split':'Stock Split'} — ${splitF}</strong>
-      <span>${splitD?'Date: '+fd(splitD)+'   ':''} ${isReverse?'Shares reduced, price increased.':'Shares increased, price reduced.'}</span></div></div>`;
-  }
-
-  h+=`<div class="grid g3">
-    <div class="sc"><div class="sc-l">Dividend Yield</div>
-      <div class="sc-v ${divYld?'v-up':'v-nu'}">${divYld!=null?fv(divYld*100,2)+'%':'None'}</div>
-      <div class="sc-s">${divRate?'$'+fv(divRate)+'/yr':'—'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Ex-Dividend Date</div>
-      <div class="sc-v v-nu" style="font-size:12px">${fd(exDiv)}</div>
-      <div class="sc-s">Pay date: ${fd(payDate)}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Split / Payout Ratio</div>
-      <div class="sc-v v-nu" style="font-size:11px">${splitF||'None on record'}</div>
-      <div class="sc-s">${payRatio!=null?fv(payRatio*100,1)+'%':'—'}${splitD?' · '+fd(splitD):''}</div>
-    </div>
-  </div>`;
-
-  // ══ §8 VALUATION & FINANCIALS ═════════════════════════════════════════════
-  h+=`<div class="sh"><span>§8 · Valuation &amp; Key Financials</span></div>`;
-  // v7 has many of these directly
-  const revTTM  = raw(F,'totalRevenue')  || q7.totalRevenue;
-  const revGrow = raw(F,'revenueGrowth') ;
-  const grossM  = raw(F,'grossMargins')  ;
-  const profitM = raw(F,'profitMargins') ;
-  const epsTTM  = raw(K,'trailingEps')   || q7.epsTrailingTwelveMonths;
-  const epsFwd  = raw(K,'forwardEps')    || q7.epsForward;
-  const psRatio = raw(D,'priceToSalesTrailing12Months') || q7.priceToSalesTrailing12Months;
-  const pegR    = raw(K,'pegRatio');
-  const roe     = raw(F,'returnOnEquity');
-  const roa     = raw(F,'returnOnAssets');
-  const d2e     = raw(F,'debtToEquity');
-  const currR   = raw(F,'currentRatio');
-  const fcf     = raw(F,'freeCashflow');
-  const opcf    = raw(F,'operatingCashflow');
-  const beta    = q7.beta ?? raw(D,'beta');
-  const avgVol  = q7.averageVolume ?? raw(D,'averageVolume');
-
-  h+=`<div class="grid g4">
-    <div class="sc"><div class="sc-l">Revenue (TTM)</div><div class="sc-v v-ac">${fb(revTTM)}</div><div class="sc-s">Growth: ${fp(revGrow)}</div></div>
-    <div class="sc"><div class="sc-l">Gross / Profit Margin</div><div class="sc-v ${grossM>0.5?'v-up':'v-nu'}">${fp(grossM)}</div><div class="sc-s">Net: ${fp(profitM)}</div></div>
-    <div class="sc"><div class="sc-l">EPS TTM / Fwd</div><div class="sc-v ${epsTTM>=0?'v-up':'v-dn'}">${epsTTM!=null?'$'+fv(epsTTM):'—'}</div><div class="sc-s">Fwd: ${epsFwd!=null?'$'+fv(epsFwd):'—'}</div></div>
-    <div class="sc"><div class="sc-l">P/S · PEG</div><div class="sc-v v-gd">${psRatio!=null?fv(psRatio,1)+'x':'—'}</div><div class="sc-s">PEG: ${pegR!=null?fv(pegR,2):'—'}</div></div>
   </div>
   <div class="grid g4">
-    <div class="sc"><div class="sc-l">ROE / ROA</div><div class="sc-v ${roe>0.15?'v-up':roe>0?'v-nu':'v-dn'}">${fp(roe)}</div><div class="sc-s">ROA: ${fp(roa)}</div></div>
-    <div class="sc"><div class="sc-l">Debt / Equity</div><div class="sc-v ${d2e>1.5?'v-or':'v-nu'}">${d2e!=null?fv(d2e,1):'—'}</div><div class="sc-s">Current ratio: ${currR!=null?fv(currR,2):'—'}</div></div>
-    <div class="sc"><div class="sc-l">Free Cash Flow</div><div class="sc-v ${fcf>0?'v-up':'v-dn'}">${fb(fcf)}</div><div class="sc-s">Op CF: ${fb(opcf)}</div></div>
-    <div class="sc"><div class="sc-l">Beta / Avg Volume</div><div class="sc-v ${beta>1.5?'v-or':beta<0.5?'v-pu':'v-nu'}">${beta!=null?fv(beta,2):'—'}</div><div class="sc-s">${fb(avgVol)?.replace('$','')}</div></div>
+    <div class="sc"><div class="sc-l">EPS (TTM)</div>
+      <div class="sc-v ${epsTTM!=null?(epsTTM>=0?'v-up':'v-dn'):'v-nu'}">${epsTTM!=null?'$'+fv(epsTTM):'—'}</div>
+      <div class="sc-s">Trailing 12 months</div>
+    </div>
+    <div class="sc"><div class="sc-l">P/S · P/B</div>
+      <div class="sc-v v-gd">${ps!=null?fv(ps,1)+'x':'—'}</div>
+      <div class="sc-s">P/B: ${pb!=null?fv(pb,1)+'x':'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">Debt / Equity</div>
+      <div class="sc-v ${d2e!=null?(d2e>1.5?'v-or':'v-nu'):'v-nu'}">${d2e!=null?fv(d2e,1):'—'}</div>
+      <div class="sc-s">Current ratio: ${currR!=null?fv(currR,2):'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">Beta · Dividend</div>
+      <div class="sc-v ${beta!=null?(beta>1.5?'v-or':beta<0.5?'v-pu':'v-nu'):'v-nu'}">${beta!=null?fv(beta,2):'—'}</div>
+      <div class="sc-s">Yield: ${divYld!=null?fv(divYld,2)+'%':'None'}${divRate?' · $'+fv(divRate)+'/yr':''}</div>
+    </div>
   </div>`;
 
-  // ══ §9 NEWS FEED ══════════════════════════════════════════════════════════
-  h+=`<div class="sh"><span>§9 · Latest News &amp; Headlines</span></div>`;
-  if(news.length){
-    h+=`<div class="news-feed">`;
-    news.slice(0,20).forEach(n=>{
-      const tl=(n.title||'').toLowerCase();
-      const dotCls=tl.match(/upgrade|beat|jump|surge|soar|raise/)?'gn':tl.match(/downgrade|miss|fall|cut|lose|warn/)?'rd':tl.match(/earn|split|divid/)?'or':tl.match(/insider|sec|filing/)?'pu':'';
-      const tagText=tl.match(/upgrade/)?'UPGRADE':tl.match(/downgrade/)?'DOWNGRADE':tl.match(/earnings|eps/)?'EARNINGS':tl.match(/split/)?'SPLIT':tl.match(/insider/)?'INSIDER':'';
-      const tagCls=tagText==='UPGRADE'?'bg-gn':tagText==='DOWNGRADE'?'bg-rd':tagText==='EARNINGS'?'bg-pu':tagText==='SPLIT'?'bg-gd':'bg-or';
-      h+=`<a class="ni" href="${n.link||'#'}" target="_blank" rel="noopener">
-        <div class="ni-dot ${dotCls}"></div>
-        <div class="ni-body">
-          <div class="ni-title">${tagText?`<span class="badge ${tagCls}" style="margin-right:6px">${tagText}</span>`:''} ${n.title||'—'}</div>
-          <div class="ni-meta"><span class="ni-src">${n.publisher||'—'}</span><span>${ago(n.providerPublishTime)}</span></div>
-        </div>
-      </a>`;
+  // ══ §5  INSIDER TRANSACTIONS ════════════════════════════════════════════
+  h+=`<div class="sh"><span>§5 · Insider Transactions (Form 3/4/5 via Finnhub)</span></div>`;
+  const txData = TX?.data||[];
+  if(txData.length){
+    let netBuy=0, netSell=0;
+    txData.forEach(t=>{
+      if(['P','A'].includes(t.transactionCode)) netBuy+=Math.abs(t.change||0);
+      else if(['S','D'].includes(t.transactionCode)) netSell+=Math.abs(t.change||0);
     });
-    h+=`</div>`;
-  }else{
-    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No news found</div>`;
-  }
-
-  h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txm);margin-top:14px;padding:10px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;line-height:1.7">
-    ⚠ Price &amp; basic data via Yahoo Finance v7/v8 (always available). Fundamentals, insider &amp; earnings detail via v10 (requires a Yahoo Finance session cookie — visit finance.yahoo.com once if fields show —). Not financial advice.
-  </div></div>`;
-
-  document.getElementById('results').innerHTML=h;
-}
-
-  // Update chart panel name
-  document.getElementById('cp-name').textContent=name;
-
-  let h=`<div class="fin">`;
-
-  // ── AI placeholder (filled async) ────────────────────────────────────────
-  h+=`<div id="ai-box"></div>`;
-
-  // ══ §1 OVERVIEW ══════════════════════════════════════════════════════════
-  h+=`<div class="sh"><span>§1 · Overview — ${sym}</span></div>`;
-  const mktCap=raw(D,'marketCap')||raw(K,'marketCap');
-  const tgtMean=raw(F,'targetMeanPrice');
-  const tgtHigh=raw(F,'targetHighPrice');
-  const tgtLow=raw(F,'targetLowPrice');
-  const upside=price&&tgtMean?((tgtMean-price)/price*100):null;
-
-  h+=`<div class="grid g4">
-    <div class="sc"><div class="sc-l">Price</div>
-      <div class="sc-v ${pc(chg||0)}">${price?fc.format(price):'—'}</div>
-      <div class="sc-s">${chg!=null?(chg>0?'+':'')+fv(chg)+'% today':'Market closed'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Market Cap</div>
-      <div class="sc-v v-ac">${fb(mktCap)}</div>
-      <div class="sc-s">${P.sector||'—'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">52-Week Range</div>
-      <div class="sc-v v-nu" style="font-size:11px">${raw(D,'fiftyTwoWeekLow')!=null?'$'+fv(raw(D,'fiftyTwoWeekLow')):'—'} – ${raw(D,'fiftyTwoWeekHigh')!=null?'$'+fv(raw(D,'fiftyTwoWeekHigh')):'—'}</div>
-      <div class="sc-s">50d avg: ${raw(D,'fiftyDayAverage')!=null?'$'+fv(raw(D,'fiftyDayAverage')):'—'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">P/E (TTM / Fwd)</div>
-      <div class="sc-v v-gd">${raw(D,'trailingPE')!=null?fv(raw(D,'trailingPE'),1):'—'}</div>
-      <div class="sc-s">Fwd: ${raw(D,'forwardPE')!=null?fv(raw(D,'forwardPE'),1):'—'}</div>
-    </div>
-  </div>`;
-
-  // Company blurb + badges + ext links
-  h+=`<div class="blurb">
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-      ${P.sector?`<span class="badge bg-ac">${P.sector}</span>`:''}
-      ${P.industry?`<span class="badge bg-pu">${P.industry}</span>`:''}
-      ${P.country?`<span class="badge bg-or">${P.country}</span>`:''}
-      ${P.fullTimeEmployees?`<span class="badge bg-gn">${fn.format(P.fullTimeEmployees)} employees</span>`:''}
-    </div>
-    ${P.longBusinessSummary?P.longBusinessSummary.slice(0,340)+(P.longBusinessSummary.length>340?'…'):'No description available.'}
-  </div>
-  <div class="ext-row">
-    <span class="el tv" onclick="openTV('${sym}')">📈 TradingView Chart</span>
-    <a class="el" href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener">Yahoo Finance</a>
-    <a class="el" href="https://finviz.com/quote.ashx?t=${sym}" target="_blank" rel="noopener">Finviz</a>
-    <a class="el" href="https://www.marketbeat.com/stocks/NASDAQ/${sym}/" target="_blank" rel="noopener">MarketBeat</a>
-    <a class="el" href="https://earningswhispers.com/stocks/${sym.toLowerCase()}" target="_blank" rel="noopener">Earnings Whispers</a>
-    <a class="el" href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&company=&CIK=${sym}&type=4&dateb=&owner=include&count=20" target="_blank" rel="noopener">SEC Filings</a>
-  </div>`;
-
-  // ══ §2 ANALYST RATINGS & UPGRADES ════════════════════════════════════════
-  h+=`<div class="sh"><span>§2 · Analyst Ratings &amp; Price Targets</span></div>`;
-  const recNow=RT[0]||{};
-  const totAn=(raw(recNow,'strongBuy')||0)+(raw(recNow,'buy')||0)+(raw(recNow,'hold')||0)+(raw(recNow,'sell')||0)+(raw(recNow,'strongSell')||0);
-  const recKey=(F.recommendationKey||'').toLowerCase();
-  const recLbl={strongbuy:'Strong Buy',buy:'Buy',hold:'Hold',sell:'Sell',strongsell:'Strong Sell'}[recKey]||recKey||'—';
-  const recCls=recKey.includes('buy')?'bg-gn':recKey==='hold'?'bg-or':'bg-rd';
-
-  h+=`<div class="grid g4">
-    <div class="sc"><div class="sc-l">Consensus</div>
-      <div class="sc-v" style="font-size:12px"><span class="badge ${recCls}">${recLbl}</span></div>
-      <div class="sc-s">${totAn} analysts · mean ${raw(F,'recommendationMean')!=null?fv(raw(F,'recommendationMean'),1):'—'}/5</div>
-    </div>
-    <div class="sc"><div class="sc-l">PT Mean / Upside</div>
-      <div class="sc-v ${upside!=null?pc(upside):'v-nu'}">${tgtMean?fc.format(tgtMean):'—'}</div>
-      <div class="sc-s">${upside!=null?(upside>0?'+':'')+fv(upside)+'% upside':'—'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">PT High (Bull)</div>
-      <div class="sc-v v-up">${tgtHigh?fc.format(tgtHigh):'—'}</div>
-      <div class="sc-s">Best-case target</div>
-    </div>
-    <div class="sc"><div class="sc-l">PT Low (Bear)</div>
-      <div class="sc-v v-dn">${tgtLow?fc.format(tgtLow):'—'}</div>
-      <div class="sc-s">Worst-case target</div>
-    </div>
-  </div>`;
-
-  // Broker consensus breakdown
-  if(totAn>0){
-    const sb=raw(recNow,'strongBuy')||0,b=raw(recNow,'buy')||0,h2=raw(recNow,'hold')||0,
-          s=raw(recNow,'sell')||0,ss=raw(recNow,'strongSell')||0;
-    h+=`<div class="grid g3" style="margin-bottom:4px">
-      <div class="sc" style="gap:4px">
-        <div class="sc-l">Strong Buy / Buy</div>
-        <div class="sc-v v-up">${sb+b} <span style="font-size:9px;color:var(--txd)">(${sb} SB, ${b} B)</span></div>
-      </div>
-      <div class="sc" style="gap:4px">
-        <div class="sc-l">Hold</div>
-        <div class="sc-v v-or">${h2}</div>
-      </div>
-      <div class="sc" style="gap:4px">
-        <div class="sc-l">Sell / Strong Sell</div>
-        <div class="sc-v v-dn">${s+ss} <span style="font-size:9px;color:var(--txd)">(${s} S, ${ss} SS)</span></div>
-      </div>
+    const signal    = netBuy>netSell?'Net Buying':netSell>netBuy?'Net Selling':'Mixed';
+    const sigCls    = signal==='Net Buying'?'bg-gn':signal==='Net Selling'?'bg-rd':'bg-or';
+    h+=`<div style="margin-bottom:8px">
+      <span class="badge ${sigCls}" style="font-size:9px">${signal}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);margin-left:8px">
+        ${fn.format(netBuy)} shares bought · ${fn.format(netSell)} shares sold (last ${Math.min(txData.length,15)} txns)
+      </span>
     </div>`;
-  }
-
-  // Upgrade/downgrade history table
-  if(UH.length){
-    h+=`<table><thead><tr><th>Date</th><th>Firm</th><th>Action</th><th>From</th><th>To</th><th>Target</th></tr></thead><tbody>`;
-    UH.slice(0,15).forEach(u=>{
-      const a=(u.action||'').toLowerCase();
-      const acls=a==='up'||a==='init'||a==='up_r'?'pos':a==='down'?'neg':'nu';
-      const albl={up:'⬆ Upgrade',down:'⬇ Downgrade',init:'★ Initiate',reit:'→ Reiterate',main:'→ Maintain',up_r:'⬆ Upgrade',down_r:'⬇ Downgrade'}[a]||u.action||'—';
+    h+=`<table><thead><tr><th>Date</th><th>Name</th><th>Code</th><th>Change</th><th>Price</th><th>Shares After</th></tr></thead><tbody>`;
+    txData.slice(0,15).forEach(t=>{
+      const code=t.transactionCode||'—';
+      const isBuy=['P','A'].includes(code), isSell=['S','D'].includes(code);
+      const codeLbl={P:'Buy',S:'Sale',A:'Award',D:'Dispose',G:'Gift',F:'Tax Withhold',M:'Option Exercise'}[code]||code;
       h+=`<tr>
-        <td class="nu">${fd(u.epochGradeDate)}</td>
-        <td style="font-weight:600;color:var(--tx)">${u.firm||'—'}</td>
-        <td class="${acls}">${albl}</td>
-        <td class="nu">${u.fromGrade||'—'}</td>
-        <td style="color:var(--tx)">${u.toGrade||'—'}</td>
-        <td class="est">${u.priceTarget?.raw?fc.format(u.priceTarget.raw):'—'}</td>
-      </tr>`;
-    });
-    h+=`</tbody></table>`;
-  }else{
-    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No recent analyst actions on record</div>`;
-  }
-
-  // ══ §3 EARNINGS CALENDAR ══════════════════════════════════════════════════
-  h+=`<div class="sh"><span>§3 · Earnings Calendar — Next &amp; History</span></div>`;
-  const nextDates=CAL.earningsDate||[];
-  const nextStr=nextDates.length?fd(nextDates[0]?.raw):'Not scheduled';
-  const q0=ET.find(t=>t.period==='0q');
-  const q1=ET.find(t=>t.period==='+1q');
-  const nextEPS=raw(q0,'earningsEstimate','avg');
-  const nextRev=raw(q0,'revenueEstimate','avg');
-  const nextEPSL=raw(q0,'earningsEstimate','low');
-  const nextEPSH=raw(q0,'earningsEstimate','high');
-  const nextRevL=raw(q0,'revenueEstimate','low');
-  const nextRevH=raw(q0,'revenueEstimate','high');
-  const nextGrowth=raw(q0,'earningsEstimate','growth');
-
-  h+=`<div class="grid g3">
-    <div class="sc"><div class="sc-l">Next Earnings Date</div>
-      <div class="sc-v v-pu" style="font-size:12px">${nextStr}</div>
-      <div class="sc-s">${nextDates.length>1?'to '+fd(nextDates[nextDates.length-1]?.raw):''}</div>
-    </div>
-    <div class="sc"><div class="sc-l">EPS Estimate (Next Q)</div>
-      <div class="sc-v est">${nextEPS!=null?'$'+fv(nextEPS):'—'}</div>
-      <div class="sc-s">${nextEPSL!=null?'Range: $'+fv(nextEPSL)+' – $'+fv(nextEPSH||0):'—'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Revenue Estimate (Next Q)</div>
-      <div class="sc-v est">${nextRev!=null?fb(nextRev):'—'}</div>
-      <div class="sc-s">${nextRevL!=null?'Range: '+fb(nextRevL)+' – '+fb(nextRevH||0):'—'}</div>
-    </div>
-  </div>`;
-
-  // Previous earnings history
-  if(EH.length){
-    h+=`<table><thead><tr><th>Quarter</th><th>EPS Actual</th><th>EPS Est</th><th>Surprise %</th><th>Revenue (approx)</th></tr></thead><tbody>`;
-    EH.slice(0,8).forEach((q,i)=>{
-      const ea=raw(q,'epsActual'),ee=raw(q,'epsEstimated');
-      const surp=ea!=null&&ee!=null&&ee!==0?((ea-ee)/Math.abs(ee)*100):null;
-      // Match revenue from quarterly income statements by approximate date
-      const qts=raw(q,'quarter');
-      let rev=null;
-      for(const iq of IQ){if(qts&&Math.abs((raw(iq,'endDate')||0)-qts)<8e6){rev=raw(iq,'totalRevenue');break;}}
-      h+=`<tr>
-        <td style="color:var(--ac);font-weight:700">${q.quarter?.fmt||'—'}</td>
-        <td class="${ea!=null?(ea>=0?'pos':'neg'):''}">${ea!=null?'$'+fv(ea):'—'}</td>
-        <td class="est">${ee!=null?'$'+fv(ee):'—'}</td>
-        <td class="${surp!=null?(surp>=0?'pos':'neg'):''}">${surp!=null?(surp>0?'+':'')+fv(surp)+'%':'—'}</td>
-        <td class="nu">${rev!=null?fb(rev):'—'}</td>
-      </tr>`;
-    });
-    h+=`</tbody></table>`;
-  }
-
-  // ══ §4 SHORT INTEREST & FLOAT ═════════════════════════════════════════════
-  h+=`<div class="sh"><span>§4 · Short Interest, Float &amp; Shares</span></div>`;
-  const sharesOut=raw(K,'sharesOutstanding');
-  const floatSh=raw(K,'floatShares');
-  const sharesShort=raw(K,'sharesShort');
-  const shortPrior=raw(K,'sharesShortPriorMonth');
-  const siFloat=raw(K,'shortPercentOfFloat');
-  const dtc=raw(K,'shortRatio');
-  const siPct=siFloat!=null?siFloat*100:null;
-
-  h+=`<div class="grid g4">
-    <div class="sc"><div class="sc-l">Shares Outstanding</div>
-      <div class="sc-v v-ac">${fb(sharesOut)?.replace('$','')}</div>
-      <div class="sc-s">Total issued</div>
-    </div>
-    <div class="sc"><div class="sc-l">Float</div>
-      <div class="sc-v v-ac">${fb(floatSh)?.replace('$','')}</div>
-      <div class="sc-s">${sharesOut&&floatSh?fv(floatSh/sharesOut*100,1)+'% of outstanding':'Free-float shares'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Shares Short</div>
-      <div class="sc-v ${siPct!=null?(siPct>20?'v-dn':siPct>10?'v-or':'v-nu'):'v-nu'}">${fb(sharesShort)?.replace('$','')}</div>
-      <div class="sc-s">
-        ${siPct!=null?fv(siPct,1)+'% of float':'—'}
-        <div class="si-bar"><div class="si-bar-f" style="width:${Math.min(siPct||0,50)*2}%"></div></div>
-      </div>
-    </div>
-    <div class="sc"><div class="sc-l">Days to Cover</div>
-      <div class="sc-v ${dtc!=null?(dtc>5?'v-dn':dtc>2?'v-or':'v-nu'):'v-nu'}">${dtc!=null?fv(dtc,1):'—'}</div>
-      <div class="sc-s">Short ratio${shortPrior!=null?' · prior mo: '+fb(shortPrior)?.replace('$',''):''}</div>
-    </div>
-  </div>`;
-
-  // ══ §5 INSTITUTIONAL OWNERSHIP ════════════════════════════════════════════
-  h+=`<div class="sh"><span>§5 · Institutional &amp; Fund Ownership</span></div>`;
-  const instPct=raw(MAJ,'institutionsPercentHeld');
-  const instFloatPct=raw(MAJ,'institutionsFloatPercentHeld');
-  const insiderPct=raw(MAJ,'insidersPercentHeld');
-  const netInfo=raw(NSP,'netInfoCount');
-
-  h+=`<div class="grid g3">
-    <div class="sc"><div class="sc-l">Institutional %</div>
-      <div class="sc-v v-ac">${instPct!=null?fv(instPct*100,1)+'%':'—'}</div>
-      <div class="sc-s">Of shares outstanding<div class="pbar"><div class="pbar-f" style="width:${Math.min((instPct||0)*100,100)}%;background:var(--ac)"></div></div></div>
-    </div>
-    <div class="sc"><div class="sc-l">Fund Float %</div>
-      <div class="sc-v v-pu">${instFloatPct!=null?fv(instFloatPct*100,1)+'%':'—'}</div>
-      <div class="sc-s">% of float held by funds<div class="pbar"><div class="pbar-f" style="width:${Math.min((instFloatPct||0)*100,100)}%;background:var(--pu)"></div></div></div>
-    </div>
-    <div class="sc"><div class="sc-l">Insider %</div>
-      <div class="sc-v v-gd">${insiderPct!=null?fv(insiderPct*100,1)+'%':'—'}</div>
-      <div class="sc-s">Net 3-mo: ${netInfo!=null?(netInfo>0?'<span class="badge bg-gn">Net Buying</span>':'<span class="badge bg-rd">Net Selling</span>'):'—'}</div>
-    </div>
-  </div>`;
-
-  if(INST.length){
-    h+=`<table><thead><tr><th>Institution</th><th>Shares</th><th>% Outstanding</th><th>Value</th><th>Report Date</th></tr></thead><tbody>`;
-    INST.slice(0,10).forEach(i=>{
-      const pct=raw(i,'pctHeld'),val=raw(i,'value'),pos=raw(i,'position');
-      h+=`<tr>
-        <td style="font-weight:600;color:var(--tx);max-width:180px;overflow:hidden;text-overflow:ellipsis">${i.organization||'—'}</td>
-        <td>${fb(pos)?.replace('$','')}</td>
-        <td style="color:var(--ac)">${pct!=null?fv(pct*100,2)+'%':'—'}</td>
-        <td style="color:var(--gd)">${val?fb(val):'—'}</td>
-        <td class="nu">${fd(raw(i,'reportDate'))}</td>
-      </tr>`;
-    });
-    h+=`</tbody></table>`;
-  }
-
-  // ══ §6 INSIDER TRANSACTIONS ═══════════════════════════════════════════════
-  h+=`<div class="sh"><span>§6 · Insider Transactions (SEC Form 4)</span></div>`;
-  if(TX.length){
-    h+=`<table><thead><tr><th>Date</th><th>Name</th><th>Title</th><th>Type</th><th>Shares</th><th>Value</th></tr></thead><tbody>`;
-    TX.slice(0,15).forEach(t=>{
-      const desc=(t.transactionDescription||'').toLowerCase();
-      const isBuy=desc.includes('buy')||desc.includes('purchase')||desc.includes('acqui');
-      const isSell=desc.includes('sale')||desc.includes('sell');
-      h+=`<tr>
-        <td class="nu">${fd(raw(t,'startDate'))}</td>
-        <td style="font-weight:600;color:var(--tx);max-width:120px;overflow:hidden;text-overflow:ellipsis">${t.filerName||'—'}</td>
-        <td class="nu" style="font-size:9.5px">${t.filerRelation||'—'}</td>
-        <td class="${isBuy?'pos':isSell?'neg':''}">${t.transactionDescription||'—'}</td>
-        <td>${fb(raw(t,'shares'))?.replace('$','')}</td>
-        <td class="est">${raw(t,'value')!=null?fb(raw(t,'value')):'—'}</td>
+        <td class="nu">${fd(t.transactionDate)}</td>
+        <td style="color:var(--tx);font-weight:600">${t.name||'—'}</td>
+        <td class="${isBuy?'pos':isSell?'neg':''}">${codeLbl}</td>
+        <td class="${t.change>0?'pos':t.change<0?'neg':''}">${t.change!=null?(t.change>0?'+':'')+fn.format(t.change):'—'}</td>
+        <td class="est">${t.transactionPrice?fc.format(t.transactionPrice):'—'}</td>
+        <td class="nu">${t.share!=null?fn.format(t.share):'—'}</td>
       </tr>`;
     });
     h+=`</tbody></table>`;
@@ -1132,189 +656,89 @@ function render(sym, q7, q8, d1, d2, news){
     h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No recent insider transactions on record</div>`;
   }
 
-  // ══ §7 STOCK SPLIT & DIVIDENDS ════════════════════════════════════════════
-  h+=`<div class="sh"><span>§7 · Stock Split &amp; Corporate Actions</span></div>`;
-  const splitF=K.lastSplitFactor;
-  const splitD=raw(K,'lastSplitDate');
-  const divYld=raw(D,'dividendYield');
-  const divRate=raw(D,'dividendRate');
-  const exDiv=raw(D,'exDividendDate');
-  const payDate=raw(D,'dividendDate')||raw(D,'payoutDate');
-  const payRatio=raw(D,'payoutRatio');
-  const div5y=raw(K,'fiveYearAvgDividendYield');
-
-  if(splitF&&splitF!=='1:1'){
-    const parts=String(splitF).split(':').map(Number);
-    const isReverse=parts.length===2&&parts[0]<parts[1];
-    h+=`<div class="split-box${isReverse?' rs'}">
-      <div class="split-ico">${isReverse?'⬇':'⬆'}</div>
-      <div class="split-info">
-        <strong>${isReverse?'Reverse Split':'Stock Split'} — ${splitF}</strong>
-        <span>${splitD?'Date: '+fd(splitD)+'   ':''} ${isReverse?'Shareholders received fewer shares at a higher price per share.':'Shareholders received more shares at a lower price per share.'}</span>
-      </div>
-    </div>`;
-  }
-
-  h+=`<div class="grid g3">
-    <div class="sc"><div class="sc-l">Dividend Yield</div>
-      <div class="sc-v ${divYld?'v-gn':'v-nu'}">${divYld!=null?fv(divYld*100,2)+'%':'None'}</div>
-      <div class="sc-s">${divRate?'$'+fv(divRate)+'/yr':'—'}${div5y?' · 5yr avg '+fv(div5y,2)+'%':''}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Ex-Dividend Date</div>
-      <div class="sc-v v-nu" style="font-size:12px">${fd(exDiv)}</div>
-      <div class="sc-s">Pay date: ${fd(payDate)}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Split / Payout</div>
-      <div class="sc-v v-nu" style="font-size:11px">${splitF||'None on record'}</div>
-      <div class="sc-s">Payout ratio: ${payRatio!=null?fv(payRatio*100,1)+'%':'—'}${splitD?' · split '+fd(splitD):''}</div>
-    </div>
-  </div>`;
-
-  // ══ §8 VALUATION & FINANCIALS ═════════════════════════════════════════════
-  h+=`<div class="sh"><span>§8 · Valuation &amp; Key Financials</span></div>`;
-  h+=`<div class="grid g4">
-    <div class="sc"><div class="sc-l">Revenue (TTM)</div>
-      <div class="sc-v v-ac">${fb(raw(F,'totalRevenue'))}</div>
-      <div class="sc-s">Growth: ${fp(raw(F,'revenueGrowth'))}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Gross / Profit Margin</div>
-      <div class="sc-v ${raw(F,'grossMargins')>0.5?'v-up':'v-nu'}">${fp(raw(F,'grossMargins'))}</div>
-      <div class="sc-s">Net: ${fp(raw(F,'profitMargins'))}</div>
-    </div>
-    <div class="sc"><div class="sc-l">EPS TTM / Fwd</div>
-      <div class="sc-v ${raw(K,'trailingEps')>=0?'v-up':'v-dn'}">${raw(K,'trailingEps')!=null?'$'+fv(raw(K,'trailingEps')):'—'}</div>
-      <div class="sc-s">Fwd: ${raw(K,'forwardEps')!=null?'$'+fv(raw(K,'forwardEps')):'—'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Price / Sales · PEG</div>
-      <div class="sc-v v-gd">${raw(D,'priceToSalesTrailing12Months')!=null?fv(raw(D,'priceToSalesTrailing12Months'),1)+'x':'—'}</div>
-      <div class="sc-s">PEG: ${raw(K,'pegRatio')!=null?fv(raw(K,'pegRatio'),2):'—'}</div>
-    </div>
-  </div>
-  <div class="grid g4">
-    <div class="sc"><div class="sc-l">Return on Equity</div>
-      <div class="sc-v ${raw(F,'returnOnEquity')>0.15?'v-up':raw(F,'returnOnEquity')>0?'v-nu':'v-dn'}">${fp(raw(F,'returnOnEquity'))}</div>
-      <div class="sc-s">ROA: ${fp(raw(F,'returnOnAssets'))}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Debt / Equity</div>
-      <div class="sc-v ${raw(F,'debtToEquity')>1.5?'v-or':'v-nu'}">${raw(F,'debtToEquity')!=null?fv(raw(F,'debtToEquity'),1):'—'}</div>
-      <div class="sc-s">Current ratio: ${raw(F,'currentRatio')!=null?fv(raw(F,'currentRatio'),2):'—'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Free Cash Flow</div>
-      <div class="sc-v ${raw(F,'freeCashflow')>0?'v-up':'v-dn'}">${fb(raw(F,'freeCashflow'))}</div>
-      <div class="sc-s">Op CF: ${fb(raw(F,'operatingCashflow'))}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Beta (5yr monthly)</div>
-      <div class="sc-v ${raw(D,'beta')>1.5?'v-or':raw(D,'beta')<0.5?'v-pu':'v-nu'}">${raw(D,'beta')!=null?fv(raw(D,'beta'),2):'—'}</div>
-      <div class="sc-s">Avg vol: ${fb(raw(D,'averageVolume'))?.replace('$','')}</div>
-    </div>
-  </div>`;
-
-  // ══ §9 NEWS FEED ══════════════════════════════════════════════════════════
-  h+=`<div class="sh"><span>§9 · Latest News &amp; Headlines</span></div>`;
-  if(news.length){
+  // ══ §6  NEWS FEED — MARKETAUX ════════════════════════════════════════════
+  h+=`<div class="sh"><span>§6 · News Feed — Marketaux NLP Sentiment</span></div>`;
+  if(NEWS?.length){
     h+=`<div class="news-feed">`;
-    news.slice(0,20).forEach(n=>{
-      const tl=(n.title||'').toLowerCase();
-      const dotCls=tl.match(/upgrade|beat|jump|surge|soar|raise/)?'gn':tl.match(/downgrade|miss|fall|cut|lose|warn/)?'rd':tl.match(/earn|split|divid/)?'or':tl.match(/insider|sec|filing/)?'pu':'';
-      const link=n.link||'#';
-      const tagText=tl.match(/upgrade/)?'UPGRADE':tl.match(/downgrade/)?'DOWNGRADE':tl.match(/earnings|eps/)?'EARNINGS':tl.match(/split/)?'SPLIT':tl.match(/insider/)?'INSIDER':'';
-      const tagCls=tagText==='UPGRADE'?'bg-gn':tagText==='DOWNGRADE'?'bg-rd':tagText==='EARNINGS'?'bg-pu':tagText==='SPLIT'?'bg-gd':'bg-or';
-      h+=`<a class="ni" href="${link}" target="_blank" rel="noopener">
+    NEWS.slice(0,20).forEach(n=>{
+      const ent  = n.entities?.find(e=>e.symbol?.toUpperCase()===sym)||n.entities?.[0];
+      const sent = ent?.sentiment_score;
+      const dotCls  = sent>0.1?'gn':sent<-0.1?'rd':'or';
+      const sentLbl = sent!=null?(sent>0.25?'Positive':sent<-0.25?'Negative':'Neutral'):'—';
+      const sentCls = sent>0.25?'sent-pos':sent<-0.25?'sent-neg':'sent-neu';
+      const tl    = (n.title||'').toLowerCase();
+      const tag   = tl.includes('upgrade')?'UPGRADE':tl.includes('downgrade')?'DOWNGRADE':tl.includes('earnings')||tl.includes(' eps')?'EARNINGS':tl.includes('split')?'SPLIT':tl.includes('insider')?'INSIDER':'';
+      const tagCls= tag==='UPGRADE'?'bg-gn':tag==='DOWNGRADE'?'bg-rd':tag==='EARNINGS'?'bg-pu':tag==='SPLIT'?'bg-gd':'bg-or';
+      h+=`<a class="ni" href="${n.url||'#'}" target="_blank" rel="noopener">
         <div class="ni-dot ${dotCls}"></div>
         <div class="ni-body">
-          <div class="ni-title">${tagText?`<span class="badge ${tagCls}" style="margin-right:6px">${tagText}</span>`:''}${n.title||'—'}</div>
+          <div class="ni-title">${tag?`<span class="badge ${tagCls}" style="margin-right:6px">${tag}</span>`:''}${n.title||'—'}</div>
           <div class="ni-meta">
-            <span class="ni-src">${n.publisher||'—'}</span>
-            <span>${ago(n.providerPublishTime)}</span>
+            <span class="ni-src">${n.source||'—'}</span>
+            <span>${ago(n.published_at)}</span>
+            ${sent!=null?`<span class="ni-sent ${sentCls}">${sentLbl} (${fv(Math.abs(sent))})</span>`:''}
           </div>
         </div>
       </a>`;
     });
     h+=`</div>`;
   }else{
-    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No recent news found</div>`;
+    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No news found for ${sym} — Marketaux free tier allows 100 requests/day</div>`;
   }
 
   h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txm);margin-top:14px;padding:10px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;line-height:1.7">
-    ⚠ Data sourced from Yahoo Finance via corsproxy.io. For research purposes only — not financial advice. Short interest data may be delayed 2–4 weeks. Verify all data against primary sources before trading.
+    📊 Data: <a href="https://finnhub.io" target="_blank" rel="noopener" style="color:var(--ac)">Finnhub.io</a> (quote, profile, metrics, earnings, insider) ·
+    <a href="https://www.marketaux.com" target="_blank" rel="noopener" style="color:var(--ac)">Marketaux</a> (news + NLP sentiment) ·
+    Chart: TradingView · For research only — not financial advice.
   </div></div>`;
 
   document.getElementById('results').innerHTML=h;
 }
 
-// ── AI Analyst Note via Anthropic API ─────────────────────────────────────
-// called as: renderAI(sym, q7, d1, d2)
-// q7 = Yahoo v7 quote (price, name, eps, pe etc.)
-// d1 = v10 summaryProfile+financialData+etc.
-// d2 = v10 earningsHistory+insiderTransactions
-async function renderAI(sym, q7, d1, d2){
+// ══════════════════════════════════════════════════════════════════════════
+//  AI ANALYST NOTE — Anthropic API (direct from browser)
+// ══════════════════════════════════════════════════════════════════════════
+async function renderAI(sym, Q, P, M, RT, PT, EH){
   const box=document.getElementById('ai-box');
   if(!box)return;
   box.innerHTML=`<div class="ai-box"><div class="ai-hdr">🤖 AI Analyst Note — ${sym}</div>
-    <div class="ai-thinking"><span class="dots"><span>●</span><span>●</span><span>●</span></span>Analysing data…</div>
+    <div class="ai-thinking"><span class="dots"><span>●</span><span>●</span><span>●</span></span>Analysing…</div>
   </div>`;
 
-  const F  = d1.financialData||{};
-  const K  = d1.defaultKeyStatistics||{};
-  const D  = d1.summaryDetail||{};
-  const P  = d1.summaryProfile||{};
-  const UH = (d1.upgradeDowngradeHistory?.history||[]).slice(0,5);
-  const EH = (d2.earningsHistory?.history||[]).slice(0,4);
-  const TX = (d2.insiderTransactions?.transactions||[]).slice(0,4);
-  const ET = d1.earningsTrend?.trend||[];
-  const MAJ= d1.majorHoldersBreakdown||{};
-
-  // Merge v7 + v10 for best coverage
-  const price    = q7.regularMarketPrice;
-  const longName = q7.longName||q7.shortName||sym;
-
-  const ctx={sym,
-    name:longName,
-    sector:P.sector||q7.sector,
-    industry:P.industry||q7.industry,
-    price,
-    mktCap:q7.marketCap||raw(D,'marketCap'),
-    pe:q7.trailingPE||raw(D,'trailingPE'),
-    fwdPe:q7.forwardPE||raw(D,'forwardPE'),
-    revenue:raw(F,'totalRevenue'),
-    revGrowth:raw(F,'revenueGrowth'),
-    grossMargin:raw(F,'grossMargins'),
-    profitMargin:raw(F,'profitMargins'),
-    roe:raw(F,'returnOnEquity'),
-    fcf:raw(F,'freeCashflow'),
-    recommendation:q7.recommendationKey||F.recommendationKey,
-    tgtMean:q7.targetMeanPrice||raw(F,'targetMeanPrice'),
-    analystCount:q7.numberOfAnalystOpinions||UH.length,
-    recentActions:UH.slice(0,3).map(u=>({firm:u.firm,action:u.action,to:u.toGrade,pt:u.priceTarget?.raw})),
-    institutionalPct:raw(MAJ,'institutionsPercentHeld'),
-    insiderPct:raw(MAJ,'insidersPercentHeld'),
-    shortPctFloat:raw(K,'shortPercentOfFloat'),
-    daysToCover:raw(K,'shortRatio'),
-    sharesShort:raw(K,'sharesShort'),
-    floatShares:q7.floatShares||raw(K,'floatShares'),
-    recentEarnings:EH.map(q=>({qtr:q.quarter?.fmt,act:q.epsActual?.raw,est:q.epsEstimated?.raw})),
-    nextEarningsDate:q7.earningsTimestamp ? new Date(q7.earningsTimestamp*1000).toLocaleDateString() : d1.calendarEvents?.earnings?.earningsDate?.[0]?.fmt,
-    nextEPSEst:q7.epsForward||raw(ET.find(t=>t?.period==='0q'),'earningsEstimate','avg'),
-    insiderActivity:TX.map(t=>({name:t.filerName,type:t.transactionDescription,shares:raw(t,'shares')})),
-    splitFactor:K.lastSplitFactor,
-    beta:q7.beta||raw(D,'beta'),
-    divYield:q7.dividendYield||raw(D,'dividendYield'),
+  const met=M?.metric||{};
+  const rec=RT?.[0]||{};
+  const totAn=(rec.strongBuy||0)+(rec.buy||0)+(rec.hold||0)+(rec.sell||0)+(rec.strongSell||0);
+  const ctx={
+    sym, name:P?.name||sym, exchange:P?.exchange, industry:P?.finnhubIndustry,
+    price:Q?.c, changePercent:Q?.dp,
+    marketCapM:P?.marketCapitalization,
+    peNorm:met['peNormalizedAnnual'], peFwd:met['peForwardAnnual'],
+    epsTTM:met['epsTTM'], epsGrowth3Y:met['epsGrowth3Y'],
+    grossMargin:met['grossMarginTTM'], netMargin:met['netProfitMarginTTM'],
+    roe:met['roeRfy'], d2e:met['totalDebt/totalEquityAnnual'],
+    revGrowth3Y:met['revenueGrowth3Y'], fcfAnnualM:met['freeCashFlowAnnual'],
+    beta:met['beta'], dividendYield:met['dividendYieldIndicatedAnnual'],
+    analysts:totAn,
+    bullishPct:totAn?Math.round(((rec.strongBuy||0)+(rec.buy||0))/totAn*100):null,
+    targetMean:PT?.targetMean, targetHigh:PT?.targetHigh, targetLow:PT?.targetLow,
+    w52h:met['52WeekHigh'], w52l:met['52WeekLow'],
+    recentEarnings:(EH||[]).slice(0,4).map(e=>({year:e.year,q:e.quarter,actual:e.actual,estimate:e.estimate,surprisePct:e.surprisePercent})),
   };
 
-  const prompt=`You are a seasoned Wall Street equity analyst. Write a concise, opinionated analyst note on ${sym} (${ctx.name}) using the data below.
+  const prompt=`You are a seasoned Wall Street equity analyst. Write a concise analyst note on ${sym} (${ctx.name}) using only the data below.
 
 DATA: ${JSON.stringify(ctx)}
 
-Format your response in exactly these 6 sections, using **SECTION NAME** as headers:
+Use exactly these 6 sections with **SECTION NAME** bold headers:
 
-**SNAPSHOT** — Company description and current market position (2 sentences).
-**EARNINGS QUALITY** — Recent EPS beat/miss trend, revenue growth trajectory, margin trends (2–3 sentences using actual numbers).
-**ANALYST SENTIMENT** — Consensus rating, price target vs current price (upside/downside %), recent notable upgrades or downgrades with firm names (2 sentences).
-**SMART MONEY** — Institutional ownership level, insider buying or selling signal, short interest squeeze risk if applicable (2 sentences).
-**KEY RISKS** — 2–3 specific, quantified risks: valuation stretched, margin compression, competition, debt load, regulatory, etc.
-**CATALYST WATCH** — Next earnings date, what metric to watch, any upcoming catalyst (product launch, FDA, rate decision, etc.).
+**SNAPSHOT** — Company and market position (2 sentences).
+**EARNINGS QUALITY** — EPS beat/miss trend, revenue growth, margins (2–3 sentences with actual numbers).
+**ANALYST SENTIMENT** — Consensus, price target upside/downside %, bull/bear breakdown (2 sentences).
+**SMART MONEY** — Insider/institutional signals, short squeeze risk if relevant (2 sentences).
+**KEY RISKS** — 2–3 specific quantified risks (valuation, margins, debt, competition, regulatory).
+**CATALYST WATCH** — Upcoming earnings window, key metric to monitor, known catalyst.
 
-Rules: be direct, use the numbers, name specific firms from the data, no generic fluff. Keep total length under 280 words.`;
+Rules: direct and opinionated, use the actual numbers, no filler. Under 280 words.`;
 
   try{
     const r=await fetch('https://api.anthropic.com/v1/messages',{
@@ -1325,12 +749,12 @@ Rules: be direct, use the numbers, name specific firms from the data, no generic
     const j=await r.json();
     const text=(j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('')||'';
     if(!text){box.innerHTML='';return;}
-    const formatted=text
+    const fmt=text
       .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
       .replace(/\n\n/g,'</p><p>')
       .replace(/\n/g,'<br>');
     box.innerHTML=`<div class="ai-box"><div class="ai-hdr">🤖 AI Analyst Note — ${sym} · ${ctx.name}</div>
-      <div class="ai-body"><p>${formatted}</p></div></div>`;
+      <div class="ai-body"><p>${fmt}</p></div></div>`;
   }catch(e){
     box.innerHTML='';
     console.warn('[AI]',e.message);
@@ -1340,7 +764,7 @@ Rules: be direct, use the numbers, name specific firms from the data, no generic
 // ── Init ───────────────────────────────────────────────────────────────────
 renderRecent();
 const urlSym=new URLSearchParams(location.search).get('sym')||location.hash.slice(1);
-if(urlSym)go(urlSym.toUpperCase());
+if(urlSym) go(urlSym.toUpperCase());
 </script>
 </body>
 </html>
