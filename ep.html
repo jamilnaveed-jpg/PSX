@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' fonts.googleapis.com fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com fonts.gstatic.com; img-src 'self' data:; connect-src 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' fonts.googleapis.com fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com fonts.gstatic.com; img-src 'self' data:; connect-src 'self' http://localhost:5050 http://127.0.0.1:5050;">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
 <meta name="referrer" content="no-referrer">
@@ -122,6 +122,31 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .chip:hover .chip-x{color:var(--rd)}
 .bucket-add-btn{width:100%;font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:5px;background:transparent;border:none;border-top:1px solid var(--bd);color:var(--txd);cursor:pointer;transition:all .15s;text-align:center}
 .bucket-add-btn:hover{background:var(--sf2);color:var(--ac)}
+/* Fetch row inside each bucket */
+.bucket-fetch-row{display:flex;gap:4px;padding:5px 8px;border-top:1px solid var(--bd);background:var(--sf3)}
+.bfetch-btn{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s;flex:1;white-space:nowrap}
+.bfetch-btn:hover{color:var(--ac);border-color:var(--ac)}
+.bfetch-btn.loading{color:var(--or);border-color:var(--orbr);cursor:wait}
+.bfetch-btn.ok{color:var(--gn);border-color:var(--gnbr);background:var(--gnbg)}
+.bfetch-btn.err{color:var(--rd);border-color:var(--rdbr)}
+.bfetch-status{font-family:'JetBrains Mono',monospace;font-size:8.5px;padding:3px 7px;border-radius:4px;color:var(--txd);align-self:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
+/* Helper status banner */
+.helper-banner{display:flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid var(--bd);border-radius:7px;background:var(--sf2);margin-bottom:14px;font-family:'JetBrains Mono',monospace;font-size:10px;transition:all .3s}
+.helper-banner.online{border-color:var(--gnbr);background:var(--gnbg)}
+.helper-banner.offline{border-color:var(--bd);opacity:.8}
+.helper-dot{width:7px;height:7px;border-radius:50%;background:var(--txm);flex-shrink:0;transition:background .3s}
+.helper-banner.online .helper-dot{background:var(--gn);box-shadow:0 0 5px var(--gn)}
+.helper-txt{flex:1;color:var(--txd)}
+.helper-banner.online .helper-txt{color:var(--gn)}
+.helper-cmd{background:var(--sf3);border:1px solid var(--bd2);border-radius:4px;padding:2px 8px;font-size:9.5px;color:var(--ac);cursor:pointer;transition:all .15s;white-space:nowrap}
+.helper-cmd:hover{background:var(--ac3)}
+/* Fetch all week button */
+.fetch-week-btn{font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:4px 12px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s}
+.fetch-week-btn:hover{color:var(--ac);border-color:var(--ac)}
+.fetch-week-btn.loading{color:var(--or);cursor:wait}
+/* Spinner */
+@keyframes spin2{to{transform:rotate(360deg)}}
+.spin2{display:inline-block;width:10px;height:10px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:spin2 .7s linear infinite;vertical-align:middle;margin-right:4px}
 /* Today highlight */
 .bucket.today{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac2)}
 .bucket.today .bucket-hdr{background:var(--ac3)}
@@ -305,12 +330,21 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
   <!-- SECTION 2: Weekly Triage Buckets -->
   <div class="sec-title">§2 · Weekly Triage Buckets</div>
 
+  <!-- Helper status banner -->
+  <div class="helper-banner offline" id="helper-banner">
+    <div class="helper-dot"></div>
+    <div class="helper-txt" id="helper-txt">Briefing.com helper: not running — tickers must be pasted manually</div>
+    <span class="helper-cmd" onclick="copyHelperCmd()" title="Copy start command">📋 Copy start cmd</span>
+    <span class="helper-cmd" onclick="checkHelper()" title="Re-check connection">↺ Retry</span>
+  </div>
+
   <div class="week-row">
     <span class="week-lbl">Week of</span>
     <input class="week-input" type="date" id="week-date" onchange="onWeekChange()">
     <button class="week-btn" onclick="prevWeek()">‹ Prev</button>
     <button class="week-btn" onclick="nextWeek()">Next ›</button>
     <button class="week-btn" onclick="thisWeek()">Today</button>
+    <button class="fetch-week-btn" id="fetch-week-btn" onclick="fetchWholeWeek()" title="Fetch all 5 days from Briefing.com">🔄 Fetch Week from Briefing</button>
     <button class="week-btn" style="color:var(--ac);border-color:var(--ac2)" onclick="saveAll()">💾 Save</button>
     <span class="save-badge" id="save-badge">Saved ✓</span>
   </div>
@@ -506,13 +540,24 @@ function renderBuckets(){
     const date=addDays(activeWeek,i);
     const today=isToday(date);
     const tickers=data.tickers[day]||[];
+    const fetchState=bucketFetchState[day]||'idle'; // idle | loading | ok | err
+    const fetchMsg=bucketFetchMsg[day]||'';
     h+=`<div class="bucket${today?' today':''}" id="bucket-${day}">
       <div class="bucket-hdr">
         <span class="bucket-day">${day.slice(0,3)}</span>
         <span class="bucket-date">${fmtShort(date)}</span>
         ${tickers.length?`<span class="bucket-count">${tickers.length}</span>`:''}
       </div>
-      <textarea class="bucket-input" id="ta-${day}" placeholder="AAPL MSFT NVDA\n(space or comma separated)" rows="3"
+      <!-- Briefing.com auto-fetch row -->
+      <div class="bucket-fetch-row">
+        <button class="bfetch-btn${fetchState==='loading'?' loading':fetchState==='ok'?' ok':fetchState==='err'?' err':''}"
+          id="fbtn-${day}" onclick="fetchBriefingDay('${day}','${date}')"
+          title="Fetch earnings symbols from Briefing.com for ${date}">
+          ${fetchState==='loading'?'<span class="spin2"></span>Fetching…':fetchState==='ok'?'✅ Fetched':'📡 Fetch from Briefing'}
+        </button>
+        <div class="bfetch-status" id="fstatus-${day}" title="${fetchMsg}">${fetchMsg}</div>
+      </div>
+      <textarea class="bucket-input" id="ta-${day}" placeholder="Or paste tickers manually:\nAAPL MSFT NVDA\n(space, comma, or newline)" rows="3"
         onblur="parseBucket('${day}')" onkeydown="if(event.key==='Enter'&&event.ctrlKey)parseBucket('${day}')"
       >${data.raw&&data.raw[day]?data.raw[day]:tickers.join(' ')}</textarea>
       <div class="bucket-chips" id="chips-${day}">
@@ -521,7 +566,7 @@ function renderBuckets(){
             ${t}<span class="chip-x" onclick="event.stopPropagation();removeChip('${day}','${t}')">✕</span>
           </div>`).join('')}
       </div>
-      <button class="bucket-add-btn" onclick="parseBucket('${day}')">+ Parse Tickers</button>
+      <button class="bucket-add-btn" onclick="parseBucket('${day}')">+ Parse Pasted Tickers</button>
     </div>`;
   });
   el.innerHTML=h;
@@ -1007,7 +1052,6 @@ function copyReport(ticker){
 
 // ── Save / feedback ───────────────────────────────────────────────────────────
 function saveAll(){
-  // Data is already auto-saved on input, this just shows confirmation
   showSaveBadge();
 }
 
@@ -1024,9 +1068,145 @@ function showSubRequired(subId){
   alert(`${sub.name} is currently toggled OFF.\n\nEnable it in the subscription toggles at the top of the page.`);
 }
 
+// ── Briefing.com Helper — fetch state ────────────────────────────────────────
+// The Python helper runs locally at http://localhost:5050
+// It logs into Briefing.com using stored credentials and returns earnings tickers.
+// If helper is offline, all fetch buttons show but are no-ops with a clear message.
+
+const HELPER_URL = 'http://localhost:5050';
+let helperOnline = false;
+let bucketFetchState = {};   // day -> 'idle'|'loading'|'ok'|'err'
+let bucketFetchMsg   = {};   // day -> status string shown under button
+
+// Check if the local Python helper is running
+async function checkHelper(){
+  const banner = document.getElementById('helper-banner');
+  const txt    = document.getElementById('helper-txt');
+  try {
+    const r = await fetch(HELPER_URL + '/ping', { method:'GET', signal: AbortSignal.timeout(2500) });
+    if(r.ok){
+      const j = await r.json();
+      helperOnline = true;
+      banner.className = 'helper-banner online';
+      txt.textContent = `✓ Briefing.com helper online — v${j.version||'1.0'} · ${j.status||'ready'}`;
+    } else {
+      throw new Error('bad status');
+    }
+  } catch {
+    helperOnline = false;
+    banner.className = 'helper-banner offline';
+    txt.textContent = 'Briefing.com helper: not running — start it to auto-fetch tickers (manual paste still works)';
+  }
+}
+
+// Copy the terminal command to start the helper
+function copyHelperCmd(){
+  const cmd = 'python briefing_helper.py';
+  navigator.clipboard.writeText(cmd).then(()=>showSaveBadge('Command copied!')).catch(()=>{});
+}
+
+// ── Fetch tickers for ONE day ─────────────────────────────────────────────────
+async function fetchBriefingDay(day, date){
+  if(!helperOnline){
+    // Show a clear actionable error rather than silently failing
+    bucketFetchState[day] = 'err';
+    bucketFetchMsg[day]   = 'Helper offline';
+    renderBuckets();
+    const banner = document.getElementById('helper-banner');
+    banner.style.animation = 'none';
+    setTimeout(()=>{ banner.style.animation=''; }, 10);
+    banner.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    return;
+  }
+
+  // Check Briefing credentials stored
+  const cred = lsGetJSON('ep_cred_briefing', {});
+  if(!cred.user || !cred.pass){
+    alert('No Briefing.com credentials stored.\n\nClick ⚙ Creds on the Briefing.com subscription toggle to save them first.');
+    return;
+  }
+
+  bucketFetchState[day] = 'loading';
+  bucketFetchMsg[day]   = 'Contacting…';
+  renderBuckets();
+
+  try {
+    const body = JSON.stringify({
+      date,
+      username: cred.user,
+      password: cred.pass,
+    });
+
+    const r = await fetch(HELPER_URL + '/earnings', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+      signal:  AbortSignal.timeout(30000),   // 30 s — login can be slow
+    });
+
+    const j = await r.json();
+
+    if(!r.ok || j.error){
+      throw new Error(j.error || `HTTP ${r.status}`);
+    }
+
+    // j.tickers = ['AAPL','NVDA', …]
+    // j.meta    = { total, bmo, amc, source }
+    const incoming = (j.tickers || []).map(t => t.toUpperCase().trim()).filter(Boolean);
+
+    // Merge with any manually-entered tickers (union, preserve order)
+    const data = loadWeek();
+    if(!data.tickers) data.tickers = {};
+    if(!data.raw)     data.raw     = {};
+    const existing = data.tickers[day] || [];
+    const merged   = [...new Set([...existing, ...incoming])];
+    data.tickers[day] = merged;
+    data.raw[day]     = merged.join(' ');
+    saveWeek(data);
+
+    const meta = j.meta || {};
+    bucketFetchState[day] = 'ok';
+    bucketFetchMsg[day]   = `${incoming.length} found` + (meta.bmo != null ? ` (${meta.bmo} BMO / ${meta.amc} AMC)` : '');
+    renderBuckets();
+
+    if(activeTicker && merged.includes(activeTicker)) renderResearch(activeTicker);
+
+  } catch(e){
+    bucketFetchState[day] = 'err';
+    bucketFetchMsg[day]   = e.message.length > 20 ? e.message.slice(0,20)+'…' : e.message;
+    renderBuckets();
+    console.error('[fetchBriefingDay]', day, e);
+  }
+}
+
+// ── Fetch the entire week at once ─────────────────────────────────────────────
+async function fetchWholeWeek(){
+  if(!helperOnline){
+    alert('The Briefing.com helper is not running.\n\nStart it with:  python briefing_helper.py\n\nThen click Retry in the status banner.');
+    return;
+  }
+  const btn = document.getElementById('fetch-week-btn');
+  if(btn){ btn.classList.add('loading'); btn.textContent='🔄 Fetching week…'; }
+
+  // Fire all 5 days in sequence (not parallel — be polite to Briefing.com)
+  for(let i = 0; i < 5; i++){
+    const day  = DAYS[i];
+    const date = addDays(activeWeek, i);
+    await fetchBriefingDay(day, date);
+    // Small pause between requests
+    await new Promise(res => setTimeout(res, 600));
+  }
+
+  if(btn){ btn.classList.remove('loading'); btn.textContent='🔄 Fetch Week from Briefing'; }
+  showSaveBadge('Week fetched ✓');
+}
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 thisWeek();
 renderSubRow();
+checkHelper();
+// Re-check helper every 30 s in case user starts it after page load
+setInterval(checkHelper, 30000);
 </script>
 </body>
 </html>
