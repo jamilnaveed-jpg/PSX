@@ -327,25 +327,107 @@ function setChart(sym){
     `<iframe src="https://www.tradingview.com/widgetembed/?frameElementId=tv1&symbol=${encodeURIComponent(sym)}&interval=D&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=${theme==='light'?'f8f9fb':'0f1720'}&studies=RSI%40tv-basicstudies%1FMA%40tv-basicstudies&theme=${theme}&style=1&timezone=America%2FNew_York&locale=en&utm_source=localhost&withdateranges=1&showpopupbutton=1" style="width:100%;height:100%;border:none" allowfullscreen></iframe>`;
 }
 
-// ── Yahoo Finance fetch via corsproxy.io ───────────────────────────────────
-async function yf(sym,modules){
-  const url='https://query1.finance.yahoo.com/v10/finance/quoteSummary/'+sym+'?modules='+modules.join(',');
-  const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url));
-  if(!r.ok)throw new Error('YF fetch failed ('+r.status+')');
-  return r.json();
+// ── Yahoo Finance — direct browser fetch (no proxy, no crumb needed) ──────
+// Yahoo Finance v7/quote and v8/chart both have open CORS from any origin.
+// v10/quoteSummary needs a crumb — we get it from Yahoo's own getcrumb endpoint.
+// Strategy: try v7+v8 (always works), then try v10 with crumb (needs Yahoo session).
+
+const Q1 = 'https://query1.finance.yahoo.com';
+const Q2 = 'https://query2.finance.yahoo.com';
+
+// ── Get session crumb (needed for v10 only) ────────────────────────────────
+let _crumb = null;
+async function getCrumb(){
+  if(_crumb !== null) return _crumb;
+  try{
+    // Try both hosts — whichever responds first
+    for(const h of [Q2,Q1]){
+      try{
+        const r = await fetch(h+'/v1/test/getcrumb',{
+          credentials:'include', cache:'no-store',
+          headers:{'Accept':'text/plain,*/*'},
+        });
+        if(r.ok){
+          const t = (await r.text()).trim();
+          // Valid crumb: short plain text, no HTML
+          if(t && t.length<40 && !t.startsWith('<') && !t.startsWith('{')){
+            _crumb = t; return _crumb;
+          }
+        }
+      }catch{}
+    }
+  }catch{}
+  _crumb = ''; return _crumb;  // empty = crumb unavailable
 }
+
+// ── v7 quote — price, market cap, 52W range, volume, PE etc. (no crumb) ──
+async function yfV7(sym){
+  for(const h of [Q1,Q2]){
+    try{
+      const r = await fetch(
+        `${h}/v7/finance/quote?symbols=${sym}&lang=en-US&region=US&corsDomain=finance.yahoo.com`,
+        {credentials:'include'}
+      );
+      if(r.ok){
+        const j = await r.json();
+        const q = j?.quoteResponse?.result?.[0];
+        if(q) return q;
+      }
+    }catch{}
+  }
+  return null;
+}
+
+// ── v8 chart — OHLCV meta (most reliable, always CORS-open) ───────────────
+async function yfV8(sym){
+  for(const h of [Q1,Q2]){
+    try{
+      const r = await fetch(
+        `${h}/v8/finance/chart/${sym}?interval=1d&range=5d&corsDomain=finance.yahoo.com`,
+        {credentials:'include'}
+      );
+      if(r.ok){
+        const j = await r.json();
+        const m = j?.chart?.result?.[0]?.meta;
+        if(m) return m;
+      }
+    }catch{}
+  }
+  return null;
+}
+
+// ── v10 quoteSummary — fundamentals (needs crumb, may fail without session) 
+async function yfV10(sym, modules){
+  const crumb = await getCrumb();
+  const cp = crumb ? `&crumb=${encodeURIComponent(crumb)}` : '';
+  for(const h of [Q2,Q1]){
+    try{
+      const url = `${h}/v10/finance/quoteSummary/${sym}?modules=${modules.join(',')}&corsDomain=finance.yahoo.com${cp}`;
+      const r = await fetch(url, {credentials:'include'});
+      if(r.ok){
+        const j = await r.json();
+        if(j?.quoteSummary?.result?.[0]) return j.quoteSummary.result[0];
+      }
+    }catch{}
+  }
+  return {};  // graceful empty — v7 already has the important stuff
+}
+
+// ── News search ───────────────────────────────────────────────────────────
 async function yfNews(sym){
-  const url='https://query1.finance.yahoo.com/v1/finance/search?q='+sym+'&newsCount=20&quotesCount=1';
-  const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url));
-  if(!r.ok)return{news:[]};
-  return r.json();
-}
-async function yfQuote(sym){
-  const url='https://query1.finance.yahoo.com/v8/finance/chart/'+sym+'?interval=1d&range=5d';
-  const r=await fetch('https://corsproxy.io/?'+encodeURIComponent(url));
-  if(!r.ok)return null;
-  const j=await r.json();
-  return j?.chart?.result?.[0]?.meta||null;
+  for(const h of [Q1,Q2]){
+    try{
+      const r = await fetch(
+        `${h}/v1/finance/search?q=${sym}&newsCount=20&quotesCount=1&corsDomain=finance.yahoo.com`,
+        {credentials:'include'}
+      );
+      if(r.ok){
+        const j = await r.json();
+        if(j?.news) return j.news;
+      }
+    }catch{}
+  }
+  return [];
 }
 
 // ── Main lookup ────────────────────────────────────────────────────────────
@@ -358,7 +440,7 @@ async function go(sym){
   const btn=document.getElementById('lbtn');
   btn.disabled=true; btn.textContent='⏳ Loading…';
 
-  // Start chart immediately — don't wait for data
+  // Chart loads instantly — no waiting for data
   setChart(sym);
 
   document.getElementById('results').innerHTML=`
@@ -368,33 +450,43 @@ async function go(sym){
     </div>`;
 
   try{
-    const [sum1,sum2,sum3,newsR,quoteR]=await Promise.allSettled([
-      yf(sym,['summaryProfile','summaryDetail','financialData','defaultKeyStatistics',
-               'calendarEvents','earnings','earningsTrend','recommendationTrend',
-               'upgradeDowngradeHistory','institutionOwnership','majorHoldersBreakdown',
-               'netSharePurchaseActivity','incomeStatementHistoryQuarterly']),
-      yf(sym,['earningsHistory','insiderTransactions','insiderHolders']),
-      yf(sym,['fundOwnership']),
+    // Kick off crumb fetch in background (used by v10)
+    getCrumb();
+
+    // v7 quote and v8 chart are CORS-open, always work
+    // v10 modules may silently return {} if no Yahoo session — that's OK
+    const [q7, q8, d1, d2, newsArr] = await Promise.all([
+      yfV7(sym),
+      yfV8(sym),
+      yfV10(sym,['summaryProfile','summaryDetail','financialData','defaultKeyStatistics',
+                  'calendarEvents','earnings','earningsTrend','recommendationTrend',
+                  'upgradeDowngradeHistory','institutionOwnership','majorHoldersBreakdown',
+                  'netSharePurchaseActivity','incomeStatementHistoryQuarterly']),
+      yfV10(sym,['earningsHistory','insiderTransactions']),
       yfNews(sym),
-      yfQuote(sym),
     ]);
 
-    const d1=sum1.status==='fulfilled'?sum1.value?.quoteSummary?.result?.[0]||{}:{};
-    const d2=sum2.status==='fulfilled'?sum2.value?.quoteSummary?.result?.[0]||{}:{};
-    const d3=sum3.status==='fulfilled'?sum3.value?.quoteSummary?.result?.[0]||{}:{};
-    const news=(newsR.status==='fulfilled'?newsR.value?.news:null)||[];
-    const meta=quoteR.status==='fulfilled'?quoteR.value:null;
+    // q7 has price, mktCap, PE, 52W range — if even this is null, symbol is bad
+    if(!q7 && !q8){
+      throw new Error(`"${sym}" not found on Yahoo Finance. Check the ticker is a valid US stock.`);
+    }
 
     addRecent(sym);
-    render(sym,d1,d2,d3,news,meta);
-    renderAI(sym,d1,d2,meta);
+    render(sym, q7||{}, q8||{}, d1||{}, d2||{}, newsArr||[]);
+    renderAI(sym, q7||{}, d1||{}, d2||{});
 
   }catch(e){
     document.getElementById('results').innerHTML=`
-      <div class="err-box">⚠ Could not load <b>${sym}</b>: ${e.message}</div>
+      <div class="err-box">⚠ ${e.message}</div>
       <div class="empty"><span class="empty-ico">🔍</span>
-        <div class="empty-title">Check symbol &amp; try again</div>
-        <div class="empty-sub">Make sure it's a valid US exchange ticker (NYSE/Nasdaq/AMEX).<br>Data source: Yahoo Finance via corsproxy.io</div>
+        <div class="empty-title">Tips</div>
+        <div class="empty-sub">
+          • Use exact Yahoo Finance tickers: <b>AAPL</b>, <b>CRM</b>, <b>NVDA</b>, <b>META</b><br>
+          • For richer data (fundamentals, insider data): open
+            <a href="https://finance.yahoo.com" target="_blank" style="color:var(--ac)">finance.yahoo.com</a>
+            in another tab first (sets a session cookie), then retry<br>
+          • Price &amp; chart data always works — fundamentals need a Yahoo session
+        </div>
       </div>`;
   }finally{
     busy=false;
@@ -403,26 +495,379 @@ async function go(sym){
 }
 
 // ── Render all sections ────────────────────────────────────────────────────
-function render(sym,d1,d2,d3,news,meta){
-  const P=d1.summaryProfile||{};
-  const D=d1.summaryDetail||{};
-  const F=d1.financialData||{};
-  const K=d1.defaultKeyStatistics||{};
-  const CAL=d1.calendarEvents?.earnings||{};
-  const EARN=d1.earnings||{};
-  const ET=d1.earningsTrend?.trend||[];
-  const RT=d1.recommendationTrend?.trend||[];
-  const UH=d1.upgradeDowngradeHistory?.history||[];
+function render(sym, q7, q8, d1, d2, news){
+  // q7 = Yahoo v7 quote object (price, mktCap, PE, 52W, volume etc.)
+  // q8 = Yahoo v8 chart meta (price, prevClose, longName)
+  // d1 = v10 quoteSummary result (fundamentals, may be {} if no session)
+  // d2 = v10 earningsHistory + insiderTransactions (may be {})
+
+  const P  = d1.summaryProfile||{};
+  const D  = d1.summaryDetail||{};
+  const F  = d1.financialData||{};
+  const K  = d1.defaultKeyStatistics||{};
+  const CAL= d1.calendarEvents?.earnings||{};
+  const ET = d1.earningsTrend?.trend||[];
+  const RT = d1.recommendationTrend?.trend||[];
+  const UH = d1.upgradeDowngradeHistory?.history||[];
   const INST=d1.institutionOwnership?.ownershipList||[];
-  const MAJ=d1.majorHoldersBreakdown||{};
-  const NSP=d1.netSharePurchaseActivity||{};
-  const IQ=d1.incomeStatementHistoryQuarterly?.incomeStatementHistory||[];
-  const EH=d2.earningsHistory?.history||[];
-  const TX=d2.insiderTransactions?.transactions||[];
-  const price=meta?.regularMarketPrice;
-  const prevClose=meta?.chartPreviousClose;
-  const chg=price&&prevClose?((price-prevClose)/prevClose*100):null;
-  const name=meta?.longName||meta?.shortName||sym;
+  const MAJ= d1.majorHoldersBreakdown||{};
+  const NSP= d1.netSharePurchaseActivity||{};
+  const IQ = d1.incomeStatementHistoryQuarterly?.incomeStatementHistory||[];
+  const EH = d2.earningsHistory?.history||[];
+  const TX = d2.insiderTransactions?.transactions||[];
+
+  // Price: v7 is most accurate (real-time), fallback to v8 meta
+  const price    = q7.regularMarketPrice      ?? q8.regularMarketPrice;
+  const prevClose= q7.regularMarketPreviousClose ?? q8.chartPreviousClose;
+  const chg      = price&&prevClose ? ((price-prevClose)/prevClose*100) : null;
+  const name     = q7.longName||q7.shortName||q8.longName||q8.shortName||sym;
+
+  // Market cap: v7 has it directly
+  const mktCap   = q7.marketCap ?? raw(D,'marketCap') ?? raw(K,'marketCap');
+
+  // Price targets: v7 has them
+  const tgtMean  = q7.targetMeanPrice  ?? raw(F,'targetMeanPrice');
+  const tgtHigh  = q7.targetHighPrice  ?? raw(F,'targetHighPrice');
+  const tgtLow   = q7.targetLowPrice   ?? raw(F,'targetLowPrice');
+  const upside   = price&&tgtMean ? ((tgtMean-price)/price*100) : null;
+
+  // Update chart panel name
+  document.getElementById('cp-name').textContent=name;
+
+  let h=`<div class="fin">`;
+  h+=`<div id="ai-box"></div>`;
+
+  // ══ §1 OVERVIEW ══════════════════════════════════════════════════════════
+  h+=`<div class="sh"><span>§1 · Overview — ${sym}</span></div>`;
+
+  // Use v7 fields for the 4 stat cards (always available)
+  const w52h = q7.fiftyTwoWeekHigh   ?? raw(D,'fiftyTwoWeekHigh');
+  const w52l = q7.fiftyTwoWeekLow    ?? raw(D,'fiftyTwoWeekLow');
+  const ma50 = q7.fiftyDayAverage    ?? raw(D,'fiftyDayAverage');
+  const peV  = q7.trailingPE         ?? raw(D,'trailingPE');
+  const fpeV = q7.forwardPE          ?? raw(D,'forwardPE');
+
+  h+=`<div class="grid g4">
+    <div class="sc"><div class="sc-l">Price</div>
+      <div class="sc-v ${pc(chg||0)}">${price?fc.format(price):'—'}</div>
+      <div class="sc-s">${chg!=null?(chg>0?'+':'')+fv(chg)+'% today':'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">Market Cap</div>
+      <div class="sc-v v-ac">${fb(mktCap)}</div>
+      <div class="sc-s">${q7.quoteType||P.sector||'—'} · ${q7.exchange||'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">52-Week Range</div>
+      <div class="sc-v v-nu" style="font-size:11px">${w52l?'$'+fv(w52l):'—'} – ${w52h?'$'+fv(w52h):'—'}</div>
+      <div class="sc-s">50d avg: ${ma50?'$'+fv(ma50):'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">P/E (TTM / Fwd)</div>
+      <div class="sc-v v-gd">${peV!=null?fv(peV,1):'—'}</div>
+      <div class="sc-s">Fwd: ${fpeV!=null?fv(fpeV,1):'—'}</div>
+    </div>
+  </div>`;
+
+  // Company blurb
+  const sector   = P.sector   || q7.sector   || '—';
+  const industry = P.industry || q7.industry || '—';
+  const country  = P.country  || q7.country  || '—';
+  const employees= P.fullTimeEmployees;
+  h+=`<div class="blurb">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      ${sector!=='—'?`<span class="badge bg-ac">${sector}</span>`:''}
+      ${industry!=='—'?`<span class="badge bg-pu">${industry}</span>`:''}
+      ${country!=='—'?`<span class="badge bg-or">${country}</span>`:''}
+      ${employees?`<span class="badge bg-gn">${fn.format(employees)} employees</span>`:''}
+    </div>
+    ${P.longBusinessSummary?P.longBusinessSummary.slice(0,340)+(P.longBusinessSummary.length>340?'…'):'No description available. (Visit finance.yahoo.com once to unlock full data.)'}
+  </div>
+  <div class="ext-row">
+    <span class="el tv" onclick="openTV('${sym}')">📈 TradingView Chart</span>
+    <a class="el" href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener">Yahoo Finance</a>
+    <a class="el" href="https://finviz.com/quote.ashx?t=${sym}" target="_blank" rel="noopener">Finviz</a>
+    <a class="el" href="https://www.marketbeat.com/stocks/NASDAQ/${sym}/" target="_blank" rel="noopener">MarketBeat</a>
+    <a class="el" href="https://earningswhispers.com/stocks/${sym.toLowerCase()}" target="_blank" rel="noopener">Earnings Whispers</a>
+    <a class="el" href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${sym}&type=4&owner=include&count=20" target="_blank" rel="noopener">SEC Form 4</a>
+  </div>`;
+
+  // ══ §2 ANALYST RATINGS ════════════════════════════════════════════════════
+  h+=`<div class="sh"><span>§2 · Analyst Ratings &amp; Price Targets</span></div>`;
+  // v7 has analyst data directly
+  const recKey  = (q7.recommendationKey||F.recommendationKey||'').toLowerCase();
+  const recMean = q7.averageAnalystRating||null;
+  const analystN= q7.numberOfAnalystOpinions ?? raw(F,'numberOfAnalystOpinions');
+  const recLbl  = {strongbuy:'Strong Buy',buy:'Buy',hold:'Hold',sell:'Sell',strongsell:'Strong Sell'}[recKey]||recKey||'—';
+  const recCls  = recKey.includes('buy')?'bg-gn':recKey==='hold'?'bg-or':(recKey.includes('sell')?'bg-rd':'bg-ac');
+  const recNow  = RT[0]||{};
+  const totAn   = (raw(recNow,'strongBuy')||0)+(raw(recNow,'buy')||0)+(raw(recNow,'hold')||0)+(raw(recNow,'sell')||0)+(raw(recNow,'strongSell')||0);
+
+  h+=`<div class="grid g4">
+    <div class="sc"><div class="sc-l">Consensus</div>
+      <div class="sc-v" style="font-size:12px"><span class="badge ${recCls}">${recLbl}</span></div>
+      <div class="sc-s">${analystN?analystN+' analysts':'—'}${recMean?' · '+recMean:''}</div>
+    </div>
+    <div class="sc"><div class="sc-l">Price Target (Mean)</div>
+      <div class="sc-v ${upside!=null?pc(upside):'v-nu'}">${tgtMean?fc.format(tgtMean):'—'}</div>
+      <div class="sc-s">${upside!=null?(upside>0?'+':'')+fv(upside)+'% upside':'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">PT High (Bull)</div>
+      <div class="sc-v v-up">${tgtHigh?fc.format(tgtHigh):'—'}</div>
+      <div class="sc-s">Best-case target</div>
+    </div>
+    <div class="sc"><div class="sc-l">PT Low (Bear)</div>
+      <div class="sc-v v-dn">${tgtLow?fc.format(tgtLow):'—'}</div>
+      <div class="sc-s">Worst-case target</div>
+    </div>
+  </div>`;
+
+  if(totAn>0){
+    const sb=raw(recNow,'strongBuy')||0,b=raw(recNow,'buy')||0,hh=raw(recNow,'hold')||0,
+          s=raw(recNow,'sell')||0,ss=raw(recNow,'strongSell')||0;
+    h+=`<div class="grid g3" style="margin-bottom:4px">
+      <div class="sc"><div class="sc-l">Strong Buy / Buy</div><div class="sc-v v-up">${sb+b} <span style="font-size:9px;color:var(--txd)">(${sb} SB · ${b} B)</span></div></div>
+      <div class="sc"><div class="sc-l">Hold</div><div class="sc-v v-or">${hh}</div></div>
+      <div class="sc"><div class="sc-l">Sell / Strong Sell</div><div class="sc-v v-dn">${s+ss} <span style="font-size:9px;color:var(--txd)">(${s} S · ${ss} SS)</span></div></div>
+    </div>`;
+  }
+
+  if(UH.length){
+    h+=`<table><thead><tr><th>Date</th><th>Firm</th><th>Action</th><th>From</th><th>To</th><th>Target</th></tr></thead><tbody>`;
+    UH.slice(0,15).forEach(u=>{
+      const a=(u.action||'').toLowerCase();
+      const acls=a==='up'||a==='init'||a==='up_r'?'pos':a==='down'?'neg':'nu';
+      const albl={up:'⬆ Upgrade',down:'⬇ Downgrade',init:'★ Initiate',reit:'→ Reiterate',main:'→ Maintain',up_r:'⬆ Upgrade',down_r:'⬇ Downgrade'}[a]||u.action||'—';
+      h+=`<tr><td class="nu">${fd(u.epochGradeDate)}</td><td style="font-weight:600;color:var(--tx)">${u.firm||'—'}</td><td class="${acls}">${albl}</td><td class="nu">${u.fromGrade||'—'}</td><td style="color:var(--tx)">${u.toGrade||'—'}</td><td class="est">${u.priceTarget?.raw?fc.format(u.priceTarget.raw):'—'}</td></tr>`;
+    });
+    h+=`</tbody></table>`;
+  }else{
+    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No upgrade/downgrade history (visit finance.yahoo.com once for full data)</div>`;
+  }
+
+  // ══ §3 EARNINGS CALENDAR ══════════════════════════════════════════════════
+  h+=`<div class="sh"><span>§3 · Earnings Calendar — Next &amp; History</span></div>`;
+  // v7 has earningsTimestamp
+  const nextEarnTs = q7.earningsTimestamp;
+  const nextStr    = nextEarnTs ? fd(nextEarnTs) : (CAL.earningsDate?.[0]?.raw ? fd(CAL.earningsDate[0].raw) : 'Not scheduled');
+  const q0=ET.find(t=>t?.period==='0q');
+  const nextEPS =raw(q0,'earningsEstimate','avg');
+  const nextRev =raw(q0,'revenueEstimate','avg');
+  const nextEPSL=raw(q0,'earningsEstimate','low');
+  const nextEPSH=raw(q0,'earningsEstimate','high');
+  const nextRevL=raw(q0,'revenueEstimate','low');
+  const nextRevH=raw(q0,'revenueEstimate','high');
+
+  // v7 has epsTrailingTwelveMonths and epsForward  
+  const epsActV7 = q7.epsTrailingTwelveMonths;
+  const epsFwdV7 = q7.epsForward;
+
+  h+=`<div class="grid g3">
+    <div class="sc"><div class="sc-l">Next Earnings Date</div>
+      <div class="sc-v v-pu" style="font-size:12px">${nextStr}</div>
+      <div class="sc-s">${q7.earningsTimestampStart&&q7.earningsTimestampEnd?fd(q7.earningsTimestampStart)+' – '+fd(q7.earningsTimestampEnd):''}</div>
+    </div>
+    <div class="sc"><div class="sc-l">EPS Estimate (Next Q)</div>
+      <div class="sc-v est">${nextEPS!=null?'$'+fv(nextEPS):epsFwdV7!=null?'$'+fv(epsFwdV7):'—'}</div>
+      <div class="sc-s">${nextEPSL!=null?'Range: $'+fv(nextEPSL)+' – $'+fv(nextEPSH||0):'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">Revenue Estimate (Next Q)</div>
+      <div class="sc-v est">${nextRev!=null?fb(nextRev):'—'}</div>
+      <div class="sc-s">${nextRevL!=null?'Range: '+fb(nextRevL)+' – '+fb(nextRevH||0):'—'}</div>
+    </div>
+  </div>`;
+
+  if(EH.length){
+    h+=`<table><thead><tr><th>Quarter</th><th>EPS Actual</th><th>EPS Est</th><th>Surprise %</th><th>Revenue</th></tr></thead><tbody>`;
+    EH.slice(0,8).forEach(q=>{
+      const ea=raw(q,'epsActual'),ee=raw(q,'epsEstimated');
+      const surp=ea!=null&&ee!=null&&ee!==0?((ea-ee)/Math.abs(ee)*100):null;
+      const qts=raw(q,'quarter');
+      let rev=null;
+      for(const iq of IQ){if(qts&&Math.abs((raw(iq,'endDate')||0)-qts)<8e6){rev=raw(iq,'totalRevenue');break;}}
+      h+=`<tr>
+        <td style="color:var(--ac);font-weight:700">${q.quarter?.fmt||'—'}</td>
+        <td class="${ea!=null?(ea>=0?'pos':'neg'):''}">${ea!=null?'$'+fv(ea):'—'}</td>
+        <td class="est">${ee!=null?'$'+fv(ee):'—'}</td>
+        <td class="${surp!=null?(surp>=0?'pos':'neg'):''}">${surp!=null?(surp>0?'+':'')+fv(surp)+'%':'—'}</td>
+        <td class="nu">${rev!=null?fb(rev):'—'}</td>
+      </tr>`;
+    });
+    h+=`</tbody></table>`;
+  }else if(epsActV7!=null){
+    h+=`<div class="grid g2" style="margin-bottom:12px">
+      <div class="sc"><div class="sc-l">EPS (TTM)</div><div class="sc-v ${epsActV7>=0?'v-up':'v-dn'}">$${fv(epsActV7)}</div><div class="sc-s">Trailing 12 months</div></div>
+      <div class="sc"><div class="sc-l">EPS (Forward)</div><div class="sc-v est">${epsFwdV7!=null?'$'+fv(epsFwdV7):'—'}</div><div class="sc-s">Next 12 months est.</div></div>
+    </div>`;
+  }
+
+  // ══ §4 SHORT INTEREST & FLOAT ═════════════════════════════════════════════
+  h+=`<div class="sh"><span>§4 · Short Interest, Float &amp; Shares</span></div>`;
+  const sharesOut  = q7.sharesOutstanding  ?? raw(K,'sharesOutstanding');
+  const floatSh    = q7.floatShares        ?? raw(K,'floatShares');
+  const sharesShort= raw(K,'sharesShort');
+  const shortPrior = raw(K,'sharesShortPriorMonth');
+  const siFloat    = raw(K,'shortPercentOfFloat');
+  const dtc        = raw(K,'shortRatio');
+  const siPct      = siFloat!=null?siFloat*100:null;
+
+  h+=`<div class="grid g4">
+    <div class="sc"><div class="sc-l">Shares Outstanding</div>
+      <div class="sc-v v-ac">${fb(sharesOut)?.replace('$','')}</div>
+      <div class="sc-s">Total issued</div>
+    </div>
+    <div class="sc"><div class="sc-l">Float</div>
+      <div class="sc-v v-ac">${fb(floatSh)?.replace('$','')}</div>
+      <div class="sc-s">${sharesOut&&floatSh?fv(floatSh/sharesOut*100,1)+'% of outstanding':'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">Shares Short</div>
+      <div class="sc-v ${siPct!=null?(siPct>20?'v-dn':siPct>10?'v-or':'v-nu'):'v-nu'}">${sharesShort!=null?fb(sharesShort)?.replace('$',''):'—'}</div>
+      <div class="sc-s">${siPct!=null?fv(siPct,1)+'% of float':'—'}<div class="si-bar"><div class="si-bar-f" style="width:${Math.min(siPct||0,50)*2}%"></div></div></div>
+    </div>
+    <div class="sc"><div class="sc-l">Days to Cover</div>
+      <div class="sc-v ${dtc!=null?(dtc>5?'v-dn':dtc>2?'v-or':'v-nu'):'v-nu'}">${dtc!=null?fv(dtc,1):'—'}</div>
+      <div class="sc-s">${shortPrior!=null?'Prior mo: '+fb(shortPrior)?.replace('$',''):'Short ratio'}</div>
+    </div>
+  </div>`;
+
+  // ══ §5 INSTITUTIONAL OWNERSHIP ════════════════════════════════════════════
+  h+=`<div class="sh"><span>§5 · Institutional &amp; Fund Ownership</span></div>`;
+  const instPct    = raw(MAJ,'institutionsPercentHeld');
+  const instFloatP = raw(MAJ,'institutionsFloatPercentHeld');
+  const insiderPct = raw(MAJ,'insidersPercentHeld');
+  const netInfo    = raw(NSP,'netInfoCount');
+
+  h+=`<div class="grid g3">
+    <div class="sc"><div class="sc-l">Institutional %</div>
+      <div class="sc-v v-ac">${instPct!=null?fv(instPct*100,1)+'%':'—'}</div>
+      <div class="sc-s">Of outstanding<div class="pbar"><div class="pbar-f" style="width:${Math.min((instPct||0)*100,100)}%;background:var(--ac)"></div></div></div>
+    </div>
+    <div class="sc"><div class="sc-l">Fund Float %</div>
+      <div class="sc-v v-pu">${instFloatP!=null?fv(instFloatP*100,1)+'%':'—'}</div>
+      <div class="sc-s">Float held by funds<div class="pbar"><div class="pbar-f" style="width:${Math.min((instFloatP||0)*100,100)}%;background:var(--pu)"></div></div></div>
+    </div>
+    <div class="sc"><div class="sc-l">Insider %</div>
+      <div class="sc-v v-gd">${insiderPct!=null?fv(insiderPct*100,1)+'%':'—'}</div>
+      <div class="sc-s">${netInfo!=null?(netInfo>0?'<span class="badge bg-gn">Net Buying</span>':'<span class="badge bg-rd">Net Selling</span>'):'—'}</div>
+    </div>
+  </div>`;
+
+  if(INST.length){
+    h+=`<table><thead><tr><th>Institution</th><th>Shares</th><th>% Out</th><th>Value</th><th>Date</th></tr></thead><tbody>`;
+    INST.slice(0,10).forEach(i=>{
+      const pct=raw(i,'pctHeld'),val=raw(i,'value'),pos=raw(i,'position');
+      h+=`<tr><td style="font-weight:600;color:var(--tx)">${i.organization||'—'}</td><td>${fb(pos)?.replace('$','')}</td><td style="color:var(--ac)">${pct!=null?fv(pct*100,2)+'%':'—'}</td><td style="color:var(--gd)">${val?fb(val):'—'}</td><td class="nu">${fd(raw(i,'reportDate'))}</td></tr>`;
+    });
+    h+=`</tbody></table>`;
+  }
+
+  // ══ §6 INSIDER TRANSACTIONS ═══════════════════════════════════════════════
+  h+=`<div class="sh"><span>§6 · Insider Transactions (SEC Form 4)</span></div>`;
+  if(TX.length){
+    h+=`<table><thead><tr><th>Date</th><th>Name</th><th>Title</th><th>Type</th><th>Shares</th><th>Value</th></tr></thead><tbody>`;
+    TX.slice(0,15).forEach(t=>{
+      const desc=(t.transactionDescription||'').toLowerCase();
+      const isBuy=desc.includes('buy')||desc.includes('purchase')||desc.includes('acqui');
+      const isSell=desc.includes('sale')||desc.includes('sell');
+      h+=`<tr><td class="nu">${fd(raw(t,'startDate'))}</td><td style="font-weight:600;color:var(--tx)">${t.filerName||'—'}</td><td class="nu" style="font-size:9.5px">${t.filerRelation||'—'}</td><td class="${isBuy?'pos':isSell?'neg':''}">${t.transactionDescription||'—'}</td><td>${fb(raw(t,'shares'))?.replace('$','')}</td><td class="est">${raw(t,'value')!=null?fb(raw(t,'value')):'—'}</td></tr>`;
+    });
+    h+=`</tbody></table>`;
+  }else{
+    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">Insider data requires a Yahoo Finance session — <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" style="color:var(--ac)">open in Yahoo</a> first then retry</div>`;
+  }
+
+  // ══ §7 STOCK SPLIT & DIVIDENDS ════════════════════════════════════════════
+  h+=`<div class="sh"><span>§7 · Stock Split &amp; Corporate Actions</span></div>`;
+  const splitF  = K.lastSplitFactor;
+  const splitD  = raw(K,'lastSplitDate');
+  // v7 has dividend data directly
+  const divYld  = q7.dividendYield   ?? raw(D,'dividendYield');
+  const divRate = q7.dividendRate    ?? raw(D,'dividendRate');
+  const exDiv   = q7.dividendDate    ?? raw(D,'exDividendDate');
+  const payDate = raw(D,'dividendDate')||raw(D,'payoutDate');
+  const payRatio= raw(D,'payoutRatio');
+
+  if(splitF&&splitF!=='1:1'){
+    const parts=String(splitF).split(':').map(Number);
+    const isReverse=parts.length===2&&parts[0]<parts[1];
+    h+=`<div class="split-box${isReverse?' rs'}"><div class="split-ico">${isReverse?'⬇':'⬆'}</div>
+      <div class="split-info"><strong>${isReverse?'Reverse Split':'Stock Split'} — ${splitF}</strong>
+      <span>${splitD?'Date: '+fd(splitD)+'   ':''} ${isReverse?'Shares reduced, price increased.':'Shares increased, price reduced.'}</span></div></div>`;
+  }
+
+  h+=`<div class="grid g3">
+    <div class="sc"><div class="sc-l">Dividend Yield</div>
+      <div class="sc-v ${divYld?'v-up':'v-nu'}">${divYld!=null?fv(divYld*100,2)+'%':'None'}</div>
+      <div class="sc-s">${divRate?'$'+fv(divRate)+'/yr':'—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">Ex-Dividend Date</div>
+      <div class="sc-v v-nu" style="font-size:12px">${fd(exDiv)}</div>
+      <div class="sc-s">Pay date: ${fd(payDate)}</div>
+    </div>
+    <div class="sc"><div class="sc-l">Split / Payout Ratio</div>
+      <div class="sc-v v-nu" style="font-size:11px">${splitF||'None on record'}</div>
+      <div class="sc-s">${payRatio!=null?fv(payRatio*100,1)+'%':'—'}${splitD?' · '+fd(splitD):''}</div>
+    </div>
+  </div>`;
+
+  // ══ §8 VALUATION & FINANCIALS ═════════════════════════════════════════════
+  h+=`<div class="sh"><span>§8 · Valuation &amp; Key Financials</span></div>`;
+  // v7 has many of these directly
+  const revTTM  = raw(F,'totalRevenue')  || q7.totalRevenue;
+  const revGrow = raw(F,'revenueGrowth') ;
+  const grossM  = raw(F,'grossMargins')  ;
+  const profitM = raw(F,'profitMargins') ;
+  const epsTTM  = raw(K,'trailingEps')   || q7.epsTrailingTwelveMonths;
+  const epsFwd  = raw(K,'forwardEps')    || q7.epsForward;
+  const psRatio = raw(D,'priceToSalesTrailing12Months') || q7.priceToSalesTrailing12Months;
+  const pegR    = raw(K,'pegRatio');
+  const roe     = raw(F,'returnOnEquity');
+  const roa     = raw(F,'returnOnAssets');
+  const d2e     = raw(F,'debtToEquity');
+  const currR   = raw(F,'currentRatio');
+  const fcf     = raw(F,'freeCashflow');
+  const opcf    = raw(F,'operatingCashflow');
+  const beta    = q7.beta ?? raw(D,'beta');
+  const avgVol  = q7.averageVolume ?? raw(D,'averageVolume');
+
+  h+=`<div class="grid g4">
+    <div class="sc"><div class="sc-l">Revenue (TTM)</div><div class="sc-v v-ac">${fb(revTTM)}</div><div class="sc-s">Growth: ${fp(revGrow)}</div></div>
+    <div class="sc"><div class="sc-l">Gross / Profit Margin</div><div class="sc-v ${grossM>0.5?'v-up':'v-nu'}">${fp(grossM)}</div><div class="sc-s">Net: ${fp(profitM)}</div></div>
+    <div class="sc"><div class="sc-l">EPS TTM / Fwd</div><div class="sc-v ${epsTTM>=0?'v-up':'v-dn'}">${epsTTM!=null?'$'+fv(epsTTM):'—'}</div><div class="sc-s">Fwd: ${epsFwd!=null?'$'+fv(epsFwd):'—'}</div></div>
+    <div class="sc"><div class="sc-l">P/S · PEG</div><div class="sc-v v-gd">${psRatio!=null?fv(psRatio,1)+'x':'—'}</div><div class="sc-s">PEG: ${pegR!=null?fv(pegR,2):'—'}</div></div>
+  </div>
+  <div class="grid g4">
+    <div class="sc"><div class="sc-l">ROE / ROA</div><div class="sc-v ${roe>0.15?'v-up':roe>0?'v-nu':'v-dn'}">${fp(roe)}</div><div class="sc-s">ROA: ${fp(roa)}</div></div>
+    <div class="sc"><div class="sc-l">Debt / Equity</div><div class="sc-v ${d2e>1.5?'v-or':'v-nu'}">${d2e!=null?fv(d2e,1):'—'}</div><div class="sc-s">Current ratio: ${currR!=null?fv(currR,2):'—'}</div></div>
+    <div class="sc"><div class="sc-l">Free Cash Flow</div><div class="sc-v ${fcf>0?'v-up':'v-dn'}">${fb(fcf)}</div><div class="sc-s">Op CF: ${fb(opcf)}</div></div>
+    <div class="sc"><div class="sc-l">Beta / Avg Volume</div><div class="sc-v ${beta>1.5?'v-or':beta<0.5?'v-pu':'v-nu'}">${beta!=null?fv(beta,2):'—'}</div><div class="sc-s">${fb(avgVol)?.replace('$','')}</div></div>
+  </div>`;
+
+  // ══ §9 NEWS FEED ══════════════════════════════════════════════════════════
+  h+=`<div class="sh"><span>§9 · Latest News &amp; Headlines</span></div>`;
+  if(news.length){
+    h+=`<div class="news-feed">`;
+    news.slice(0,20).forEach(n=>{
+      const tl=(n.title||'').toLowerCase();
+      const dotCls=tl.match(/upgrade|beat|jump|surge|soar|raise/)?'gn':tl.match(/downgrade|miss|fall|cut|lose|warn/)?'rd':tl.match(/earn|split|divid/)?'or':tl.match(/insider|sec|filing/)?'pu':'';
+      const tagText=tl.match(/upgrade/)?'UPGRADE':tl.match(/downgrade/)?'DOWNGRADE':tl.match(/earnings|eps/)?'EARNINGS':tl.match(/split/)?'SPLIT':tl.match(/insider/)?'INSIDER':'';
+      const tagCls=tagText==='UPGRADE'?'bg-gn':tagText==='DOWNGRADE'?'bg-rd':tagText==='EARNINGS'?'bg-pu':tagText==='SPLIT'?'bg-gd':'bg-or';
+      h+=`<a class="ni" href="${n.link||'#'}" target="_blank" rel="noopener">
+        <div class="ni-dot ${dotCls}"></div>
+        <div class="ni-body">
+          <div class="ni-title">${tagText?`<span class="badge ${tagCls}" style="margin-right:6px">${tagText}</span>`:''} ${n.title||'—'}</div>
+          <div class="ni-meta"><span class="ni-src">${n.publisher||'—'}</span><span>${ago(n.providerPublishTime)}</span></div>
+        </div>
+      </a>`;
+    });
+    h+=`</div>`;
+  }else{
+    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No news found</div>`;
+  }
+
+  h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txm);margin-top:14px;padding:10px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;line-height:1.7">
+    ⚠ Price &amp; basic data via Yahoo Finance v7/v8 (always available). Fundamentals, insider &amp; earnings detail via v10 (requires a Yahoo Finance session cookie — visit finance.yahoo.com once if fields show —). Not financial advice.
+  </div></div>`;
+
+  document.getElementById('results').innerHTML=h;
+}
 
   // Update chart panel name
   document.getElementById('cp-name').textContent=name;
@@ -798,40 +1243,62 @@ function render(sym,d1,d2,d3,news,meta){
 }
 
 // ── AI Analyst Note via Anthropic API ─────────────────────────────────────
-async function renderAI(sym,d1,d2,meta){
+// called as: renderAI(sym, q7, d1, d2)
+// q7 = Yahoo v7 quote (price, name, eps, pe etc.)
+// d1 = v10 summaryProfile+financialData+etc.
+// d2 = v10 earningsHistory+insiderTransactions
+async function renderAI(sym, q7, d1, d2){
   const box=document.getElementById('ai-box');
   if(!box)return;
   box.innerHTML=`<div class="ai-box"><div class="ai-hdr">🤖 AI Analyst Note — ${sym}</div>
     <div class="ai-thinking"><span class="dots"><span>●</span><span>●</span><span>●</span></span>Analysing data…</div>
   </div>`;
 
-  const F=d1.financialData||{};
-  const K=d1.defaultKeyStatistics||{};
-  const D=d1.summaryDetail||{};
-  const P=d1.summaryProfile||{};
-  const UH=(d1.upgradeDowngradeHistory?.history||[]).slice(0,5);
-  const EH=(d2.earningsHistory?.history||[]).slice(0,4);
-  const TX=(d2.insiderTransactions?.transactions||[]).slice(0,4);
-  const ET=d1.earningsTrend?.trend||[];
-  const MAJ=d1.majorHoldersBreakdown||{};
+  const F  = d1.financialData||{};
+  const K  = d1.defaultKeyStatistics||{};
+  const D  = d1.summaryDetail||{};
+  const P  = d1.summaryProfile||{};
+  const UH = (d1.upgradeDowngradeHistory?.history||[]).slice(0,5);
+  const EH = (d2.earningsHistory?.history||[]).slice(0,4);
+  const TX = (d2.insiderTransactions?.transactions||[]).slice(0,4);
+  const ET = d1.earningsTrend?.trend||[];
+  const MAJ= d1.majorHoldersBreakdown||{};
 
-  const ctx={sym,name:meta?.longName||sym,sector:P.sector,industry:P.industry,
-    price:meta?.regularMarketPrice,mktCap:raw(D,'marketCap'),
-    pe:raw(D,'trailingPE'),fwdPe:raw(D,'forwardPE'),
-    revenue:raw(F,'totalRevenue'),revGrowth:raw(F,'revenueGrowth'),
-    grossMargin:raw(F,'grossMargins'),profitMargin:raw(F,'profitMargins'),
-    roe:raw(F,'returnOnEquity'),fcf:raw(F,'freeCashflow'),
-    recommendation:F.recommendationKey,tgtMean:raw(F,'targetMeanPrice'),
-    analystCount:UH.length,
+  // Merge v7 + v10 for best coverage
+  const price    = q7.regularMarketPrice;
+  const longName = q7.longName||q7.shortName||sym;
+
+  const ctx={sym,
+    name:longName,
+    sector:P.sector||q7.sector,
+    industry:P.industry||q7.industry,
+    price,
+    mktCap:q7.marketCap||raw(D,'marketCap'),
+    pe:q7.trailingPE||raw(D,'trailingPE'),
+    fwdPe:q7.forwardPE||raw(D,'forwardPE'),
+    revenue:raw(F,'totalRevenue'),
+    revGrowth:raw(F,'revenueGrowth'),
+    grossMargin:raw(F,'grossMargins'),
+    profitMargin:raw(F,'profitMargins'),
+    roe:raw(F,'returnOnEquity'),
+    fcf:raw(F,'freeCashflow'),
+    recommendation:q7.recommendationKey||F.recommendationKey,
+    tgtMean:q7.targetMeanPrice||raw(F,'targetMeanPrice'),
+    analystCount:q7.numberOfAnalystOpinions||UH.length,
     recentActions:UH.slice(0,3).map(u=>({firm:u.firm,action:u.action,to:u.toGrade,pt:u.priceTarget?.raw})),
-    institutionalPct:raw(MAJ,'institutionsPercentHeld'),insiderPct:raw(MAJ,'insidersPercentHeld'),
-    shortPctFloat:raw(K,'shortPercentOfFloat'),daysToCover:raw(K,'shortRatio'),
-    sharesShort:raw(K,'sharesShort'),floatShares:raw(K,'floatShares'),
+    institutionalPct:raw(MAJ,'institutionsPercentHeld'),
+    insiderPct:raw(MAJ,'insidersPercentHeld'),
+    shortPctFloat:raw(K,'shortPercentOfFloat'),
+    daysToCover:raw(K,'shortRatio'),
+    sharesShort:raw(K,'sharesShort'),
+    floatShares:q7.floatShares||raw(K,'floatShares'),
     recentEarnings:EH.map(q=>({qtr:q.quarter?.fmt,act:q.epsActual?.raw,est:q.epsEstimated?.raw})),
-    nextEarningsDate:d1.calendarEvents?.earnings?.earningsDate?.[0]?.fmt,
-    nextEPSEst:raw(ET.find(t=>t?.period==='0q'),'earningsEstimate','avg'),
+    nextEarningsDate:q7.earningsTimestamp ? new Date(q7.earningsTimestamp*1000).toLocaleDateString() : d1.calendarEvents?.earnings?.earningsDate?.[0]?.fmt,
+    nextEPSEst:q7.epsForward||raw(ET.find(t=>t?.period==='0q'),'earningsEstimate','avg'),
     insiderActivity:TX.map(t=>({name:t.filerName,type:t.transactionDescription,shares:raw(t,'shares')})),
-    splitFactor:K.lastSplitFactor,beta:raw(D,'beta'),divYield:raw(D,'dividendYield'),
+    splitFactor:K.lastSplitFactor,
+    beta:q7.beta||raw(D,'beta'),
+    divYield:q7.dividendYield||raw(D,'dividendYield'),
   };
 
   const prompt=`You are a seasoned Wall Street equity analyst. Write a concise, opinionated analyst note on ${sym} (${ctx.name}) using the data below.
