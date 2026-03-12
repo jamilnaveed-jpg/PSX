@@ -248,6 +248,7 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
     <a class="nl" href="index.html">🧭 MM</a>
     <a class="nl" href="ntrt.html">⚡ NTRT</a>
     <a class="nl" href="ep.html">🎯 EP</a>
+    <a class="nl" href="us-news.html">📰 US·News</a>
   </div>
   <div class="hs"></div>
   <div class="tog" onclick="tog()">
@@ -283,10 +284,7 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 
 <script>
 // ── TradingView chart opener ───────────────────────────────────────────────────
-function openTV(sym) {
-  if (!sym) return;
-  // PSX symbols on TradingView use the PSX: prefix
-  const url = `https://www.tradingview.com/chart/?symbol=PSX:${sym.toUpperCase()}`;
+function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 

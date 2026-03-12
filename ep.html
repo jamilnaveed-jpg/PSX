@@ -269,6 +269,7 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
     <a class="nl" href="index.html">🧭 MM</a>
     <a class="nl" href="ntrt.html">⚡ NTRT</a>
     <a class="nl on" href="ep.html">🎯 EP</a>
+    <a class="nl" href="us-news.html">📰 US·News</a>
   </div>
   <div class="hs"></div>
   <div class="tog" onclick="tog()" title="Toggle theme">
@@ -390,10 +391,7 @@ function tog(){
 })();
 
 // ── TradingView ───────────────────────────────────────────────────────────────
-function openTV(sym){
-  if(!sym)return;
-  window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');
-}
+function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
 
 // ── Safe localStorage helpers ─────────────────────────────────────────────────
 function lsGet(k){try{return localStorage.getItem(k);}catch{return null;}}

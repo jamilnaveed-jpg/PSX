@@ -231,6 +231,7 @@ main{padding:16px 18px 60px;overflow-x:hidden}
     <a class="nl" href="index.html">🧭 MM</a>
     <a class="nl on" href="ntrt.html">⚡ NTRT</a>
     <a class="nl" href="ep.html">🎯 EP</a>
+    <a class="nl" href="us-news.html">📰 US·News</a>
   </div>
   <div class="hs"></div>
   <div class="tog" onclick="tog()" title="Toggle theme">
@@ -313,10 +314,7 @@ function tog(){
 })();
 
 // ── TradingView ─────────────────────────────────────────────────────────────
-function openTV(sym){
-  if(!sym)return;
-  window.open(`https://www.tradingview.com/chart/?symbol=NASDAQ:${sym.toUpperCase()}`,'_blank','noopener,noreferrer');
-}
+function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function fmtDate(s){

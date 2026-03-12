@@ -141,9 +141,11 @@ table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
   <div class="nav">
     <a class="nl" href="daily.html">📊 Daily</a>
     <a class="nl on" href="trend.html">📈 Trend</a>
+    <a class="nl" href="etf.html">🏦 ETF</a>
     <a class="nl" href="index.html">🧭 MM</a>
     <a class="nl" href="ntrt.html">⚡ NTRT</a>
     <a class="nl" href="ep.html">🎯 EP</a>
+    <a class="nl" href="us-news.html">📰 US·News</a>
   </div>
   <div class="hs"></div>
   <div class="tog" onclick="tog()">
@@ -173,7 +175,7 @@ table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
 
 <script>
 // TradingView chart opener
-function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=PSX:${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
+function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
 
 let dates=[],sel=null,cY=new Date().getFullYear(),cM=new Date().getMonth();
 

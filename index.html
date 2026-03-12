@@ -149,6 +149,7 @@ tbody tr.rl td.td-date::after{content:' ◀ TODAY';font-size:8px;color:var(--gn)
     <a class="nl on" href="index.html">🧭 MM</a>
     <a class="nl" href="ntrt.html">⚡ NTRT</a>
     <a class="nl" href="ep.html">🎯 EP</a>
+    <a class="nl" href="us-news.html">📰 US·News</a>
   </div>
   <div class="hs"></div>
   <div class="live-badge"><div class="live-dot"></div>DAILY UPDATE</div>
@@ -265,6 +266,9 @@ tbody tr.rl td.td-date::after{content:' ◀ TODAY';font-size:8px;color:var(--gn)
 <script>
 const DATA_URL='mm_data.json', MAX_ROWS=120;
 const BAR_MAX={up4:150,dn4:150,up25q:300,dn25q:300,up25m:200,dn25m:200,up50m:100,dn50m:100,up13_34:250,dn13_34:250};
+
+/* TradingView — universal, no exchange prefix */
+function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
 
 /* Theme */
 function tog(){
