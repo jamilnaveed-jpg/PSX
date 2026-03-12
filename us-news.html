@@ -267,15 +267,23 @@ td.nu{color:var(--txd)}
 // New add from Google 
 
 // CONFIGURATION: Replace these with your free API keys
-const FINNHUB_KEY = 'd6pgn01r01qo88aj4negd6pgn01r01qo88aj4nf0'; // Get at finnhub.io
-const MARKETAUX_KEY = 'MHYnUE41mpwSPXGhYfWQwnTzLcML2LAKjeE5LlPG'; // Get at marketaux.com
+const FINNHUB_KEY = 'd6pgn01r01qo88aj4negd6pgn01r01qo88aj4nf0'; 
+const MARKETAUX_KEY = 'MHYnUE41mpwSPXGhYfWQwnTzLcML2LAKjeE5LlPG'; 
 
-async function searchTicker() {
-  const sym = document.getElementById('tickerInput').value.toUpperCase();
-  const box = document.getElementById('displayBox');
+// 1. Rename your function to "go" so the existing button can call it
+async function go(symInput) {
+  // Use the existing ID "sym-inp" from your HTML
+  const inputEl = document.getElementById('sym-inp');
+  const sym = (symInput || inputEl.value).toUpperCase().replace(/[^A-Z0-9.]/g,'');
+  
+  // Use the existing ID "results" to display the data
+  const box = document.getElementById('results');
   
   if(!sym) return;
-  box.innerHTML = `<div class="loading">Analyzing ${sym} for Magna53 criteria...</div>`;
+  box.innerHTML = `<div class="empty"><span class="spinner"></span>Analyzing ${sym} for Magna53 criteria...</div>`;
+
+  // Update the chart (this uses your existing function)
+  setChart(sym);
 
   try {
     // 1. Fetch Fundamental & Earnings Data (M & A Criteria)
@@ -295,9 +303,12 @@ async function searchTicker() {
     const profData = await profRes.json();
     const newsData = await newsRes.json();
 
+    // Add to recent list (your existing function)
+    addRecent(sym);
+    
     renderMagnaDashboard(sym, epsData, profData, newsData);
   } catch (err) {
-    box.innerHTML = `<div class="error">Connection Failed. Check your API Keys.</div>`;
+    box.innerHTML = `<div class="err-box">Connection Failed. Check your API Keys or console for errors.</div>`;
     console.error(err);
   }
 }
@@ -307,44 +318,52 @@ function renderMagnaDashboard(sym, eps, profile, news) {
   const articles = news.data || [];
   
   // Magna53 Logic Checks
-  const hasSurprise = latest.surprise > 10; // "M" - Massive Surprise > 10%
-  const marketCap = (profile.marketCapitalization / 1000).toFixed(2); // "Cap 10" Check
+  const hasSurprise = latest.surprise > 10;
+  const marketCap = profile.marketCapitalization ? (profile.marketCapitalization / 1000).toFixed(2) : '—';
   
-  document.getElementById('displayBox').innerHTML = `
-    <div class="magna-card">
-      <div class="card-header">
-        <h2>${sym} — ${profile.name || 'Stock Data'}</h2>
-        <span class="cap-tag">${marketCap}B Market Cap</span>
-      </div>
+  // Target the "results" box for output
+  document.getElementById('results').innerHTML = `
+    <div class="fin" style="padding:20px">
+      <div class="sh"><span>${sym} — ${profile.name || 'Stock Intelligence'}</span></div>
       
-      <div class="metrics-grid">
-        <div class="metric ${hasSurprise ? 'pos' : ''}">
-          <label>M: EPS Surprise</label>
-          <span>${latest.surprise.toFixed(2)}%</span>
+      <div class="grid g3">
+        <div class="sc">
+          <div class="sc-l">M: EPS Surprise</div>
+          <div class="sc-v ${hasSurprise ? 'v-up' : ''}">${latest.surprise ? latest.surprise.toFixed(2) : '0'}%</div>
         </div>
-        <div class="metric">
-          <label>A: Actual EPS</label>
-          <span>$${latest.actual}</span>
+        <div class="sc">
+          <div class="sc-l">A: Actual EPS</div>
+          <div class="sc-v v-ac">$${latest.actual || '—'}</div>
         </div>
-        <div class="metric">
-          <label>N: Sentiment</label>
-          <span>${articles[0]?.entities[0]?.sentiment_score?.toFixed(2) || 'N/A'}</span>
+        <div class="sc">
+          <div class="sc-l">N: Sentiment</div>
+          <div class="sc-v v-pu">${articles[0]?.entities[0]?.sentiment_score?.toFixed(2) || 'Neutral'}</div>
         </div>
       </div>
 
+      <div class="sh"><span>Cap 10 Check</span></div>
+      <div class="blurb">
+        Current Market Cap: <strong>${marketCap}B</strong>. 
+        ${marketCap < 10 ? '✅ Qualifies as Small/Mid Cap' : '⚠️ Large Cap (> $10B)'}
+      </div>
+
+      <div class="sh"><span>Latest News (N - News/Neglect)</span></div>
       <div class="news-feed">
-        <h4>Latest News (N - News/Neglect)</h4>
         ${articles.slice(0, 3).map(a => `
-          <div class="news-item">
-            <a href="${a.url}" target="_blank">${a.title}</a>
-            <small>${new Date(a.published_at).toLocaleDateString()} via ${a.source}</small>
-          </div>
+          <a class="ni" href="${a.url}" target="_blank">
+            <div class="ni-dot ${a.entities[0]?.sentiment_score > 0 ? 'gn' : 'rd'}"></div>
+            <div class="ni-body">
+              <div class="ni-title">${a.title}</div>
+              <div class="ni-meta"><span class="ni-src">${a.source}</span> • ${new Date(a.published_at).toLocaleDateString()}</div>
+            </div>
+          </a>
         `).join('')}
       </div>
     </div>
   `;
 }
 
+// End from Google 
 // ── Theme ──────────────────────────────────────────────────────────────────
 function tog(){
   const h=document.documentElement,d=h.getAttribute('data-theme')==='dark',n=d?'light':'dark';
