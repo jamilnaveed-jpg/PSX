@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' fonts.googleapis.com fonts.gstatic.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com fonts.gstatic.com; img-src 'self' data:; connect-src 'none';">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+<meta name="referrer" content="no-referrer">
+<title>PSX · EP Screener</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root,[data-theme="dark"]{
+  --bg:#060a0e;--sf:#0b1017;--sf2:#0f1720;--sf3:#131e28;--sf4:#161f2c;
+  --bd:#162030;--bd2:#1e2e42;--bd3:#263848;
+  --tx:#c8ddf0;--txd:#3a5870;--txm:#1a2e40;
+  --ac:#00c4e8;--ac2:#006688;--ac3:rgba(0,196,232,.12);
+  --gn:#00e676;--gnbg:#001f0d;--gnmd:#003515;--gnbr:#00e67630;
+  --rd:#ff4444;--rdbg:#1f0000;--rdmd:#330000;--rdbr:#ff444430;
+  --gd:#ffd040;--gdbg:#1f1400;--gdbr:#ffd04030;
+  --or:#ff9c20;--orbg:#1f1000;--orbr:#ff9c2030;
+  --pu:#b388ff;--pubg:#180d2e;--pubr:#b388ff30;
+  --tl:#26d4e8;--bl:#4db8ff;
+  --hdr:rgba(6,10,14,0.97);
+  --sl:rgba(0,0,0,0.08);
+  --go:#00e676;--go-bg:#001f0d;--go-br:#00e67640;
+  --nogo:#ff4444;--nogo-bg:#1f0000;--nogo-br:#ff444440;
+  --pend:#ffd040;--pend-bg:#1f1400;--pend-br:#ffd04040;
+}
+[data-theme="light"]{
+  --bg:#edf2f8;--sf:#ffffff;--sf2:#f4f8fc;--sf3:#eaf0f7;--sf4:#e4eef7;
+  --bd:#c4d4e8;--bd2:#a0bcd4;--bd3:#88a8c8;
+  --tx:#0a1828;--txd:#4a6a88;--txm:#88aac8;
+  --ac:#0077aa;--ac2:#005588;--ac3:rgba(0,119,170,.1);
+  --gn:#1a7a40;--gnbg:#e4f8ea;--gnmd:#c0ecd0;--gnbr:#1a7a4030;
+  --rd:#cc2222;--rdbg:#fde4e4;--rdmd:#f8c0c0;--rdbr:#cc222230;
+  --gd:#886000;--gdbg:#fff6d8;--gdbr:#88600030;
+  --or:#c66000;--orbg:#fff0d0;--orbr:#c6600030;
+  --pu:#7b22cc;--pubg:#efe8ff;--pubr:#7b22cc30;
+  --tl:#00838f;--bl:#1565c0;
+  --hdr:rgba(237,242,248,0.97);
+  --sl:transparent;
+  --go:#1a7a40;--go-bg:#e4f8ea;--go-br:#1a7a4040;
+  --nogo:#cc2222;--nogo-bg:#fde4e4;--nogo-br:#cc222240;
+  --pend:#886000;--pend-bg:#fff6d8;--pend-br:#88600040;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Syne',sans-serif;font-size:13px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--sl) 3px,var(--sl) 4px);pointer-events:none;z-index:9999}
+
+/* ── HEADER ── */
+header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);border-bottom:1px solid var(--bd);backdrop-filter:blur(16px);display:flex;align-items:center;padding:0 20px;gap:12px;transition:background .25s}
+.logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ac);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.logo span{color:var(--txd);font-weight:400}
+.nav{display:flex;gap:2px;flex-wrap:wrap}
+.nl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);text-decoration:none;padding:4px 9px;border-radius:4px;border:1px solid transparent;transition:all .15s;white-space:nowrap}
+.nl:hover{color:var(--ac);border-color:var(--bd2)}
+.nl.on{color:var(--ac);background:rgba(0,196,232,.09);border-color:var(--ac2)}
+.hs{width:1px;height:22px;background:var(--bd);flex-shrink:0}
+.tog{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.tt{width:32px;height:18px;background:var(--bd);border-radius:9px;position:relative;border:1px solid var(--bd2);transition:background .2s}
+.tk{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--txd);transition:transform .2s,background .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+[data-theme="light"] .tk{transform:translateX(14px);background:var(--ac)}
+#upd-label{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);white-space:nowrap}
+
+/* ── PAGE ── */
+.page{padding:18px 20px 80px;max-width:1800px;margin:0 auto}
+
+/* ── SECTION TITLE ── */
+.sec-title{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--txd);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* ── CREDENTIAL PANEL ── */
+.cred-banner{background:var(--gdbg);border:1px solid var(--gdbr);border-radius:8px;padding:12px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start}
+.cred-ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.cred-body{flex:1;font-size:11.5px;line-height:1.7}
+.cred-body strong{color:var(--gd)}
+.cred-body code{font-family:'JetBrains Mono',monospace;background:var(--sf3);padding:1px 6px;border-radius:3px;font-size:10.5px;color:var(--ac)}
+
+/* ── SUBSCRIPTION TOGGLES ── */
+.sub-row{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.sub-toggle{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--sf);cursor:pointer;transition:all .2s;user-select:none;min-width:180px}
+.sub-toggle.active{border-color:var(--ac);background:var(--ac3)}
+.sub-toggle.active .sub-dot{background:var(--gn);box-shadow:0 0 6px var(--gn)}
+.sub-dot{width:8px;height:8px;border-radius:50%;background:var(--txm);transition:all .2s;flex-shrink:0}
+.sub-name{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;color:var(--txd);transition:color .2s}
+.sub-toggle.active .sub-name{color:var(--ac)}
+.sub-tag{font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 5px;border-radius:3px;background:var(--sf3);color:var(--txd)}
+.sub-toggle.active .sub-tag{background:var(--ac3);color:var(--ac)}
+.sub-cred-btn{font-family:'JetBrains Mono',monospace;font-size:8.5px;padding:2px 7px;border-radius:4px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s;margin-left:auto}
+.sub-cred-btn:hover{color:var(--ac);border-color:var(--ac)}
+
+/* ── WEEK SELECTOR ── */
+.week-row{display:flex;align-items:center;gap:8px;margin-bottom:18px}
+.week-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.week-input{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);padding:4px 10px;cursor:pointer;transition:border-color .15s}
+.week-input:focus{outline:none;border-color:var(--ac)}
+.week-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s}
+.week-btn:hover{color:var(--ac);border-color:var(--ac)}
+.save-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--go-bg);color:var(--go);border:1px solid var(--go-br);opacity:0;transition:opacity .3s}
+.save-badge.show{opacity:1}
+
+/* ── 5-DAY BUCKET GRID ── */
+.bucket-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:28px}
+.bucket{border:1px solid var(--bd);border-radius:8px;background:var(--sf);overflow:hidden;transition:border-color .2s}
+.bucket:hover{border-color:var(--bd2)}
+.bucket-hdr{padding:8px 12px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;background:var(--sf2)}
+.bucket-day{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--ac);letter-spacing:.06em;text-transform:uppercase}
+.bucket-date{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd)}
+.bucket-count{font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 6px;border-radius:3px;background:var(--ac3);color:var(--ac)}
+.bucket-input{width:100%;background:transparent;border:none;outline:none;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx);padding:8px 12px;resize:none;min-height:80px;transition:background .15s;border-bottom:1px solid var(--bd)}
+.bucket-input:focus{background:var(--sf2)}
+.bucket-input::placeholder{color:var(--txm)}
+.bucket-chips{padding:6px 10px;display:flex;flex-wrap:wrap;gap:4px;min-height:32px}
+.chip{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:var(--sf3);color:var(--ac);border:1px solid var(--bd2);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+.chip:hover{background:var(--ac3);border-color:var(--ac)}
+.chip.active{background:var(--ac3);border-color:var(--ac);color:var(--ac)}
+.chip .chip-x{color:var(--txd);font-size:9px;transition:color .15s}
+.chip:hover .chip-x{color:var(--rd)}
+.bucket-add-btn{width:100%;font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:5px;background:transparent;border:none;border-top:1px solid var(--bd);color:var(--txd);cursor:pointer;transition:all .15s;text-align:center}
+.bucket-add-btn:hover{background:var(--sf2);color:var(--ac)}
+/* Today highlight */
+.bucket.today{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac2)}
+.bucket.today .bucket-hdr{background:var(--ac3)}
+.bucket.today .bucket-day{color:var(--gn)}
+
+/* ── TICKER RESEARCH PANEL ── */
+.research-panel{border:1px solid var(--bd);border-radius:10px;background:var(--sf);overflow:hidden;margin-bottom:20px;transition:border-color .2s}
+.rp-hdr{padding:12px 16px;border-bottom:1px solid var(--bd);background:var(--sf2);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.rp-sym{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--ac);cursor:pointer;border-bottom:1px dashed var(--ac2);padding:1px 4px;border-radius:3px;transition:all .15s}
+.rp-sym:hover{color:#fff;background:var(--ac);border-bottom-color:transparent}
+.rp-day-tag{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;background:var(--sf3);color:var(--txd);border:1px solid var(--bd)}
+.rp-close{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 9px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf3);color:var(--txd);cursor:pointer;transition:all .15s}
+.rp-close:hover{color:var(--rd);border-color:var(--rd)}
+
+/* MAGNA53 status pills */
+.magna-row{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--bd);background:var(--sf3)}
+.mg{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;padding:3px 9px;border-radius:5px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.mg.pending{background:var(--pend-bg);color:var(--pend);border-color:var(--pend-br)}
+.mg.go{background:var(--go-bg);color:var(--go);border-color:var(--go-br)}
+.mg.nogo{background:var(--nogo-bg);color:var(--nogo);border-color:var(--nogo-br)}
+.mg-verdict{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:3px 12px;border-radius:5px}
+.mv-go{background:var(--go-bg);color:var(--go);border:1px solid var(--go-br)}
+.mv-nogo{background:var(--nogo-bg);color:var(--nogo);border:1px solid var(--nogo-br)}
+.mv-pend{background:var(--pend-bg);color:var(--pend);border:1px solid var(--pend-br)}
+
+/* Source tabs */
+.src-tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--sf2)}
+.src-tab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.04em;padding:8px 14px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;color:var(--txd);white-space:nowrap}
+.src-tab:hover{color:var(--tx)}
+.src-tab.on{color:var(--ac);border-bottom-color:var(--ac)}
+.src-tab.disabled{opacity:.35;cursor:not-allowed}
+
+/* Source content areas */
+.src-content{display:none;padding:14px 16px}
+.src-content.on{display:block;animation:fadein .2s ease}
+.src-row{margin-bottom:14px}
+.src-lbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.src-lbl .required{font-size:8px;padding:1px 5px;border-radius:3px;background:var(--rdbg);color:var(--rd)}
+.src-lbl .optional{font-size:8px;padding:1px 5px;border-radius:3px;background:var(--sf3);color:var(--txd)}
+.src-ta{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:11px;padding:8px 10px;resize:vertical;min-height:60px;transition:border-color .15s;line-height:1.5}
+.src-ta:focus{outline:none;border-color:var(--ac)}
+.src-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.src-mini-cell{background:var(--sf3);border:1px solid var(--bd);border-radius:5px;padding:8px 10px}
+.src-mini-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);margin-bottom:4px}
+.src-mini-val{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--tx)}
+.src-num{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 8px;transition:border-color .15s}
+.src-num:focus{outline:none;border-color:var(--ac)}
+.src-select{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 8px;transition:border-color .15s;cursor:pointer}
+.src-select:focus{outline:none;border-color:var(--ac)}
+.ext-links{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.ext-btn{font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:4px 10px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;text-decoration:none;display:inline-block;transition:all .15s}
+.ext-btn:hover{color:var(--ac);border-color:var(--ac)}
+.ext-btn.disabled{opacity:.4;pointer-events:none}
+
+/* Report output */
+.report-section{border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-top:4px}
+.rep-hdr{padding:8px 14px;background:var(--sf3);border-bottom:1px solid var(--bd);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--tx);display:flex;justify-content:space-between;align-items:center}
+.rep-body{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.rep-field{display:flex;flex-direction:column;gap:3px}
+.rep-field-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd)}
+.rep-field-val{font-size:11.5px;color:var(--tx);line-height:1.5;font-family:'JetBrains Mono',monospace}
+.rep-full{grid-column:1/-1}
+
+/* Checklist items */
+.chk-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--bd);cursor:pointer}
+.chk-row:last-child{border-bottom:none}
+.chk-box{width:16px;height:16px;border:2px solid var(--bd2);border-radius:3px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:10px}
+.chk-row.done .chk-box{background:var(--go);border-color:var(--go);color:#000}
+.chk-txt{font-size:11.5px;color:var(--txd);line-height:1.4;transition:color .15s}
+.chk-row.done .chk-txt{color:var(--txd);text-decoration:line-through;opacity:.6}
+.chk-row:hover .chk-txt{color:var(--tx)}
+
+/* Bottom action bar */
+.action-bar{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--bd);background:var(--sf2);flex-wrap:wrap}
+.act-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:5px 14px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf3);color:var(--txd);cursor:pointer;transition:all .15s}
+.act-btn:hover{color:var(--ac);border-color:var(--ac)}
+.act-btn.primary{background:var(--ac3);color:var(--ac);border-color:var(--ac2)}
+.act-btn.primary:hover{background:var(--ac);color:#fff}
+.act-btn.success{background:var(--go-bg);color:var(--go);border-color:var(--go-br)}
+.act-btn.danger{color:var(--rd);border-color:var(--rdbr)}
+.act-btn.danger:hover{background:var(--rdbg)}
+
+/* Credential modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
+.modal-bg.hidden{display:none}
+.modal{background:var(--sf);border:1px solid var(--bd2);border-radius:12px;padding:24px;max-width:500px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.modal-title{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--tx);margin-bottom:6px}
+.modal-sub{font-size:11px;color:var(--txd);margin-bottom:18px;line-height:1.6}
+.modal-sub strong{color:var(--tx)}
+.modal-field{margin-bottom:14px}
+.modal-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin-bottom:4px}
+.modal-inp{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 10px;transition:border-color .15s}
+.modal-inp:focus{outline:none;border-color:var(--ac)}
+.modal-warn{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--or);background:var(--orbg);border:1px solid var(--orbr);border-radius:5px;padding:8px 12px;margin-bottom:14px;line-height:1.6}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.modal-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 16px;border-radius:5px;cursor:pointer;transition:all .15s}
+.modal-btn.cancel{background:var(--sf2);border:1px solid var(--bd2);color:var(--txd)}
+.modal-btn.cancel:hover{color:var(--tx);border-color:var(--bd3)}
+.modal-btn.save{background:var(--ac3);border:1px solid var(--ac2);color:var(--ac)}
+.modal-btn.save:hover{background:var(--ac);color:#fff}
+.modal-btn.danger{background:var(--rdbg);border:1px solid var(--rdbr);color:var(--rd)}
+
+/* EP empty state */
+.ep-empty{padding:48px;text-align:center;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px}
+.ep-empty-ico{font-size:32px;display:block;margin-bottom:12px;opacity:.4}
+
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media(max-width:1000px){.bucket-grid{grid-template-columns:repeat(2,1fr) 1fr}}
+@media(max-width:700px){.bucket-grid{grid-template-columns:1fr}.rep-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PSX <span>/</span> EP Screener</div>
+  <div class="nav">
+    <a class="nl" href="daily.html">📊 Daily</a>
+    <a class="nl" href="trend.html">📈 Trend</a>
+    <a class="nl" href="etf.html">🏦 ETF</a>
+    <a class="nl" href="index.html">🧭 MM</a>
+    <a class="nl" href="ntrt.html">⚡ NTRT</a>
+    <a class="nl on" href="ep.html">🎯 EP</a>
+  </div>
+  <div class="hs"></div>
+  <div class="tog" onclick="tog()" title="Toggle theme">
+    <span id="ti">🌙</span>
+    <div class="tt"><div class="tk"></div></div>
+    <span id="tl">Dark</span>
+  </div>
+  <div id="upd-label">MAGNA53 EP Screener</div>
+</header>
+
+<!-- Credential Modal -->
+<div class="modal-bg hidden" id="cred-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Configure Subscription</div>
+    <div class="modal-sub">
+      <strong>🔒 Security Notice:</strong> Credentials are stored <strong>only in your browser's localStorage</strong> — never sent to any server.
+      This page has no external connections. Use a <strong>read-only / research account</strong> where possible.
+      Clear credentials anytime with the "Clear" button below.
+    </div>
+    <div class="modal-warn">⚠ Never enter your primary banking password. Use a dedicated research account with 2FA. These credentials are stored locally in plain text — treat this as a personal device only.</div>
+    <div class="modal-field">
+      <div class="modal-lbl">Username / Email</div>
+      <input class="modal-inp" id="cred-user" type="text" autocomplete="off" spellcheck="false" placeholder="your@email.com">
+    </div>
+    <div class="modal-field">
+      <div class="modal-lbl">Password (stored locally only)</div>
+      <input class="modal-inp" id="cred-pass" type="password" autocomplete="off" placeholder="••••••••••">
+    </div>
+    <div class="modal-field">
+      <div class="modal-lbl">Notes (optional)</div>
+      <input class="modal-inp" id="cred-notes" type="text" placeholder="e.g. trial ends Mar 31, linked to Gmail">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn danger" onclick="clearCred()">🗑 Clear</button>
+      <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn save" onclick="saveCred()">💾 Save Locally</button>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- SECTION 1: Subscriptions -->
+  <div class="sec-title">§1 · Subscription Toggles</div>
+
+  <div class="cred-banner">
+    <div class="cred-ico">🔐</div>
+    <div class="cred-body">
+      <strong>How to store credentials safely:</strong> Click the <code>⚙ Creds</code> button on any subscription below.
+      Credentials are saved to <code>localStorage</code> only — <strong>never transmitted</strong>.
+      Use a dedicated research browser profile or private window.
+      Revoke or change passwords on the subscription site if you ever suspect exposure.
+      For maximum safety, store only a reminder note (e.g. <code>saved in Bitwarden</code>) rather than the actual password.
+    </div>
+  </div>
+
+  <div class="sub-row" id="sub-row"></div>
+
+  <!-- SECTION 2: Weekly Triage Buckets -->
+  <div class="sec-title">§2 · Weekly Triage Buckets</div>
+
+  <div class="week-row">
+    <span class="week-lbl">Week of</span>
+    <input class="week-input" type="date" id="week-date" onchange="onWeekChange()">
+    <button class="week-btn" onclick="prevWeek()">‹ Prev</button>
+    <button class="week-btn" onclick="nextWeek()">Next ›</button>
+    <button class="week-btn" onclick="thisWeek()">Today</button>
+    <button class="week-btn" style="color:var(--ac);border-color:var(--ac2)" onclick="saveAll()">💾 Save</button>
+    <span class="save-badge" id="save-badge">Saved ✓</span>
+  </div>
+
+  <div class="bucket-grid" id="bucket-grid"></div>
+
+  <!-- SECTION 3: Research Panel -->
+  <div class="sec-title">§3 · Research Checklist & MAGNA53 Filter</div>
+  <div id="research-area">
+    <div class="ep-empty">
+      <span class="ep-empty-ico">🎯</span>
+      Click any ticker chip above to open its research panel.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── SECURITY: no external fetch, all data in localStorage ─────────────────────
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+const SUBS = [
+  {id:'briefing', name:'Briefing.com', tag:'Earnings Narrative', url:'https://www.briefing.com'},
+  {id:'marketsurge', name:'MarketSurge', tag:'Technical & Institutional', url:'https://marketsurge.investors.com'},
+  {id:'stockbee', name:'StockBee.biz', tag:'Community Sentiment', url:'https://stockbee.biz'},
+];
+
+let activeSub = null;   // for credential modal
+let activeWeek = mondayOf(new Date());
+let activeTicker = null;
+
+// ── Theme ─────────────────────────────────────────────────────────────────────
+function tog(){
+  const h=document.documentElement,d=h.getAttribute('data-theme')==='dark',n=d?'light':'dark';
+  h.setAttribute('data-theme',n);
+  document.getElementById('ti').textContent=d?'☀️':'🌙';
+  document.getElementById('tl').textContent=d?'Light':'Dark';
+  lsSet('psx-mm-theme',n);
+}
+(()=>{
+  const s=lsGet('psx-mm-theme');
+  if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('ti').textContent=s==='light'?'☀️':'🌙';document.getElementById('tl').textContent=s==='light'?'Light':'Dark';}
+})();
+
+// ── TradingView ───────────────────────────────────────────────────────────────
+function openTV(sym){
+  if(!sym)return;
+  window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');
+}
+
+// ── Safe localStorage helpers ─────────────────────────────────────────────────
+function lsGet(k){try{return localStorage.getItem(k);}catch{return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch{}}
+function lsDel(k){try{localStorage.removeItem(k);}catch{}}
+function lsGetJSON(k,def={}){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch{return def;}}
+function lsSetJSON(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+function mondayOf(d){
+  const dt=new Date(d);
+  const day=dt.getDay();
+  const diff=day===0?-6:1-day;
+  dt.setDate(dt.getDate()+diff);
+  return isoDate(dt);
+}
+function isoDate(d){
+  const dt=new Date(d);
+  return dt.toISOString().split('T')[0];
+}
+function addDays(d,n){
+  const dt=new Date(d+'T00:00:00');
+  dt.setDate(dt.getDate()+n);
+  return isoDate(dt);
+}
+function fmtShort(d){
+  try{return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+  catch{return d;}
+}
+function isToday(d){return isoDate(new Date())===d;}
+function weekKey(){return 'ep_week_'+activeWeek;}
+function loadWeek(){return lsGetJSON(weekKey(),{tickers:{},research:{}});}
+function saveWeek(data){lsSetJSON(weekKey(),data);}
+
+// ── Subscription toggles ──────────────────────────────────────────────────────
+function renderSubRow(){
+  const el=document.getElementById('sub-row');
+  const states=lsGetJSON('ep_subs',{briefing:true,marketsurge:false,stockbee:false});
+  let h='';
+  SUBS.forEach(s=>{
+    const on=!!states[s.id];
+    h+=`<div class="sub-toggle${on?' active':''}" id="subtog-${s.id}" onclick="toggleSub('${s.id}')">
+      <div class="sub-dot"></div>
+      <div>
+        <div class="sub-name">${s.name}</div>
+        <div class="sub-tag">${s.tag}</div>
+      </div>
+      <button class="sub-cred-btn" onclick="event.stopPropagation();openCredModal('${s.id}')" title="Store credentials locally">⚙ Creds</button>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+function toggleSub(id){
+  const states=lsGetJSON('ep_subs',{});
+  states[id]=!states[id];
+  lsSetJSON('ep_subs',states);
+  renderSubRow();
+  if(activeTicker)renderResearch(activeTicker);
+}
+function subActive(id){
+  return !!(lsGetJSON('ep_subs',{})[id]);
+}
+
+// ── Credential modal ──────────────────────────────────────────────────────────
+function openCredModal(subId){
+  activeSub=subId;
+  const sub=SUBS.find(s=>s.id===subId);
+  document.getElementById('modal-title').textContent=`⚙ ${sub.name} — Local Credentials`;
+  const saved=lsGetJSON('ep_cred_'+subId,{});
+  document.getElementById('cred-user').value=saved.user||'';
+  document.getElementById('cred-pass').value=saved.pass||'';
+  document.getElementById('cred-notes').value=saved.notes||'';
+  document.getElementById('cred-modal').classList.remove('hidden');
+}
+function closeModal(){
+  document.getElementById('cred-modal').classList.add('hidden');
+  activeSub=null;
+}
+function saveCred(){
+  if(!activeSub)return;
+  const data={
+    user: document.getElementById('cred-user').value,
+    pass: document.getElementById('cred-pass').value,
+    notes: document.getElementById('cred-notes').value,
+    saved: new Date().toISOString(),
+  };
+  lsSetJSON('ep_cred_'+activeSub,data);
+  closeModal();
+  showSaveBadge();
+}
+function clearCred(){
+  if(!activeSub)return;
+  lsDel('ep_cred_'+activeSub);
+  document.getElementById('cred-user').value='';
+  document.getElementById('cred-pass').value='';
+  document.getElementById('cred-notes').value='';
+  closeModal();
+}
+// Close modal on background click
+document.getElementById('cred-modal').addEventListener('click',function(e){
+  if(e.target===this)closeModal();
+});
+
+// ── Week navigation ───────────────────────────────────────────────────────────
+function thisWeek(){
+  activeWeek=mondayOf(new Date());
+  syncDateInput();
+  renderBuckets();
+}
+function prevWeek(){
+  activeWeek=addDays(activeWeek,-7);
+  syncDateInput();
+  renderBuckets();
+}
+function nextWeek(){
+  activeWeek=addDays(activeWeek,7);
+  syncDateInput();
+  renderBuckets();
+}
+function onWeekChange(){
+  const v=document.getElementById('week-date').value;
+  if(v)activeWeek=mondayOf(new Date(v+'T00:00:00'));
+  renderBuckets();
+}
+function syncDateInput(){
+  document.getElementById('week-date').value=activeWeek;
+}
+
+// ── Bucket rendering ──────────────────────────────────────────────────────────
+function parseSymbols(text){
+  return [...new Set(
+    text.toUpperCase()
+      .split(/[\s,;\n\t]+/)
+      .map(s=>s.replace(/[^A-Z0-9\.]/g,''))
+      .filter(s=>s.length>=1&&s.length<=6)
+  )];
+}
+
+function renderBuckets(){
+  const data=loadWeek();
+  const el=document.getElementById('bucket-grid');
+  let h='';
+  DAYS.forEach((day,i)=>{
+    const date=addDays(activeWeek,i);
+    const today=isToday(date);
+    const tickers=data.tickers[day]||[];
+    h+=`<div class="bucket${today?' today':''}" id="bucket-${day}">
+      <div class="bucket-hdr">
+        <span class="bucket-day">${day.slice(0,3)}</span>
+        <span class="bucket-date">${fmtShort(date)}</span>
+        ${tickers.length?`<span class="bucket-count">${tickers.length}</span>`:''}
+      </div>
+      <textarea class="bucket-input" id="ta-${day}" placeholder="AAPL MSFT NVDA\n(space or comma separated)" rows="3"
+        onblur="parseBucket('${day}')" onkeydown="if(event.key==='Enter'&&event.ctrlKey)parseBucket('${day}')"
+      >${data.raw&&data.raw[day]?data.raw[day]:tickers.join(' ')}</textarea>
+      <div class="bucket-chips" id="chips-${day}">
+        ${tickers.map(t=>`
+          <div class="chip${activeTicker===t?' active':''}" onclick="openResearch('${t}','${day}','${date}')">
+            ${t}<span class="chip-x" onclick="event.stopPropagation();removeChip('${day}','${t}')">✕</span>
+          </div>`).join('')}
+      </div>
+      <button class="bucket-add-btn" onclick="parseBucket('${day}')">+ Parse Tickers</button>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+
+function parseBucket(day){
+  const ta=document.getElementById('ta-'+day);
+  const tickers=parseSymbols(ta.value);
+  const data=loadWeek();
+  if(!data.tickers)data.tickers={};
+  if(!data.raw)data.raw={};
+  data.tickers[day]=tickers;
+  data.raw[day]=ta.value;
+  saveWeek(data);
+  renderBuckets();
+  // Re-open active ticker if still visible
+  if(activeTicker&&tickers.includes(activeTicker))renderResearch(activeTicker);
+}
+
+function removeChip(day,ticker){
+  const data=loadWeek();
+  data.tickers[day]=(data.tickers[day]||[]).filter(t=>t!==ticker);
+  saveWeek(data);
+  if(activeTicker===ticker){
+    activeTicker=null;
+    document.getElementById('research-area').innerHTML=`<div class="ep-empty"><span class="ep-empty-ico">🎯</span>Click any ticker chip above to open its research panel.</div>`;
+  }
+  renderBuckets();
+}
+
+// ── Research Panel ────────────────────────────────────────────────────────────
+const SOURCES = [
+  {id:'briefing',    label:'📰 Briefing.com', sub:'briefing'},
+  {id:'marketsurge', label:'📊 MarketSurge',  sub:'marketsurge'},
+  {id:'stockbee',    label:'🐝 StockBee',     sub:'stockbee'},
+  {id:'social',      label:'📡 Social/News',  sub:null},
+  {id:'report',      label:'📋 EP Report',    sub:null},
+];
+
+const MAGNA = [
+  {key:'M', label:'M — Massive Acceleration', tip:'Triple-digit earnings jump or significant revenue inflection'},
+  {key:'A1',label:'A — Acceleration',         tip:'Growth rate faster than previous 2 quarters'},
+  {key:'G', label:'G — Gap & Hold',            tip:'Stock gapped up on high volume — capture % gap'},
+  {key:'N', label:'N — News / Neglect',        tip:'Specific catalyst · still under retail radar'},
+  {key:'A2',label:'A — Analyst Outlook',       tip:'≥3 analysts raised targets or ratings post-earnings'},
+];
+
+const CHECKLIST = {
+  briefing: [
+    'Read the full earnings press release narrative',
+    'Note EPS surprise % vs. consensus estimate',
+    'Extract revenue growth % YoY',
+    'Record specific guidance wording (Upgraded / Reiterated / Lowered)',
+    'Identify any forward-looking revenue or EPS guidance range',
+  ],
+  marketsurge: [
+    'Open weekly chart — identify EP section on chart',
+    'Record Institutional Ownership % (current vs. last quarter)',
+    'Note RS (Relative Strength) Rating out of 99',
+    'Record Accumulation/Distribution Grade (A+ to E)',
+    'Confirm price action: gap and hold, or gap and fade?',
+  ],
+  stockbee: [
+    'Search ticker on StockBee momentum lists',
+    'Classify EP Type (Type 1 / Type 2 / Continuation)',
+    'Capture key community commentary on setup quality',
+    'Note any prior EP history for this ticker',
+  ],
+  social: [
+    'Scan X (Twitter) for real-time sentiment — use $TICKER',
+    'Check financial news for upgrade/downgrade alerts',
+    'Note any unusual options activity or dark pool prints',
+    'Search for any pending catalysts (FDA, contract, etc.)',
+  ],
+};
+
+function getResearchData(ticker){
+  const data=loadWeek();
+  return (data.research&&data.research[ticker])||{
+    magna:{},checklist:{},
+    briefing_story:'',briefing_surprise_eps:'',briefing_surprise_rev:'',briefing_guidance:'',briefing_notes:'',
+    ms_ep_type:'',ms_inst_own:'',ms_rs:'',ms_acc:'',ms_notes:'',
+    sb_ep_type:'',sb_commentary:'',sb_notes:'',
+    soc_x_sentiment:'',soc_news:'',soc_notes:'',
+    rep_story:'',rep_eps_beat:'',rep_rev_beat:'',rep_guidance:'',
+    rep_news:'',rep_social:'',
+    rep_short_interest:'',rep_inst_trend:'',rep_chart_url:'',
+    activeTab:'briefing',
+  };
+}
+function saveResearchData(ticker,rd){
+  const data=loadWeek();
+  if(!data.research)data.research={};
+  data.research[ticker]=rd;
+  saveWeek(data);
+}
+
+let activeTab = 'briefing';
+
+function openResearch(ticker, day, date){
+  activeTicker=ticker;
+  activeTab=getResearchData(ticker).activeTab||'briefing';
+  renderBuckets(); // refresh chips highlight
+  renderResearch(ticker, day, date);
+}
+
+function renderResearch(ticker, day, date){
+  if(!ticker)return;
+  const rd=getResearchData(ticker);
+  activeTab=rd.activeTab||'briefing';
+
+  // Compute MAGNA verdict
+  const magnaVals=rd.magna||{};
+  const goCount=Object.values(magnaVals).filter(v=>v==='go').length;
+  const total=MAGNA.length;
+  let verdict='pend', verdictLabel='⏳ Pending';
+  if(goCount===total){verdict='go';verdictLabel='✅ GO — All criteria met';}
+  else if(goCount>=3){verdict='pend';verdictLabel=`⚠ ${goCount}/${total} — Review`;}
+  else if(Object.keys(magnaVals).length>0&&goCount<3){verdict='nogo';verdictLabel=`❌ NO-GO — ${goCount}/${total}`;}
+
+  let h=`<div class="research-panel" id="rp-${ticker}">
+    <div class="rp-hdr">
+      <span class="rp-sym" onclick="openTV('${ticker}')" title="Open on TradingView">${ticker}</span>
+      ${day?`<span class="rp-day-tag">${day} · ${fmtShort(date||'')}</span>`:''}
+      <span style="font-size:11px;color:var(--txd);flex:1">${rd.briefing_story?rd.briefing_story.slice(0,60)+'…':''}</span>
+      <button class="rp-close" onclick="closeResearch()">✕ Close</button>
+    </div>
+
+    <!-- MAGNA53 Filter Row -->
+    <div class="magna-row">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);margin-right:4px;text-transform:uppercase;letter-spacing:.08em">MAGNA53</span>
+      ${MAGNA.map(m=>{
+        const state=magnaVals[m.key]||'pending';
+        return `<div class="mg ${state}" onclick="cycleMagna('${ticker}','${m.key}')" title="${m.tip} (click to toggle: Pending → GO → NO-GO)">${m.label}</div>`;
+      }).join('')}
+      <div class="mg-verdict mv-${verdict}">${verdictLabel}</div>
+    </div>
+
+    <!-- Source tabs -->
+    <div class="src-tabs">
+      ${SOURCES.map(s=>{
+        const disabled=s.sub&&!subActive(s.sub);
+        return `<div class="src-tab${activeTab===s.id?' on':''}${disabled?' disabled':''}" onclick="${disabled?`showSubRequired('${s.sub}')`:''}" id="tab-${s.id}-${ticker}"
+          ${!disabled?`onclick="switchTab('${ticker}','${s.id}')"`:''}>
+          ${s.label}${s.sub&&!subActive(s.sub)?` <span style="font-size:8px;opacity:.6">(off)</span>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // ── Briefing.com tab ──
+  h+=`<div class="src-content${activeTab==='briefing'?' on':''}" id="sc-briefing-${ticker}">
+    <div class="src-row">
+      <div class="src-lbl">The Story <span class="required">required</span></div>
+      <textarea class="src-ta" rows="3" placeholder="Narrative summary from the earnings press release…"
+        oninput="saveField('${ticker}','briefing_story',this.value)">${rd.briefing_story||''}</textarea>
+    </div>
+    <div class="src-mini">
+      <div>
+        <div class="src-lbl">EPS Surprise %</div>
+        <input class="src-num" type="text" placeholder="+42%" value="${rd.briefing_surprise_eps||''}"
+          oninput="saveField('${ticker}','briefing_surprise_eps',this.value)">
+      </div>
+      <div>
+        <div class="src-lbl">Revenue Growth %</div>
+        <input class="src-num" type="text" placeholder="+29% YoY" value="${rd.briefing_surprise_rev||''}"
+          oninput="saveField('${ticker}','briefing_surprise_rev',this.value)">
+      </div>
+      <div>
+        <div class="src-lbl">Guidance Wording</div>
+        <select class="src-select" onchange="saveField('${ticker}','briefing_guidance',this.value)">
+          <option value="">— select —</option>
+          <option value="Upgraded" ${rd.briefing_guidance==='Upgraded'?'selected':''}>Upgraded 📈</option>
+          <option value="Reiterated" ${rd.briefing_guidance==='Reiterated'?'selected':''}>Reiterated ➡</option>
+          <option value="Lowered" ${rd.briefing_guidance==='Lowered'?'selected':''}>Lowered 📉</option>
+          <option value="N/A" ${rd.briefing_guidance==='N/A'?'selected':''}>N/A</option>
+        </select>
+      </div>
+    </div>
+    <div class="src-row" style="margin-top:10px">
+      <div class="src-lbl">Additional Notes</div>
+      <textarea class="src-ta" rows="2" placeholder="Any other details from the press release…"
+        oninput="saveField('${ticker}','briefing_notes',this.value)">${rd.briefing_notes||''}</textarea>
+    </div>
+    ${checklist('${ticker}','briefing',rd)}
+    <div class="ext-links">
+      <a class="ext-btn${!subActive('briefing')?' disabled':''}" href="https://www.briefing.com/stock-market/earnings-analysis" target="_blank" rel="noopener noreferrer">↗ Briefing Earnings</a>
+      <a class="ext-btn" href="https://finance.yahoo.com/quote/${ticker}/financials" target="_blank" rel="noopener noreferrer">↗ Yahoo Financials</a>
+    </div>
+  </div>`;
+
+  // ── MarketSurge tab ──
+  h+=`<div class="src-content${activeTab==='marketsurge'?' on':''}" id="sc-marketsurge-${ticker}">
+    <div class="src-mini" style="margin-bottom:12px">
+      <div>
+        <div class="src-lbl">RS Rating (1–99)</div>
+        <input class="src-num" type="number" min="1" max="99" placeholder="85" value="${rd.ms_rs||''}"
+          oninput="saveField('${ticker}','ms_rs',this.value)">
+      </div>
+      <div>
+        <div class="src-lbl">Institutional Own %</div>
+        <input class="src-num" type="text" placeholder="68%" value="${rd.ms_inst_own||''}"
+          oninput="saveField('${ticker}','ms_inst_own',this.value)">
+      </div>
+      <div>
+        <div class="src-lbl">Acc/Dist Grade</div>
+        <select class="src-select" onchange="saveField('${ticker}','ms_acc',this.value)">
+          <option value="">— select —</option>
+          ${['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','E'].map(g=>`<option value="${g}"${rd.ms_acc===g?' selected':''}>${g}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="src-row">
+      <div class="src-lbl">EP Section on Chart <span class="required">required</span></div>
+      <textarea class="src-ta" rows="2" placeholder="Describe the EP section: weekly base, prior earnings reaction, breakout level…"
+        oninput="saveField('${ticker}','ms_ep_type',this.value)">${rd.ms_ep_type||''}</textarea>
+    </div>
+    <div class="src-row">
+      <div class="src-lbl">Chart / Notes</div>
+      <textarea class="src-ta" rows="2" placeholder="Price action notes, key levels, volume analysis…"
+        oninput="saveField('${ticker}','ms_notes',this.value)">${rd.ms_notes||''}</textarea>
+    </div>
+    ${checklist('${ticker}','marketsurge',rd)}
+    <div class="ext-links">
+      <a class="ext-btn${!subActive('marketsurge')?' disabled':''}" href="https://marketsurge.investors.com" target="_blank" rel="noopener noreferrer">↗ MarketSurge</a>
+      <a class="ext-btn" href="https://finance.yahoo.com/chart/${ticker}" target="_blank" rel="noopener noreferrer">↗ Yahoo Chart</a>
+    </div>
+  </div>`;
+
+  // ── StockBee tab ──
+  h+=`<div class="src-content${activeTab==='stockbee'?' on':''}" id="sc-stockbee-${ticker}">
+    <div class="src-row">
+      <div class="src-lbl">EP Type</div>
+      <select class="src-select" style="max-width:240px" onchange="saveField('${ticker}','sb_ep_type',this.value)">
+        <option value="">— select EP type —</option>
+        <option value="Type 1" ${rd.sb_ep_type==='Type 1'?'selected':''}>Type 1 — First big earnings gap</option>
+        <option value="Type 2" ${rd.sb_ep_type==='Type 2'?'selected':''}>Type 2 — Continuation after prior EP</option>
+        <option value="Continuation" ${rd.sb_ep_type==='Continuation'?'selected':''}>Continuation — Trend following EP</option>
+        <option value="Failed" ${rd.sb_ep_type==='Failed'?'selected':''}>Failed EP — Gap faded</option>
+      </select>
+    </div>
+    <div class="src-row">
+      <div class="src-lbl">Community Commentary <span class="optional">optional</span></div>
+      <textarea class="src-ta" rows="3" placeholder="Key comments from StockBee momentum lists or forum…"
+        oninput="saveField('${ticker}','sb_commentary',this.value)">${rd.sb_commentary||''}</textarea>
+    </div>
+    <div class="src-row">
+      <div class="src-lbl">Notes</div>
+      <textarea class="src-ta" rows="2" placeholder="Prior EP history, momentum rank…"
+        oninput="saveField('${ticker}','sb_notes',this.value)">${rd.sb_notes||''}</textarea>
+    </div>
+    ${checklist('${ticker}','stockbee',rd)}
+    <div class="ext-links">
+      <a class="ext-btn${!subActive('stockbee')?' disabled':''}" href="https://stockbee.biz" target="_blank" rel="noopener noreferrer">↗ StockBee.biz</a>
+    </div>
+  </div>`;
+
+  // ── Social/News tab ──
+  h+=`<div class="src-content${activeTab==='social'?' on':''}" id="sc-social-${ticker}">
+    <div class="src-row">
+      <div class="src-lbl">X (Twitter) Sentiment</div>
+      <textarea class="src-ta" rows="3" placeholder="Real-time sentiment from $${ticker} — bullish/bearish tone, notable accounts…"
+        oninput="saveField('${ticker}','soc_x_sentiment',this.value)">${rd.soc_x_sentiment||''}</textarea>
+    </div>
+    <div class="src-row">
+      <div class="src-lbl">News — Upgrades / Downgrades / Catalysts</div>
+      <textarea class="src-ta" rows="3" placeholder="Analyst upgrades, downgrades, strategic news, partnerships…"
+        oninput="saveField('${ticker}','soc_news',this.value)">${rd.soc_news||''}</textarea>
+    </div>
+    <div class="src-row">
+      <div class="src-lbl">Other Notes</div>
+      <textarea class="src-ta" rows="2" placeholder="Options flow, dark pool, insider activity…"
+        oninput="saveField('${ticker}','soc_notes',this.value)">${rd.soc_notes||''}</textarea>
+    </div>
+    ${checklist('${ticker}','social',rd)}
+    <div class="ext-links">
+      <a class="ext-btn" href="https://twitter.com/search?q=%24${ticker}" target="_blank" rel="noopener noreferrer">↗ X: $${ticker}</a>
+      <a class="ext-btn" href="https://finviz.com/quote.ashx?t=${ticker}" target="_blank" rel="noopener noreferrer">↗ Finviz</a>
+      <a class="ext-btn" href="https://www.marketbeat.com/stocks/NASDAQ/${ticker}/analyst-ratings/" target="_blank" rel="noopener noreferrer">↗ Analyst Ratings</a>
+    </div>
+  </div>`;
+
+  // ── EP Report tab ──
+  h+=`<div class="src-content${activeTab==='report'?' on':''}" id="sc-report-${ticker}">
+    <div class="report-section">
+      <div class="rep-hdr">Section A — MAGNA53 Fundamentals</div>
+      <div class="rep-body">
+        <div class="rep-field rep-full">
+          <div class="rep-field-lbl">The Story</div>
+          <textarea class="src-ta" rows="3" placeholder="Narrative summary of the press release…"
+            oninput="saveField('${ticker}','rep_story',this.value)">${rd.rep_story||rd.briefing_story||''}</textarea>
+        </div>
+        <div class="rep-field">
+          <div class="rep-field-lbl">EPS Surprise %</div>
+          <input class="src-num" type="text" placeholder="+150%" value="${rd.rep_eps_beat||rd.briefing_surprise_eps||''}"
+            oninput="saveField('${ticker}','rep_eps_beat',this.value)">
+        </div>
+        <div class="rep-field">
+          <div class="rep-field-lbl">Revenue Surprise %</div>
+          <input class="src-num" type="text" placeholder="+12% vs est" value="${rd.rep_rev_beat||rd.briefing_surprise_rev||''}"
+            oninput="saveField('${ticker}','rep_rev_beat',this.value)">
+        </div>
+        <div class="rep-field">
+          <div class="rep-field-lbl">Guidance</div>
+          <input class="src-num" type="text" placeholder="Upgraded / Reiterated / Lowered" value="${rd.rep_guidance||rd.briefing_guidance||''}"
+            oninput="saveField('${ticker}','rep_guidance',this.value)">
+        </div>
+      </div>
+    </div>
+    <div class="report-section" style="margin-top:10px">
+      <div class="rep-hdr">Section B — Market Context</div>
+      <div class="rep-body">
+        <div class="rep-field">
+          <div class="rep-field-lbl">News (upgrades/downgrades)</div>
+          <textarea class="src-ta" rows="3" placeholder="Analyst actions, strategic news…"
+            oninput="saveField('${ticker}','rep_news',this.value)">${rd.rep_news||rd.soc_news||''}</textarea>
+        </div>
+        <div class="rep-field" style="grid-column:span 2">
+          <div class="rep-field-lbl">Social (X + StockBee sentiment)</div>
+          <textarea class="src-ta" rows="3" placeholder="Summary of social sentiment…"
+            oninput="saveField('${ticker}','rep_social',this.value)">${rd.rep_social||rd.soc_x_sentiment||''}</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="report-section" style="margin-top:10px">
+      <div class="rep-hdr">Section C — Structural Data</div>
+      <div class="rep-body">
+        <div class="rep-field">
+          <div class="rep-field-lbl">Short Interest (float % · days to cover)</div>
+          <input class="src-num" type="text" placeholder="12% float · 4.2 days" value="${rd.rep_short_interest||''}"
+            oninput="saveField('${ticker}','rep_short_interest',this.value)">
+        </div>
+        <div class="rep-field">
+          <div class="rep-field-lbl">Institutional Ownership Trend</div>
+          <input class="src-num" type="text" placeholder="Accumulating · 68% owned" value="${rd.rep_inst_trend||rd.ms_inst_own||''}"
+            oninput="saveField('${ticker}','rep_inst_trend',this.value)">
+        </div>
+        <div class="rep-field">
+          <div class="rep-field-lbl">Chart URL (MarketSurge weekly)</div>
+          <input class="src-num" type="text" placeholder="https://..." value="${rd.rep_chart_url||''}"
+            oninput="saveField('${ticker}','rep_chart_url',this.value)">
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px 4px">
+      <div class="src-lbl" style="margin-bottom:6px">EP Summary Verdict</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${['✅ Strong EP — Full MAGNA53','⚠ Partial — Watch','❌ No-Go — Skip'].map(v=>`
+          <div onclick="saveField('${ticker}','ep_verdict','${v}')" style="cursor:pointer;padding:5px 12px;border-radius:5px;border:1px solid var(--bd2);background:${rd.ep_verdict===v?'var(--ac3)':'var(--sf3)'};color:${rd.ep_verdict===v?'var(--ac)':'var(--txd)'};font-family:'JetBrains Mono',monospace;font-size:10px;transition:all .15s">${v}</div>
+        `).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  // Bottom action bar
+  h+=`<div class="action-bar">
+    <button class="act-btn primary" onclick="saveAll()">💾 Save All</button>
+    <button class="act-btn" onclick="copyReport('${ticker}')">📋 Copy Report</button>
+    <button class="act-btn" onclick="clearTicker('${ticker}')">🗑 Clear Data</button>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);margin-left:auto;align-self:center">All data stored locally in your browser</span>
+  </div>
+  </div>`; // close research-panel
+
+  document.getElementById('research-area').innerHTML=h;
+
+  // Wire up tab clicks properly after render
+  SOURCES.forEach(s=>{
+    const el=document.getElementById(`tab-${s.id}-${ticker}`);
+    if(el&&!(s.sub&&!subActive(s.sub))){
+      el.onclick=()=>switchTab(ticker,s.id);
+    }
+  });
+}
+
+function checklist(ticker, srcId, rd){
+  const items=CHECKLIST[srcId]||[];
+  if(!items.length)return'';
+  const done=rd.checklist&&rd.checklist[srcId]||[];
+  let h=`<div style="margin-top:10px;border:1px solid var(--bd);border-radius:5px;overflow:hidden">
+    <div style="padding:5px 10px;background:var(--sf3);font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);border-bottom:1px solid var(--bd)">
+      Research Checklist — ${done.length}/${items.length} complete
+    </div>`;
+  items.forEach((item,i)=>{
+    const isDone=done.includes(i);
+    h+=`<div class="chk-row${isDone?' done':''}" onclick="toggleCheck('${ticker}','${srcId}',${i})">
+      <div class="chk-box">${isDone?'✓':''}</div>
+      <div class="chk-txt">${item}</div>
+    </div>`;
+  });
+  h+=`</div>`;
+  return h;
+}
+
+function toggleCheck(ticker, srcId, idx){
+  const rd=getResearchData(ticker);
+  if(!rd.checklist)rd.checklist={};
+  if(!rd.checklist[srcId])rd.checklist[srcId]=[];
+  const i=rd.checklist[srcId].indexOf(idx);
+  if(i>=0)rd.checklist[srcId].splice(i,1);
+  else rd.checklist[srcId].push(idx);
+  saveResearchData(ticker,rd);
+  renderResearch(ticker);
+}
+
+function switchTab(ticker, tabId){
+  activeTab=tabId;
+  const rd=getResearchData(ticker);
+  rd.activeTab=tabId;
+  saveResearchData(ticker,rd);
+  // Just toggle classes without full re-render for snappiness
+  SOURCES.forEach(s=>{
+    const tab=document.getElementById(`tab-${s.id}-${ticker}`);
+    const content=document.getElementById(`sc-${s.id}-${ticker}`);
+    if(tab)tab.classList.toggle('on',s.id===tabId);
+    if(content)content.classList.toggle('on',s.id===tabId);
+  });
+}
+
+function cycleMagna(ticker, key){
+  const rd=getResearchData(ticker);
+  if(!rd.magna)rd.magna={};
+  const states=['pending','go','nogo'];
+  const cur=rd.magna[key]||'pending';
+  rd.magna[key]=states[(states.indexOf(cur)+1)%states.length];
+  saveResearchData(ticker,rd);
+  renderResearch(ticker);
+}
+
+function saveField(ticker, field, value){
+  const rd=getResearchData(ticker);
+  rd[field]=value;
+  saveResearchData(ticker,rd);
+}
+
+function closeResearch(){
+  activeTicker=null;
+  document.getElementById('research-area').innerHTML=`<div class="ep-empty"><span class="ep-empty-ico">🎯</span>Click any ticker chip above to open its research panel.</div>`;
+  renderBuckets();
+}
+
+function clearTicker(ticker){
+  if(!confirm(`Clear all research data for ${ticker}? This cannot be undone.`))return;
+  const data=loadWeek();
+  if(data.research)delete data.research[ticker];
+  saveWeek(data);
+  renderResearch(ticker);
+}
+
+function copyReport(ticker){
+  const rd=getResearchData(ticker);
+  const lines=[
+    `MAGNA53 EP Report — ${ticker}`,
+    `Week of ${activeWeek}`,
+    ``,
+    `=== MAGNA53 Filter ===`,
+    ...MAGNA.map(m=>{
+      const st=rd.magna&&rd.magna[m.key]||'pending';
+      return `${st==='go'?'✅':st==='nogo'?'❌':'⏳'} ${m.label}`;
+    }),
+    ``,
+    `=== Section A: MAGNA53 Fundamentals ===`,
+    `Story: ${rd.rep_story||rd.briefing_story||'—'}`,
+    `EPS Surprise: ${rd.rep_eps_beat||rd.briefing_surprise_eps||'—'}`,
+    `Rev Surprise: ${rd.rep_rev_beat||rd.briefing_surprise_rev||'—'}`,
+    `Guidance: ${rd.rep_guidance||rd.briefing_guidance||'—'}`,
+    ``,
+    `=== Section B: Market Context ===`,
+    `News: ${rd.rep_news||rd.soc_news||'—'}`,
+    `Social: ${rd.rep_social||rd.soc_x_sentiment||'—'}`,
+    ``,
+    `=== Section C: Structural Data ===`,
+    `Short Interest: ${rd.rep_short_interest||'—'}`,
+    `Institutional: ${rd.rep_inst_trend||rd.ms_inst_own||'—'}`,
+    `Chart: ${rd.rep_chart_url||'—'}`,
+    ``,
+    `RS Rating: ${rd.ms_rs||'—'}   Acc/Dist: ${rd.ms_acc||'—'}`,
+    `StockBee EP Type: ${rd.sb_ep_type||'—'}`,
+    `Verdict: ${rd.ep_verdict||'Pending'}`,
+  ];
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+    showSaveBadge('Copied!');
+  }).catch(()=>alert(lines.join('\n')));
+}
+
+// ── Save / feedback ───────────────────────────────────────────────────────────
+function saveAll(){
+  // Data is already auto-saved on input, this just shows confirmation
+  showSaveBadge();
+}
+
+function showSaveBadge(txt='Saved ✓'){
+  const el=document.getElementById('save-badge');
+  if(!el)return;
+  el.textContent=txt;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+function showSubRequired(subId){
+  const sub=SUBS.find(s=>s.id===subId);
+  alert(`${sub.name} is currently toggled OFF.\n\nEnable it in the subscription toggles at the top of the page.`);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+thisWeek();
+renderSubRow();
+</script>
+</body>
+</html>
