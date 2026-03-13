@@ -177,6 +177,7 @@ td.nu{color:var(--txd)}
         oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9.]/g,'')"
         onkeydown="if(event.key==='Enter')go()">
       <button class="lookup-btn" id="lbtn" onclick="go()">🔍 Lookup</button>
+      <span id="api-status" style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--bd);color:var(--txd);background:var(--sf2)">⏳ Checking API…</span>
     </div>
     <div class="recent-row" id="recent-row"><span class="rc-lbl">Recent:</span></div>
     <div id="results">
@@ -213,8 +214,8 @@ td.nu{color:var(--txd)}
 //  PSX · US-News  |  Finnhub (quote/fundamentals) + Marketaux (news)
 //
 //  API keys are INJECTED AT BUILD TIME by GitHub Actions using:
-//    sed -i 's/d6pgn01r01qo88aj4negd6pgn01r01qo88aj4nf0/${{ secrets.FINNHUB_KEY }}/g' us-news.html
-//    sed -i 's/MHYnUE41mpwSPXGhYfWQwnTzLcML2LAKjeE5LlPG/${{ secrets.MARKETAUX_KEY }}/g' us-news.html
+//    sed -i 's/%%FINNHUB_KEY%%/${{ secrets.FINNHUB_KEY }}/g' us-news.html
+//    sed -i 's/%%MARKETAUX_KEY%%/${{ secrets.MARKETAUX_KEY }}/g' us-news.html
 //
 //  DO NOT commit real keys here — always use the %%PLACEHOLDER%% format.
 // ══════════════════════════════════════════════════════════════════════════
@@ -780,6 +781,29 @@ Rules: direct and opinionated, use the actual numbers, no filler. Under 280 word
 renderRecent();
 const urlSym = new URLSearchParams(location.search).get('sym') || location.hash.slice(1);
 if(urlSym) go(urlSym.toUpperCase());
+
+// ── Startup API connection test ─────────────────────────────────────────────
+(async()=>{
+  const badge = document.getElementById('api-status');
+  try{
+    const r = await fetch(`${FH_BASE}/quote?symbol=AAPL&token=${FH_KEY}`);
+    const j = await r.json();
+    if(r.ok && j?.c > 0){
+      badge.textContent = '🟢 Finnhub Connected';
+      badge.style.color = 'var(--gn)';
+      badge.style.borderColor = 'var(--gnbr)';
+      badge.style.background = 'var(--gnbg)';
+    } else {
+      throw new Error(r.status);
+    }
+  }catch(e){
+    badge.textContent = '🔴 API Error — see console';
+    badge.style.color = 'var(--rd)';
+    badge.style.borderColor = 'var(--rdbr)';
+    badge.style.background = 'var(--rdbg)';
+    console.error('[Finnhub startup test]', e);
+  }
+})();
 </script>
 </body>
 </html>
