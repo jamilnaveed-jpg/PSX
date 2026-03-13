@@ -213,8 +213,8 @@ td.nu{color:var(--txd)}
 //  PSX · US-News  |  Finnhub (quote/fundamentals) + Marketaux (news)
 //
 //  API keys are INJECTED AT BUILD TIME by GitHub Actions using:
-//    sed -i 's/%%FINNHUB_KEY%%/${{ secrets.FINNHUB_KEY }}/g' us-news.html
-//    sed -i 's/%%MARKETAUX_KEY%%/${{ secrets.MARKETAUX_KEY }}/g' us-news.html
+//    sed -i 's/d6pgn01r01qo88aj4negd6pgn01r01qo88aj4nf0/${{ secrets.FINNHUB_KEY }}/g' us-news.html
+//    sed -i 's/MHYnUE41mpwSPXGhYfWQwnTzLcML2LAKjeE5LlPG/${{ secrets.MARKETAUX_KEY }}/g' us-news.html
 //
 //  DO NOT commit real keys here — always use the %%PLACEHOLDER%% format.
 // ══════════════════════════════════════════════════════════════════════════
@@ -331,7 +331,7 @@ async function go(sym){
   if(false){
     document.getElementById('results').innerHTML=`
       <div class="err-box">⚠ API keys not injected yet.<br><br>
-      The GitHub Actions workflow must replace <code>%%FINNHUB_KEY%%</code> and <code>%%MARKETAUX_KEY%%</code>
+      The GitHub Actions workflow must replace <code>d6pgn01r01qo88aj4negd6pgn01r01qo88aj4nf0</code> and <code>MHYnUE41mpwSPXGhYfWQwnTzLcML2LAKjeE5LlPG</code>
       with your repo secrets before deploying. See the workflow file below.</div>`;
     return;
   }
