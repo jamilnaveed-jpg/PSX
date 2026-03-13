@@ -6,5 +6,13 @@
     "total_earnings": 0,
     "total_screened": 0,
     "candidates": []
+  },
+  {
+    "date": "2026-03-13",
+    "scanned_at": "2026-03-13T14:09:54.619054Z",
+    "market": "US",
+    "total_earnings": 0,
+    "total_screened": 0,
+    "candidates": []
   }
 ]
