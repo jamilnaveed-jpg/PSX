@@ -326,57 +326,55 @@ function renderRecent() {
 // ══════════════════════════════════════════════════════════════════════════
 //  YAHOO FINANCE API LAYER
 // ══════════════════════════════════════════════════════════════════════════
+//  FETCH LAYER
+//  v8/chart  — direct, always CORS-open from any origin → price, OHLCV, PE
+//  v7/quote  — via allorigins.win proxy → analyst PTs, recommendation, earnings date
+//  v10       — via allorigins.win proxy → deep fundamentals (margins, FCF, etc.)
+//  allorigins: free, no-key CORS proxy; wraps any URL; returns {contents:"..."}
+// ══════════════════════════════════════════════════════════════════════════
 
-// v7/quote — real-time price, analyst PTs, earnings date, recommendation
-// FULLY CORS-open from any origin with no cookies required
-async function yf7(sym) {
-  for (const host of [YQ1, YQ2]) {
-    try {
-      const r = await fetch(
-        `${host}/v7/finance/quote?symbols=${sym}&lang=en-US&region=US`,
-        { credentials: 'include' }
-      );
-      if (!r.ok) continue;
-      const j = await r.json();
-      const q = j?.quoteResponse?.result?.[0];
-      if (q) return q;
-    } catch {}
-  }
-  return null;
+const PROXY = 'https://api.allorigins.win/get?url=';
+
+async function proxied(url) {
+  const r = await fetch(PROXY + encodeURIComponent(url));
+  if (!r.ok) return null;
+  const j = await r.json();
+  return JSON.parse(j.contents);
 }
 
-// v8/chart — OHLCV + meta, always CORS-open
+// v8/chart — direct (no proxy needed, always CORS-open)
 async function yf8(sym) {
   for (const host of [YQ1, YQ2]) {
     try {
-      const r = await fetch(
-        `${host}/v8/finance/chart/${sym}?interval=1d&range=5d`,
-        { credentials: 'include' }
-      );
+      const r = await fetch(`${host}/v8/finance/chart/${sym}?interval=1d&range=5d`);
       if (!r.ok) continue;
       const j = await r.json();
       const m = j?.chart?.result?.[0]?.meta;
-      if (m) return m;
+      if (m && m.regularMarketPrice) return m;
     } catch {}
   }
   return null;
 }
 
-// v10/quoteSummary — deep fundamentals; needs Yahoo session cookie
-// Returns {} gracefully if not available
+// v7/quote — via proxy (returns analyst targets, recommendation, earnings date)
+async function yf7(sym) {
+  try {
+    const url = `${YQ1}/v7/finance/quote?symbols=${sym}&lang=en-US&region=US`;
+    const j = await proxied(url);
+    const q = j?.quoteResponse?.result?.[0];
+    if (q) return q;
+  } catch {}
+  return null;
+}
+
+// v10/quoteSummary — via proxy (deep fundamentals)
 async function yf10(sym, modules) {
-  for (const host of [YQ1, YQ2]) {
-    try {
-      const r = await fetch(
-        `${host}/v10/finance/quoteSummary/${sym}?modules=${modules.join(',')}`,
-        { credentials: 'include' }
-      );
-      if (!r.ok) continue;
-      const j = await r.json();
-      const res = j?.quoteSummary?.result?.[0];
-      if (res) return res;
-    } catch {}
-  }
+  try {
+    const url = `${YQ1}/v10/finance/quoteSummary/${sym}?modules=${modules.join(',')}`;
+    const j = await proxied(url);
+    const res = j?.quoteSummary?.result?.[0];
+    if (res) return res;
+  } catch {}
   return {};
 }
 
@@ -424,13 +422,13 @@ async function go(sym) {
       mxNews(sym),
     ]);
 
-    const q7   = r7.status   === 'fulfilled' ? r7.value   : null;
     const q8   = r8.status   === 'fulfilled' ? r8.value   : null;
+    const q7   = r7.status   === 'fulfilled' ? r7.value   : null;
     const d10  = r10.status  === 'fulfilled' ? r10.value  : {};
     const news = rNews.status === 'fulfilled' ? rNews.value : [];
 
-    // v7 always works for valid US tickers — if null it's an invalid symbol
-    if (!q7 && !q8) {
+    // v8 is the guaranteed source — if no price at all, symbol is invalid
+    if (!q8?.regularMarketPrice && !q7?.regularMarketPrice) {
       throw new Error(`"${sym}" not found. Check it's a valid US ticker (e.g. NVDA, AAPL, TSLA, AMZN).`);
     }
 
@@ -460,6 +458,9 @@ async function go(sym) {
 //  RENDER
 // ══════════════════════════════════════════════════════════════════════════
 function render(sym, q7, q8, d10, news) {
+  // q8 (v8/chart meta) is ALWAYS populated — use as primary price source
+  // q7 (v7/quote via proxy) enriches with analyst data, recommendation, earnings date
+  // d10 (v10 via proxy) adds deep fundamentals
   const P   = d10.summaryProfile || {};
   const D   = d10.summaryDetail  || {};
   const F   = d10.financialData  || {};
@@ -471,20 +472,32 @@ function render(sym, q7, q8, d10, news) {
   const EH  = d10.earningsHistory?.history || [];
   const IQ  = d10.incomeStatementHistoryQuarterly?.incomeStatementHistory || [];
 
-  // Core price fields — v7 is real-time, v8 is fallback
-  const price     = q7.regularMarketPrice      ?? q8.regularMarketPrice;
-  const prevClose = q7.regularMarketPreviousClose ?? q8.chartPreviousClose;
-  const chg       = q7.regularMarketChangePercent ?? (price && prevClose ? ((price - prevClose) / prevClose * 100) : null);
-  const chgAbs    = q7.regularMarketChange;
-  const name      = q7.longName || q7.shortName || q8.longName || q8.shortName || sym;
-  const mktCap    = q7.marketCap ?? raw(D, 'marketCap');
+  // Price — v8 is primary (always CORS-open), v7 proxy as fallback
+  const price     = q8?.regularMarketPrice      ?? q7?.regularMarketPrice;
+  const prevClose = q8?.chartPreviousClose       ?? q8?.previousClose ?? q7?.regularMarketPreviousClose;
+  const chg       = q8?.regularMarketChangePercent
+                 ?? q7?.regularMarketChangePercent
+                 ?? (price && prevClose ? ((price - prevClose) / prevClose * 100) : null);
+  const chgAbs    = q8?.regularMarketChange      ?? q7?.regularMarketChange;
+  const name      = q7?.longName  || q7?.shortName  || q8?.longName  || q8?.shortName  || sym;
+  const mktCap    = q7?.marketCap ?? q8?.marketCap  ?? raw(D, 'marketCap');
 
-  // Analyst data — always in v7 for US equities
-  const tgtMean = q7.targetMeanPrice  ?? raw(F, 'targetMeanPrice');
-  const tgtHigh = q7.targetHighPrice  ?? raw(F, 'targetHighPrice');
-  const tgtLow  = q7.targetLowPrice   ?? raw(F, 'targetLowPrice');
-  const upside  = price && tgtMean ? ((tgtMean - price) / price * 100) : null;
-  const analystN = q7.numberOfAnalystOpinions ?? raw(F, 'numberOfAnalystOpinions');
+  // Analyst data — from v7 proxy (null if proxy unavailable)
+  const tgtMean  = q7?.targetMeanPrice  ?? raw(F, 'targetMeanPrice');
+  const tgtHigh  = q7?.targetHighPrice  ?? raw(F, 'targetHighPrice');
+  const tgtLow   = q7?.targetLowPrice   ?? raw(F, 'targetLowPrice');
+  const upside   = price && tgtMean ? ((tgtMean - price) / price * 100) : null;
+  const analystN = q7?.numberOfAnalystOpinions ?? raw(F, 'numberOfAnalystOpinions');
+
+  // PE from v8 (always available) or v7
+  const peTrail  = q8?.trailingPE  ?? q7?.trailingPE;
+  const peFwd    = q8?.forwardPE   ?? q7?.forwardPE;
+  const w52h     = q8?.fiftyTwoWeekHigh  ?? q7?.fiftyTwoWeekHigh;
+  const w52l     = q8?.fiftyTwoWeekLow   ?? q7?.fiftyTwoWeekLow;
+  const ma50     = q8?.fiftyDayAverage   ?? q7?.fiftyDayAverage;
+  const exchange = q7?.fullExchangeName  ?? q7?.exchange ?? q8?.exchangeName ?? '';
+  const beta     = q7?.beta ?? q8?.beta;
+  const avgVol   = q7?.averageVolume     ?? q8?.regularMarketVolume;
 
   document.getElementById('cp-name').textContent = name;
 
@@ -506,25 +519,25 @@ function render(sym, q7, q8, d10, news) {
     </div>
     <div class="sc"><div class="sc-l">Market Cap</div>
       <div class="sc-v v-ac">${fb(mktCap)}</div>
-      <div class="sc-s">${q7.fullExchangeName || q7.exchange || '—'}</div>
+      <div class="sc-s">${exchange}</div>
     </div>
     <div class="sc"><div class="sc-l">52-Week Range</div>
-      <div class="sc-v v-nu" style="font-size:11px">${q7.fiftyTwoWeekLow ? '$' + fv(q7.fiftyTwoWeekLow) : '—'} – ${q7.fiftyTwoWeekHigh ? '$' + fv(q7.fiftyTwoWeekHigh) : '—'}</div>
-      <div class="sc-s">50d MA: ${q7.fiftyDayAverage ? '$' + fv(q7.fiftyDayAverage) : '—'}</div>
+      <div class="sc-v v-nu" style="font-size:11px">${w52l ? '$' + fv(w52l) : '—'} – ${w52h ? '$' + fv(w52h) : '—'}</div>
+      <div class="sc-s">50d MA: ${ma50 ? '$' + fv(ma50) : '—'}</div>
     </div>
     <div class="sc"><div class="sc-l">P/E (TTM / Fwd)</div>
-      <div class="sc-v v-gd">${q7.trailingPE != null ? fv(q7.trailingPE, 1) : '—'}</div>
-      <div class="sc-s">Fwd: ${q7.forwardPE != null ? fv(q7.forwardPE, 1) : '—'}</div>
+      <div class="sc-v v-gd">${peTrail != null ? fv(peTrail, 1) : '—'}</div>
+      <div class="sc-s">Fwd: ${peFwd != null ? fv(peFwd, 1) : '—'}</div>
     </div>
   </div>`;
 
-  const sector   = P.sector   || q7.sector   || '';
-  const industry = P.industry || q7.industry || '';
+  const sector   = P.sector   || q7?.sector   || '';
+  const industry = P.industry || q7?.industry || '';
   h += `<div class="blurb">
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">
       ${sector   ? `<span class="badge bg-ac">${sector}</span>`   : ''}
       ${industry ? `<span class="badge bg-pu">${industry}</span>` : ''}
-      ${q7.exchange ? `<span class="badge bg-or">${q7.fullExchangeName || q7.exchange}</span>` : ''}
+      ${q7?.exchange ? `<span class="badge bg-or">${q7?.fullExchangeName || q7?.exchange}</span>` : ''}
     </div>
     <b style="color:var(--tx)">${name}</b>
     ${P.longBusinessSummary ? '<br><span style="font-size:11px">' + P.longBusinessSummary.slice(0, 300) + (P.longBusinessSummary.length > 300 ? '…' : '') + '</span>' : ''}
@@ -542,7 +555,7 @@ function render(sym, q7, q8, d10, news) {
   // ══ §2 ANALYST RATINGS ════════════════════════════════════════════════
   h += `<div class="sh"><span>§2 · Analyst Ratings &amp; Price Targets</span></div>`;
 
-  const recKey = (q7.recommendationKey || '').toLowerCase();
+  const recKey = (q7?.recommendationKey || '').toLowerCase();
   const recLbl = { strongbuy: 'Strong Buy', buy: 'Buy', hold: 'Hold', sell: 'Sell', strongsell: 'Strong Sell' }[recKey] || recKey || '—';
   const recCls = recKey.includes('buy') ? 'bg-gn' : recKey === 'hold' ? 'bg-or' : recKey.includes('sell') ? 'bg-rd' : 'bg-ac';
 
@@ -601,9 +614,9 @@ function render(sym, q7, q8, d10, news) {
 
   // ══ §3 EARNINGS ═══════════════════════════════════════════════════════
   h += `<div class="sh"><span>§3 · Earnings History</span></div>`;
-  const nextEarnTs = q7.earningsTimestamp;
-  const epsTTM = q7.epsTrailingTwelveMonths ?? raw(K, 'trailingEps');
-  const epsFwd  = q7.epsForward ?? raw(K, 'forwardEps');
+  const nextEarnTs = q7?.earningsTimestamp;
+  const epsTTM = q7?.epsTrailingTwelveMonths ?? raw(K, 'trailingEps');
+  const epsFwd  = q7?.epsForward ?? raw(K, 'forwardEps');
 
   h += `<div class="grid g4">
     <div class="sc"><div class="sc-l">Next Earnings</div>
@@ -619,8 +632,8 @@ function render(sym, q7, q8, d10, news) {
       <div class="sc-s">Next 12 months est.</div>
     </div>
     <div class="sc"><div class="sc-l">P/E Fwd vs TTM</div>
-      <div class="sc-v v-gd">${q7.forwardPE != null ? fv(q7.forwardPE, 1) + 'x' : '—'}</div>
-      <div class="sc-s">TTM: ${q7.trailingPE != null ? fv(q7.trailingPE, 1) + 'x' : '—'}</div>
+      <div class="sc-v v-gd">${q7?.forwardPE != null ? fv(q7?.forwardPE, 1) + 'x' : '—'}</div>
+      <div class="sc-s">TTM: ${q7?.trailingPE != null ? fv(q7?.trailingPE, 1) + 'x' : '—'}</div>
     </div>
   </div>`;
 
@@ -680,8 +693,8 @@ function render(sym, q7, q8, d10, news) {
       <div class="sc-s">Days to cover: ${raw(K, 'shortRatio') != null ? fv(raw(K, 'shortRatio'), 1) : '—'}</div>
     </div>
     <div class="sc"><div class="sc-l">Beta · Avg Vol</div>
-      <div class="sc-v ${q7.beta > 1.5 ? 'v-or' : q7.beta < 0.5 ? 'v-pu' : 'v-nu'}">${q7.beta != null ? fv(q7.beta, 2) : '—'}</div>
-      <div class="sc-s">${q7.averageVolume != null ? fn.format(q7.averageVolume) + ' avg' : '—'}</div>
+      <div class="sc-v ${q7?.beta > 1.5 ? 'v-or' : q7?.beta < 0.5 ? 'v-pu' : 'v-nu'}">${q7?.beta != null ? fv(q7?.beta, 2) : '—'}</div>
+      <div class="sc-s">${q7?.averageVolume != null ? fn.format(q7?.averageVolume) + ' avg' : '—'}</div>
     </div>
   </div>`;
 
@@ -789,14 +802,14 @@ async function renderAI(sym, q7, d10) {
   const tot = (rec.strongBuy || 0) + (rec.buy || 0) + (rec.hold || 0) + (rec.sell || 0) + (rec.strongSell || 0);
 
   const ctx = {
-    sym, name: q7.longName || q7.shortName || sym,
-    sector: q7.sector, industry: q7.industry,
-    price: q7.regularMarketPrice, changePct: q7.regularMarketChangePercent,
-    marketCap: q7.marketCap, pe: q7.trailingPE, fwdPe: q7.forwardPE,
-    epsTTM: q7.epsTrailingTwelveMonths, epsForward: q7.epsForward,
-    w52h: q7.fiftyTwoWeekHigh, w52l: q7.fiftyTwoWeekLow, beta: q7.beta,
-    targetMean: q7.targetMeanPrice, targetHigh: q7.targetHighPrice, targetLow: q7.targetLowPrice,
-    analysts: q7.numberOfAnalystOpinions, recommendation: q7.recommendationKey,
+    sym, name: q7?.longName || q7?.shortName || sym,
+    sector: q7?.sector, industry: q7?.industry,
+    price: q7?.regularMarketPrice, changePct: q7?.regularMarketChangePercent,
+    marketCap: q7?.marketCap, pe: q7?.trailingPE, fwdPe: q7?.forwardPE,
+    epsTTM: q7?.epsTrailingTwelveMonths, epsForward: q7?.epsForward,
+    w52h: q7?.fiftyTwoWeekHigh, w52l: q7?.fiftyTwoWeekLow, beta: q7?.beta,
+    targetMean: q7?.targetMeanPrice, targetHigh: q7?.targetHighPrice, targetLow: q7?.targetLowPrice,
+    analysts: q7?.numberOfAnalystOpinions, recommendation: q7?.recommendationKey,
     bullishPct: tot ? Math.round(((rec.strongBuy || 0) + (rec.buy || 0)) / tot * 100) : null,
     grossMargin: raw(F, 'grossMargins'), netMargin: raw(F, 'profitMargins'),
     roe: raw(F, 'returnOnEquity'), fcf: raw(F, 'freeCashflow'),
