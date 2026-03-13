@@ -699,21 +699,122 @@ async function load(){
     const res=await fetch(DATA_URL+'?t='+Date.now());
     if(!res.ok)throw new Error(`HTTP ${res.status}`);
     allDays=await res.json();
-    if(!Array.isArray(allDays)||!allDays.length){
-      document.getElementById('main-content').innerHTML=`<div class="no-data">📭 No NTRT data yet.<br><br>Run: <code>python ntrt_screener.py --demo</code> to test, or schedule the script for market days.</div>`;
-      return;
-    }
-    // Select most recent date
+    if(!Array.isArray(allDays)||!allDays.length) throw new Error('empty');
     const sorted=[...allDays].sort((a,b)=>a.date>b.date?1:-1);
     selDate=sorted[sorted.length-1].date;
     allDays=sorted;
     renderDateList();
     renderMain();
   }catch(e){
-    document.getElementById('main-content').innerHTML=`<div class="no-data">⚠ Could not load ntrt_data.json<br><br>${e.message}</div>`;
+    // ntrt_data.json not found or empty — load embedded demo data
+    console.warn('[ntrt] No live data, loading demo:', e.message);
+    loadDemo();
   }
 }
-load();
+
+function loadDemo(){
+  const today=new Date().toISOString().slice(0,10);
+  allDays=[{
+    date:today,
+    scanned_at:new Date().toISOString(),
+    market:'DEMO',
+    total_earnings:14,
+    total_screened:5,
+    pre_post_movers_count:2,
+    candidates:[
+      {
+        ticker:'FSLY',company:'Fastly Inc.',timing:'AMC',date:today,
+        price:12.45,prev_close:8.90,gap_pct:39.9,volume:42000000,market_cap:1650000000,
+        eps_actual:0.12,eps_estimate:0.06,eps_surprise:100.0,eps_growth:null,
+        rev_actual:172600000,rev_estimate:160000000,rev_growth:23.0,rev_growth_q2:18.5,annual_revenue:680000000,
+        magna_m:true,magna_m_detail:'EPS surprise +100% · 2Q rev ≥29%',
+        magna_g:true,magna_g_detail:'Gap +39.9%, Vol 42.0M',
+        magna_n:true,magna_n_detail:'Mid-cap (<$2B)',
+        magna_a:true,magna_a_detail:'Rev growth: +23.0% (prev Q: +18.5%)',
+        magna_3:true,magna_3_detail:'William Blair upgraded to Buy',
+        magna_score:5,setup_a:true,setup_b:true,setup_c:true,setup_types:['B','C'],
+        analyst_upgrades:2,story:'EPS surprise: +100% · Revenue growth: +23.0% YoY · Gap: +39.9% · Neglect: strong · NEW CRITERIA: ≥4% move (+39.9%) & ≥$5 move',
+        verdict:'STRONG',neglect_strength:'strong',
+        is_new_criteria_mover:true,new_criteria_passes_pct:true,new_criteria_passes_dol:true,
+        session:'Post-Market',session_chgpct:39.9,session_chg:3.55
+      },
+      {
+        ticker:'ASTH',company:'Asthma Holdings Inc.',timing:'BMO',date:today,
+        price:6.40,prev_close:4.80,gap_pct:33.3,volume:8500000,market_cap:1100000000,
+        eps_actual:0.22,eps_estimate:0.11,eps_surprise:108.0,eps_growth:220.0,
+        rev_actual:null,rev_estimate:null,rev_growth:43.0,rev_growth_q2:38.0,annual_revenue:180000000,
+        magna_m:true,magna_m_detail:'EPS surprise +108% · EPS growth +220% YoY',
+        magna_g:true,magna_g_detail:'Gap +33.3%, Vol 8.5M',
+        magna_n:true,magna_n_detail:'Small-cap (<$500M) · Low institutional coverage',
+        magna_a:true,magna_a_detail:'Rev growth: +43.0% (prev Q: +38.0%)',
+        magna_3:false,magna_3_detail:'Some analyst coverage but <3 upgrades',
+        magna_score:4,setup_a:true,setup_b:true,setup_c:false,setup_types:['A','B'],
+        analyst_upgrades:1,story:'EPS surprise: +108% · Revenue growth: +43.0% YoY · Gap: +33.3% · Neglect: strong',
+        verdict:'STRONG',neglect_strength:'strong',
+        is_new_criteria_mover:true,new_criteria_passes_pct:true,new_criteria_passes_dol:true,
+        session:'Pre-Market',session_chgpct:33.3,session_chg:1.60
+      },
+      {
+        ticker:'VIAV',company:'Viavi Solutions Inc.',timing:'BMO',date:today,
+        price:11.20,prev_close:9.03,gap_pct:24.0,volume:18000000,market_cap:2100000000,
+        eps_actual:0.23,eps_estimate:0.20,eps_surprise:17.0,eps_growth:81.0,
+        rev_actual:310000000,rev_estimate:295000000,rev_growth:36.0,rev_growth_q2:28.0,annual_revenue:1100000000,
+        magna_m:true,magna_m_detail:'EPS growth +81% YoY · Rev growth +36% YoY',
+        magna_g:true,magna_g_detail:'Gap +24.0%, Vol 18.0M',
+        magna_n:true,magna_n_detail:'Mid-cap (<$2B) · Long sideways base',
+        magna_a:true,magna_a_detail:'Rev growth: +36.0% (prev Q: +28.0%)',
+        magna_3:true,magna_3_detail:'Multiple analyst upgrades',
+        magna_score:5,setup_a:true,setup_b:false,setup_c:false,setup_types:['A'],
+        analyst_upgrades:3,story:'EPS surprise: +17% · Revenue growth: +36.0% YoY · Gap: +24.0% · Neglect: strong',
+        verdict:'STRONG',neglect_strength:'strong',
+        is_new_criteria_mover:false,new_criteria_passes_pct:false,new_criteria_passes_dol:true,
+        session:'Pre-Market',session_chgpct:24.0,session_chg:2.17
+      },
+      {
+        ticker:'XYZ',company:'XYZ Corp — Pre-Market Mover',timing:'Pre-Market',date:today,
+        price:18.50,prev_close:17.10,gap_pct:8.2,volume:250000,market_cap:420000000,
+        eps_actual:null,eps_estimate:null,eps_surprise:null,eps_growth:null,
+        rev_actual:null,rev_estimate:null,rev_growth:null,rev_growth_q2:null,annual_revenue:null,
+        magna_m:false,magna_m_detail:'No earnings data in pre-market',
+        magna_g:true,magna_g_detail:'Gap +8.2%, Vol 250K',
+        magna_n:true,magna_n_detail:'Small-cap (<$500M) · Large gap signals neglect',
+        magna_a:false,magna_a_detail:'No revenue data',
+        magna_3:false,magna_3_detail:'Needs FMP key',
+        magna_score:2,setup_a:false,setup_b:false,setup_c:false,setup_types:[],
+        analyst_upgrades:0,story:'UP 8.2% in Pre-Market session · $1.40 absolute move · Vol 250K · ✓ MAGNA-G confirmed',
+        verdict:'MOVER',neglect_strength:'strong',
+        is_new_criteria_mover:true,new_criteria_passes_pct:true,new_criteria_passes_dol:false,
+        session:'Pre-Market',session_chgpct:8.2,session_chg:1.40
+      },
+      {
+        ticker:'AVGO',company:'Broadcom Inc.',timing:'AMC',date:today,
+        price:214.50,prev_close:204.90,gap_pct:4.7,volume:22000000,market_cap:1000000000000,
+        eps_actual:1.60,eps_estimate:1.48,eps_surprise:8.0,eps_growth:29.0,
+        rev_actual:19300000000,rev_estimate:18900000000,rev_growth:29.0,rev_growth_q2:25.0,annual_revenue:72000000000,
+        magna_m:true,magna_m_detail:'AI revenue +106% YoY to $8.4B · Total rev +29%',
+        magna_g:true,magna_g_detail:'Gap +4.7%, Vol 22.0M',
+        magna_n:false,magna_n_detail:'$1T market cap — institutional neglect very limited',
+        magna_a:true,magna_a_detail:'Rev growth: +29.0% (prev Q: +25.0%)',
+        magna_3:true,magna_3_detail:'Bernstein PT raised — multiple others expected',
+        magna_score:4,setup_a:false,setup_b:false,setup_c:false,setup_types:['B'],
+        analyst_upgrades:4,story:'Revenue growth: +29.0% YoY · Gap: +4.7% · NEW CRITERIA: ≥4% move & ≥$5 move',
+        verdict:'WATCH',neglect_strength:'none',
+        is_new_criteria_mover:true,new_criteria_passes_pct:true,new_criteria_passes_dol:true,
+        session:'Post-Market',session_chgpct:4.7,session_chg:9.60
+      }
+    ]
+  }];
+  selDate=today;
+  renderDateList();
+  renderMain();
+  // Show demo banner
+  document.getElementById('main-content').insertAdjacentHTML('afterbegin',
+    `<div style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:7px 12px;background:var(--or-bg,#2a1f00);border:1px solid var(--or-br,#5a3e00);color:var(--or,#f59e0b);border-radius:6px;margin-bottom:12px">
+      ⚠ Showing <b>demo data</b> — <code>ntrt_data.json</code> not found in repo.
+      Run <code>python ntrt_screener.py --demo</code> then commit the JSON to see live scans.
+    </div>`
+  );
+}
 </script>
 </body>
 </html>

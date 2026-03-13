@@ -167,6 +167,7 @@ td.nu{color:var(--txd)}
   <div class="tog" onclick="tog()">
     <span id="ti">🌙</span><div class="tt"><div class="tk"></div></div><span id="tl">Dark</span>
   </div>
+</header>
 
 <div class="layout">
   <div class="left" id="left">
@@ -199,8 +200,11 @@ td.nu{color:var(--txd)}
       <span class="cp-name" id="cp-name">Load a symbol to see chart</span>
       <a class="cp-open" id="cp-open" href="#" onclick="openTV(cpSym);return false">↗ TradingView</a>
     </div>
-    <div id="chart-wrap">
-      <div class="chart-ph"><span class="chart-ph-ico">📊</span><div class="chart-ph-txt">Chart appears here after lookup</div></div>
+    <div id="cp-body" class="cp-body">
+      <div id="cp-empty" class="cp-empty">
+        <span class="cp-empty-ico">📈</span>
+        Chart appears here after lookup
+      </div>
     </div>
   </div>
 </div>
