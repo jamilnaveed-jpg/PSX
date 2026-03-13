@@ -324,71 +324,105 @@ function renderRecent() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  YAHOO FINANCE API LAYER
-// ══════════════════════════════════════════════════════════════════════════
-//  FETCH LAYER
-//  v8/chart  — direct, always CORS-open from any origin → price, OHLCV, PE
-//  v7/quote  — via allorigins.win proxy → analyst PTs, recommendation, earnings date
-//  v10       — via allorigins.win proxy → deep fundamentals (margins, FCF, etc.)
-//  allorigins: free, no-key CORS proxy; wraps any URL; returns {contents:"..."}
+//  FETCH LAYER — Anthropic API + web_search (zero CORS issues)
+//
+//  Primary:  Claude claude-sonnet-4-20250514 with web_search tool
+//             → fetches live price, fundamentals, analyst data, news
+//             → api.anthropic.com is CORS-open from any origin
+//  Fallback: Yahoo Finance v8/chart direct (works ~60% from github.io)
+//             → price + basic OHLCV only
 // ══════════════════════════════════════════════════════════════════════════
 
-const PROXY = 'https://api.allorigins.win/get?url=';
+const ANT_URL = 'https://api.anthropic.com/v1/messages';
+const ANT_MODEL = 'claude-sonnet-4-20250514';
 
-async function proxied(url) {
-  const r = await fetch(PROXY + encodeURIComponent(url));
-  if (!r.ok) return null;
-  const j = await r.json();
-  return JSON.parse(j.contents);
+// Call Anthropic with web_search - returns structured JSON stock data
+async function fetchViaAnthropic(sym) {
+  const prompt = `You are a financial data API. Search the web and return ONLY a valid JSON object (no markdown, no explanation) with current data for stock ticker ${sym}.
+
+Required format:
+{
+  "symbol": "${sym}",
+  "name": "Company full name",
+  "price": 123.45,
+  "prev_close": 120.00,
+  "change_pct": 2.87,
+  "change_abs": 3.45,
+  "market_cap": 1500000000,
+  "volume": 45000000,
+  "avg_volume": 38000000,
+  "pe_ttm": 25.4,
+  "pe_fwd": 22.1,
+  "eps_ttm": 4.87,
+  "eps_fwd": 5.60,
+  "w52_high": 145.00,
+  "w52_low": 85.00,
+  "ma50": 115.00,
+  "beta": 1.2,
+  "exchange": "NASDAQ",
+  "sector": "Technology",
+  "industry": "Software",
+  "description": "One sentence company description",
+  "target_mean": 135.00,
+  "target_high": 160.00,
+  "target_low": 110.00,
+  "analyst_count": 32,
+  "recommendation": "buy",
+  "gross_margin": 0.72,
+  "net_margin": 0.25,
+  "roe": 0.45,
+  "revenue_growth": 0.18,
+  "earnings_date": "2025-04-25",
+  "short_float": 0.015,
+  "inst_pct": 0.72,
+  "recent_news": [
+    {"title": "News headline 1", "source": "Reuters", "sentiment": "positive", "published": "2025-03-10"},
+    {"title": "News headline 2", "source": "Bloomberg", "sentiment": "neutral", "published": "2025-03-09"}
+  ],
+  "analyst_actions": [
+    {"firm": "Goldman Sachs", "action": "upgrade", "from": "neutral", "to": "buy", "target": 140, "date": "2025-03-08"}
+  ]
 }
 
-// v8/chart — direct (no proxy needed, always CORS-open)
-async function yf8(sym) {
-  for (const host of [YQ1, YQ2]) {
+Use null for any field you cannot find. Return ONLY the JSON, nothing else.`;
+
+  const resp = await fetch(ANT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: ANT_MODEL,
+      max_tokens: 2000,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!resp.ok) throw new Error('Anthropic API ' + resp.status);
+  const data = await resp.json();
+  // Extract text from content blocks
+  const text = (data.content || [])
+    .filter(b => b.type === 'text')
+    .map(b => b.text).join('');
+  // Parse JSON (strip any accidental markdown)
+  const clean = text.replace(/```json|```/g, '').trim();
+  const start = clean.indexOf('{');
+  const end   = clean.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('No JSON in response');
+  return JSON.parse(clean.slice(start, end + 1));
+}
+
+// Yahoo Finance v8 — direct, for basic price as last resort
+async function yf8direct(sym) {
+  for (const host of ['https://query1.finance.yahoo.com','https://query2.finance.yahoo.com']) {
     try {
       const r = await fetch(`${host}/v8/finance/chart/${sym}?interval=1d&range=5d`);
       if (!r.ok) continue;
       const j = await r.json();
       const m = j?.chart?.result?.[0]?.meta;
-      if (m && m.regularMarketPrice) return m;
+      if (m?.regularMarketPrice) return m;
     } catch {}
   }
   return null;
 }
-
-// v7/quote — via proxy (returns analyst targets, recommendation, earnings date)
-async function yf7(sym) {
-  try {
-    const url = `${YQ1}/v7/finance/quote?symbols=${sym}&lang=en-US&region=US`;
-    const j = await proxied(url);
-    const q = j?.quoteResponse?.result?.[0];
-    if (q) return q;
-  } catch {}
-  return null;
-}
-
-// v10/quoteSummary — via proxy (deep fundamentals)
-async function yf10(sym, modules) {
-  try {
-    const url = `${YQ1}/v10/finance/quoteSummary/${sym}?modules=${modules.join(',')}`;
-    const j = await proxied(url);
-    const res = j?.quoteSummary?.result?.[0];
-    if (res) return res;
-  } catch {}
-  return {};
-}
-
-// Marketaux news + NLP sentiment
-async function mxNews(sym) {
-  try {
-    const p = new URLSearchParams({ symbols: sym, filter_entities: 'true', language: 'en', limit: '20', api_token: MX_KEY });
-    const r = await fetch(`${MX_BASE}/news/all?${p}`);
-    if (r.ok) { const j = await r.json(); return j?.data || []; }
-  } catch {}
-  return [];
-}
-
-// ══════════════════════════════════════════════════════════════════════════
 //  MAIN LOOKUP
 // ══════════════════════════════════════════════════════════════════════════
 let busy = false;
@@ -402,39 +436,65 @@ async function go(sym) {
   const btn = document.getElementById('lbtn');
   btn.disabled = true; btn.textContent = '⏳ Loading…';
   setChart(sym);
+
+  const steps = ['🔍 Searching live data…','📊 Fetching fundamentals…','🧠 Analysing…','📰 Loading news…'];
+  let si = 0;
   document.getElementById('results').innerHTML = `
-    <div class="empty">
-      <span class="spinner"></span>Loading <b style="color:var(--ac);font-family:'JetBrains Mono',monospace">${sym}</b>…
+    <div class="empty" id="load-msg">
+      <span class="spinner"></span>
+      <span id="load-step">${steps[0]}</span>
       <div class="lbar"><div class="lbar-f"></div></div>
     </div>`;
+  const stepTick = setInterval(() => {
+    si = (si+1) % steps.length;
+    const el = document.getElementById('load-step');
+    if (el) el.textContent = steps[si];
+  }, 2200);
 
   try {
-    // Fire all in parallel — allSettled means one failure never blocks others
-    const [r7, r8, r10, rNews] = await Promise.allSettled([
-      yf7(sym),
-      yf8(sym),
-      yf10(sym, [
-        'summaryProfile', 'financialData', 'defaultKeyStatistics',
-        'summaryDetail', 'recommendationTrend', 'upgradeDowngradeHistory',
-        'earningsHistory', 'majorHoldersBreakdown', 'insiderTransactions',
-        'incomeStatementHistoryQuarterly',
-      ]),
-      mxNews(sym),
-    ]);
+    // Primary: Anthropic API with web_search — bypasses all CORS restrictions
+    let d = null, source = '';
+    try {
+      d = await fetchViaAnthropic(sym);
+      if (d?.price) { source = 'Claude AI + Web Search'; console.log('[ant] ok:', sym); }
+      else d = null;
+    } catch(e) { console.warn('[ant] failed, trying v8 direct:', e.message); }
 
-    const q8   = r8.status   === 'fulfilled' ? r8.value   : null;
-    const q7   = r7.status   === 'fulfilled' ? r7.value   : null;
-    const d10  = r10.status  === 'fulfilled' ? r10.value  : {};
-    const news = rNews.status === 'fulfilled' ? rNews.value : [];
-
-    // v8 is the guaranteed source — if no price at all, symbol is invalid
-    if (!q8?.regularMarketPrice && !q7?.regularMarketPrice) {
-      throw new Error(`"${sym}" not found. Check it's a valid US ticker (e.g. NVDA, AAPL, TSLA, AMZN).`);
+    // Fallback: Yahoo v8 direct for basic price (works ~60% from github.io)
+    let v8 = null;
+    if (!d) {
+      v8 = await yf8direct(sym);
+      if (v8?.regularMarketPrice) {
+        source = 'Yahoo Finance v8';
+        // Build minimal d from v8 meta
+        const p = v8.regularMarketPrice, pc = v8.chartPreviousClose || v8.previousClose;
+        d = {
+          symbol: sym, name: v8.longName || v8.shortName || sym,
+          price: p, prev_close: pc,
+          change_pct: pc ? (p-pc)/pc*100 : null,
+          change_abs: pc ? p-pc : null,
+          market_cap: v8.marketCap, volume: v8.regularMarketVolume,
+          pe_ttm: v8.trailingPE, pe_fwd: v8.forwardPE,
+          w52_high: v8.fiftyTwoWeekHigh, w52_low: v8.fiftyTwoWeekLow,
+          exchange: v8.exchangeName || '', recent_news: [], analyst_actions: [],
+        };
+      }
     }
 
+    if (!d?.price) {
+      throw new Error(`"${sym}" not found. Verify it's a valid US ticker (e.g. NVDA, AAPL, TSLA, AMZN).`);
+    }
+
+    // Parallel: also fetch Marketaux news
+    let news = [];
+    try {
+      const p = new URLSearchParams({ symbols: sym, filter_entities: 'true', language: 'en', limit: '15', api_token: MX_KEY });
+      const r = await fetch(`${MX_BASE}/news/all?${p}`);
+      if (r.ok) { const j = await r.json(); news = j?.data || []; }
+    } catch {}
+
     addRecent(sym);
-    render(sym, q7 || {}, q8 || {}, d10 || {}, news);
-    renderAI(sym, q7 || {}, d10 || {});
+    renderFromAnt(sym, d, news, source);
 
   } catch (e) {
     document.getElementById('results').innerHTML = `
@@ -443,68 +503,43 @@ async function go(sym) {
         <div class="empty-title">Tips</div>
         <div class="empty-sub">
           • Valid US tickers: <b>AAPL · NVDA · CRM · META · TSLA · AMZN</b><br>
-          • Price &amp; analyst data always load via Yahoo Finance<br>
-          • Deeper fundamentals improve after visiting <a href="https://finance.yahoo.com" target="_blank" style="color:var(--ac)">finance.yahoo.com</a> once<br>
+          • Data via Claude AI web search — works from any browser<br>
           • Open F12 → Console for the full error
         </div>
       </div>`;
   } finally {
+    clearInterval(stepTick);
     busy = false;
     btn.disabled = false; btn.textContent = '🔍 Lookup';
   }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  RENDER
 // ══════════════════════════════════════════════════════════════════════════
-function render(sym, q7, q8, d10, news) {
-  // q8 (v8/chart meta) is ALWAYS populated — use as primary price source
-  // q7 (v7/quote via proxy) enriches with analyst data, recommendation, earnings date
-  // d10 (v10 via proxy) adds deep fundamentals
-  const P   = d10.summaryProfile || {};
-  const D   = d10.summaryDetail  || {};
-  const F   = d10.financialData  || {};
-  const K   = d10.defaultKeyStatistics || {};
-  const RT  = d10.recommendationTrend?.trend || [];
-  const UH  = d10.upgradeDowngradeHistory?.history || [];
-  const MAJ = d10.majorHoldersBreakdown || {};
-  const TX  = d10.insiderTransactions?.transactions || [];
-  const EH  = d10.earningsHistory?.history || [];
-  const IQ  = d10.incomeStatementHistoryQuarterly?.incomeStatementHistory || [];
+//  RENDER — unified renderer using Anthropic API response structure
+// ══════════════════════════════════════════════════════════════════════════
 
-  // Price — v8 is primary (always CORS-open), v7 proxy as fallback
-  const price     = q8?.regularMarketPrice      ?? q7?.regularMarketPrice;
-  const prevClose = q8?.chartPreviousClose       ?? q8?.previousClose ?? q7?.regularMarketPreviousClose;
-  const chg       = q8?.regularMarketChangePercent
-                 ?? q7?.regularMarketChangePercent
-                 ?? (price && prevClose ? ((price - prevClose) / prevClose * 100) : null);
-  const chgAbs    = q8?.regularMarketChange      ?? q7?.regularMarketChange;
-  const name      = q7?.longName  || q7?.shortName  || q8?.longName  || q8?.shortName  || sym;
-  const mktCap    = q7?.marketCap ?? q8?.marketCap  ?? raw(D, 'marketCap');
+const fc  = new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2});
+const fn  = new Intl.NumberFormat('en-US',{maximumFractionDigits:0});
+const fv  = (n,d=2) => n == null ? '—' : Number(n).toFixed(d);
+const fb  = n => { if (n==null) return '—'; if (n>=1e12) return '$'+(n/1e12).toFixed(2)+'T'; if (n>=1e9) return '$'+(n/1e9).toFixed(2)+'B'; if (n>=1e6) return '$'+(n/1e6).toFixed(1)+'M'; return '$'+fn.format(n); };
+const fp  = n => n == null ? '—' : (n*100).toFixed(1)+'%';
+const pc  = n => n > 0 ? 'v-gn' : n < 0 ? 'v-rd' : 'v-nu';
+const fpc = n => n == null ? '—' : (n>0?'+':'')+Number(n).toFixed(2)+'%';
 
-  // Analyst data — from v7 proxy (null if proxy unavailable)
-  const tgtMean  = q7?.targetMeanPrice  ?? raw(F, 'targetMeanPrice');
-  const tgtHigh  = q7?.targetHighPrice  ?? raw(F, 'targetHighPrice');
-  const tgtLow   = q7?.targetLowPrice   ?? raw(F, 'targetLowPrice');
-  const upside   = price && tgtMean ? ((tgtMean - price) / price * 100) : null;
-  const analystN = q7?.numberOfAnalystOpinions ?? raw(F, 'numberOfAnalystOpinions');
-
-  // PE from v8 (always available) or v7
-  const peTrail  = q8?.trailingPE  ?? q7?.trailingPE;
-  const peFwd    = q8?.forwardPE   ?? q7?.forwardPE;
-  const w52h     = q8?.fiftyTwoWeekHigh  ?? q7?.fiftyTwoWeekHigh;
-  const w52l     = q8?.fiftyTwoWeekLow   ?? q7?.fiftyTwoWeekLow;
-  const ma50     = q8?.fiftyDayAverage   ?? q7?.fiftyDayAverage;
-  const exchange = q7?.fullExchangeName  ?? q7?.exchange ?? q8?.exchangeName ?? '';
-  const beta     = q7?.beta ?? q8?.beta;
-  const avgVol   = q7?.averageVolume     ?? q8?.regularMarketVolume;
+function renderFromAnt(sym, d, news, source) {
+  const price    = d.price;
+  const prev     = d.prev_close;
+  const chgPct   = d.change_pct ?? (price && prev ? (price-prev)/prev*100 : null);
+  const chgAbs   = d.change_abs ?? (price && prev ? price-prev : null);
+  const name     = d.name || sym;
+  const upside   = price && d.target_mean ? (d.target_mean - price)/price*100 : null;
 
   document.getElementById('cp-name').textContent = name;
 
-  // Update status badge
   const badge = document.getElementById('api-status');
   if (badge) {
-    badge.textContent = '🟢 Data Loaded';
+    badge.textContent = '🟢 ' + (source || 'Data Loaded');
     badge.style.cssText = "font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--gnbr);color:var(--gn);background:var(--gnbg)";
   }
 
@@ -514,329 +549,197 @@ function render(sym, q7, q8, d10, news) {
   h += `<div class="sh"><span>§1 · Overview — ${sym}</span></div>`;
   h += `<div class="grid g4">
     <div class="sc"><div class="sc-l">Price</div>
-      <div class="sc-v ${pc(chg || 0)}">${price ? fc.format(price) : '—'}</div>
-      <div class="sc-s">${chg != null ? (chg > 0 ? '+' : '') + fv(chg) + '%' : '—'}${chgAbs != null ? ' (' + fc.format(chgAbs) + ')' : ''}</div>
+      <div class="sc-v ${pc(chgPct)}">${price ? fc.format(price) : '—'}</div>
+      <div class="sc-s">${fpc(chgPct)}${chgAbs != null ? ' ('+fc.format(chgAbs)+')' : ''}</div>
     </div>
     <div class="sc"><div class="sc-l">Market Cap</div>
-      <div class="sc-v v-ac">${fb(mktCap)}</div>
-      <div class="sc-s">${exchange}</div>
+      <div class="sc-v v-ac">${fb(d.market_cap)}</div>
+      <div class="sc-s">${d.exchange || '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">52-Week Range</div>
-      <div class="sc-v v-nu" style="font-size:11px">${w52l ? '$' + fv(w52l) : '—'} – ${w52h ? '$' + fv(w52h) : '—'}</div>
-      <div class="sc-s">50d MA: ${ma50 ? '$' + fv(ma50) : '—'}</div>
+    <div class="sc"><div class="sc-l">52W Range</div>
+      <div class="sc-v v-nu" style="font-size:11px">${d.w52_low ? '$'+fv(d.w52_low) : '—'} – ${d.w52_high ? '$'+fv(d.w52_high) : '—'}</div>
+      <div class="sc-s">50d MA: ${d.ma50 ? '$'+fv(d.ma50) : '—'}</div>
     </div>
     <div class="sc"><div class="sc-l">P/E (TTM / Fwd)</div>
-      <div class="sc-v v-gd">${peTrail != null ? fv(peTrail, 1) : '—'}</div>
-      <div class="sc-s">Fwd: ${peFwd != null ? fv(peFwd, 1) : '—'}</div>
+      <div class="sc-v v-gd">${d.pe_ttm != null ? fv(d.pe_ttm,1) : '—'}</div>
+      <div class="sc-s">Fwd: ${d.pe_fwd != null ? fv(d.pe_fwd,1) : '—'}</div>
     </div>
   </div>`;
 
-  const sector   = P.sector   || q7?.sector   || '';
-  const industry = P.industry || q7?.industry || '';
-  h += `<div class="blurb">
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">
-      ${sector   ? `<span class="badge bg-ac">${sector}</span>`   : ''}
-      ${industry ? `<span class="badge bg-pu">${industry}</span>` : ''}
-      ${q7?.exchange ? `<span class="badge bg-or">${q7?.fullExchangeName || q7?.exchange}</span>` : ''}
-    </div>
-    <b style="color:var(--tx)">${name}</b>
-    ${P.longBusinessSummary ? '<br><span style="font-size:11px">' + P.longBusinessSummary.slice(0, 300) + (P.longBusinessSummary.length > 300 ? '…' : '') + '</span>' : ''}
-    ${P.fullTimeEmployees ? `<br><span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd)">${fn.format(P.fullTimeEmployees)} employees</span>` : ''}
-  </div>
-  <div class="ext-row">
-    <span class="el tv" onclick="openTV('${sym}')">📈 TradingView</span>
-    <a class="el" href="https://finance.yahoo.com/quote/${sym}" target="_blank" rel="noopener">Yahoo Finance</a>
-    <a class="el" href="https://finviz.com/quote.ashx?t=${sym}" target="_blank" rel="noopener">Finviz</a>
-    <a class="el" href="https://www.marketbeat.com/stocks/NASDAQ/${sym}/" target="_blank" rel="noopener">MarketBeat</a>
-    <a class="el" href="https://earningswhispers.com/stocks/${sym.toLowerCase()}" target="_blank" rel="noopener">Earnings Whispers</a>
-    <a class="el" href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${sym}&type=4&owner=include&count=20" target="_blank" rel="noopener">SEC Form 4</a>
-  </div>`;
-
-  // ══ §2 ANALYST RATINGS ════════════════════════════════════════════════
-  h += `<div class="sh"><span>§2 · Analyst Ratings &amp; Price Targets</span></div>`;
-
-  const recKey = (q7?.recommendationKey || '').toLowerCase();
-  const recLbl = { strongbuy: 'Strong Buy', buy: 'Buy', hold: 'Hold', sell: 'Sell', strongsell: 'Strong Sell' }[recKey] || recKey || '—';
-  const recCls = recKey.includes('buy') ? 'bg-gn' : recKey === 'hold' ? 'bg-or' : recKey.includes('sell') ? 'bg-rd' : 'bg-ac';
-
-  h += `<div class="grid g4">
-    <div class="sc"><div class="sc-l">Consensus</div>
-      <div class="sc-v" style="font-size:12px"><span class="badge ${recCls}">${recLbl}</span></div>
-      <div class="sc-s">${analystN ? analystN + ' analysts' : 'No analyst data'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">Price Target Mean</div>
-      <div class="sc-v ${upside != null ? pc(upside) : 'v-nu'}">${tgtMean ? fc.format(tgtMean) : '—'}</div>
-      <div class="sc-s">${upside != null ? (upside > 0 ? '+' : '') + fv(upside) + '% upside' : '—'}</div>
-    </div>
-    <div class="sc"><div class="sc-l">PT High (Bull)</div>
-      <div class="sc-v v-up">${tgtHigh ? fc.format(tgtHigh) : '—'}</div>
-      <div class="sc-s">Best-case target</div>
-    </div>
-    <div class="sc"><div class="sc-l">PT Low (Bear)</div>
-      <div class="sc-v v-dn">${tgtLow ? fc.format(tgtLow) : '—'}</div>
-      <div class="sc-s">Bear-case target</div>
-    </div>
-  </div>`;
-
-  // Recommendation trend table
-  if (RT.length > 0) {
-    const r0 = RT[0] || {};
-    const tot = (r0.strongBuy || 0) + (r0.buy || 0) + (r0.hold || 0) + (r0.sell || 0) + (r0.strongSell || 0);
-    if (tot > 0) {
-      const sb = r0.strongBuy || 0, b = r0.buy || 0, hh = r0.hold || 0, s = r0.sell || 0, ss = r0.strongSell || 0;
-      const bar = (n, c) => `<div style="height:4px;background:var(--bd);border-radius:2px;margin-top:3px;overflow:hidden"><div style="width:${Math.round(n / tot * 100)}%;height:100%;background:${c};border-radius:2px"></div></div>`;
-      h += `<div class="grid g3" style="margin-bottom:4px">
-        <div class="sc"><div class="sc-l">Strong Buy / Buy</div><div class="sc-v v-up">${sb + b}</div><div class="sc-s">${sb} SB · ${b} B${bar(sb + b, 'var(--gn)')}</div></div>
-        <div class="sc"><div class="sc-l">Hold</div><div class="sc-v v-or">${hh}</div><div class="sc-s">${hh} neutral${bar(hh, 'var(--or)')}</div></div>
-        <div class="sc"><div class="sc-l">Sell / Strong Sell</div><div class="sc-v v-dn">${s + ss}</div><div class="sc-s">${s} S · ${ss} SS${bar(s + ss, 'var(--rd)')}</div></div>
-      </div>`;
-    }
-    if (RT.length > 1) {
-      h += `<table><thead><tr><th>Period</th><th>Str Buy</th><th>Buy</th><th>Hold</th><th>Sell</th><th>Str Sell</th></tr></thead><tbody>`;
-      RT.slice(0, 4).forEach(r => {
-        h += `<tr><td style="color:var(--ac)">${r.period}</td><td class="pos">${r.strongBuy || 0}</td><td class="pos">${r.buy || 0}</td><td class="est">${r.hold || 0}</td><td class="neg">${r.sell || 0}</td><td class="neg">${r.strongSell || 0}</td></tr>`;
-      });
-      h += `</tbody></table>`;
-    }
+  if (d.description || d.sector) {
+    h += `<div class="sc" style="margin:8px 0;flex-direction:row;gap:16px;flex-wrap:wrap">
+      ${d.sector ? `<span style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;background:var(--ac3);border:1px solid var(--ac2);border-radius:4px;color:var(--ac)">${d.sector}${d.industry?' · '+d.industry:''}</span>` : ''}
+      ${d.description ? `<span style="font-size:11px;color:var(--txd);flex:1;min-width:200px">${d.description}</span>` : ''}
+      <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ac);text-decoration:none">Yahoo ↗</a>
+      <a href="https://finviz.com/quote.ashx?t=${sym}" target="_blank" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ac);text-decoration:none">Finviz ↗</a>
+      <a href="https://www.barchart.com/stocks/quotes/${sym}" target="_blank" style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ac);text-decoration:none">Barchart ↗</a>
+    </div>`;
   }
 
-  // Upgrade/downgrade history
-  if (UH.length) {
-    h += `<table><thead><tr><th>Date</th><th>Firm</th><th>Action</th><th>From</th><th>To</th></tr></thead><tbody>`;
-    UH.slice(0, 10).forEach(u => {
-      const a = (u.action || '').toLowerCase();
-      const ac = a === 'up' || a === 'init' ? 'pos' : a === 'down' ? 'neg' : '';
-      const al = { up: '⬆ Upgrade', down: '⬇ Downgrade', init: '★ Initiate', reit: '→ Reiterate', main: '→ Maintain' }[a] || u.action || '—';
-      h += `<tr><td class="nu">${fd(u.epochGradeDate)}</td><td style="font-weight:600;color:var(--tx)">${u.firm || '—'}</td><td class="${ac}">${al}</td><td class="nu">${u.fromGrade || '—'}</td><td>${u.toGrade || '—'}</td></tr>`;
+  // ══ §2 ANALYST RATINGS ════════════════════════════════════════════════
+  h += `<div class="sh"><span>§2 · Analyst Ratings</span></div>`;
+  const rec = (d.recommendation || '').toLowerCase();
+  const recBadge = rec.includes('strong_buy') || rec==='buy' ? 'v-gn' :
+                   rec==='hold' ? 'v-gd' :
+                   rec.includes('sell') ? 'v-rd' : 'v-nu';
+  const recLabel = rec.replace('_',' ').toUpperCase() || '—';
+  h += `<div class="grid g4">
+    <div class="sc"><div class="sc-l">Consensus</div>
+      <div class="sc-v"><span class="badge ${recBadge}">${recLabel}</span></div>
+      <div class="sc-s">${d.analyst_count != null ? d.analyst_count+' analysts' : '—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">PT Mean</div>
+      <div class="sc-v v-ac">${d.target_mean ? '$'+fv(d.target_mean) : '—'}</div>
+      <div class="sc-s">${upside != null ? 'Upside: '+(upside>0?'+':'')+fv(upside,1)+'%' : '—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">PT High</div>
+      <div class="sc-v v-gn">${d.target_high ? '$'+fv(d.target_high) : '—'}</div>
+    </div>
+    <div class="sc"><div class="sc-l">PT Low</div>
+      <div class="sc-v v-rd">${d.target_low ? '$'+fv(d.target_low) : '—'}</div>
+    </div>
+  </div>`;
+
+  // Analyst actions table
+  const aa = d.analyst_actions || [];
+  if (aa.length) {
+    h += `<div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>Firm</th><th>Action</th><th>Rating</th><th>Target</th><th>Date</th>
+    </tr></thead><tbody>`;
+    aa.slice(0,8).forEach(a => {
+      const ac = (a.action||'').toLowerCase().includes('upgrade') ? 'v-gn' :
+                 (a.action||'').toLowerCase().includes('downgrade') ? 'v-rd' : 'v-gd';
+      h += `<tr>
+        <td>${a.firm||'—'}</td>
+        <td><span class="badge ${ac}">${a.action||'—'}</span></td>
+        <td>${a.from ? a.from+'→'+a.to : (a.to||'—')}</td>
+        <td>${a.target ? '$'+a.target : '—'}</td>
+        <td style="color:var(--txd)">${a.date||'—'}</td>
+      </tr>`;
     });
-    h += `</tbody></table>`;
+    h += `</tbody></table></div>`;
   }
 
   // ══ §3 EARNINGS ═══════════════════════════════════════════════════════
-  h += `<div class="sh"><span>§3 · Earnings History</span></div>`;
-  const nextEarnTs = q7?.earningsTimestamp;
-  const epsTTM = q7?.epsTrailingTwelveMonths ?? raw(K, 'trailingEps');
-  const epsFwd  = q7?.epsForward ?? raw(K, 'forwardEps');
-
+  h += `<div class="sh"><span>§3 · Earnings</span></div>`;
   h += `<div class="grid g4">
     <div class="sc"><div class="sc-l">Next Earnings</div>
-      <div class="sc-v v-pu" style="font-size:11px">${nextEarnTs ? fd(nextEarnTs) : 'Not scheduled'}</div>
-      <div class="sc-s">Expected report date</div>
+      <div class="sc-v v-or">${d.earnings_date || '—'}</div>
     </div>
     <div class="sc"><div class="sc-l">EPS (TTM)</div>
-      <div class="sc-v ${epsTTM != null ? (epsTTM >= 0 ? 'v-up' : 'v-dn') : 'v-nu'}">${epsTTM != null ? '$' + fv(epsTTM) : '—'}</div>
-      <div class="sc-s">Trailing 12 months</div>
+      <div class="sc-v ${pc(d.eps_ttm)}">${d.eps_ttm != null ? '$'+fv(d.eps_ttm) : '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">EPS Forward</div>
-      <div class="sc-v est">${epsFwd != null ? '$' + fv(epsFwd) : '—'}</div>
-      <div class="sc-s">Next 12 months est.</div>
+    <div class="sc"><div class="sc-l">EPS (Fwd)</div>
+      <div class="sc-v v-gd">${d.eps_fwd != null ? '$'+fv(d.eps_fwd) : '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">P/E Fwd vs TTM</div>
-      <div class="sc-v v-gd">${q7?.forwardPE != null ? fv(q7?.forwardPE, 1) + 'x' : '—'}</div>
-      <div class="sc-s">TTM: ${q7?.trailingPE != null ? fv(q7?.trailingPE, 1) + 'x' : '—'}</div>
+    <div class="sc"><div class="sc-l">Revenue Growth</div>
+      <div class="sc-v ${pc(d.revenue_growth)}">${d.revenue_growth != null ? fpc(d.revenue_growth*100) : '—'}</div>
     </div>
   </div>`;
-
-  if (EH.length) {
-    h += `<table><thead><tr><th>Quarter</th><th>EPS Actual</th><th>EPS Est.</th><th>Surprise %</th><th>Revenue</th></tr></thead><tbody>`;
-    EH.slice(0, 8).forEach(q => {
-      const ea = raw(q, 'epsActual'), ee = raw(q, 'epsEstimated');
-      const surp = ea != null && ee != null && ee !== 0 ? ((ea - ee) / Math.abs(ee) * 100) : null;
-      // Try to match quarterly revenue from income statement
-      const qts = raw(q, 'quarter');
-      let rev = null;
-      for (const iq of IQ) {
-        if (qts && Math.abs((raw(iq, 'endDate') || 0) - qts) < 8e6) { rev = raw(iq, 'totalRevenue'); break; }
-      }
-      h += `<tr>
-        <td style="color:var(--ac);font-weight:700">${q.quarter?.fmt || '—'}</td>
-        <td class="${ea != null ? (ea >= 0 ? 'pos' : 'neg') : ''}">${ea != null ? '$' + fv(ea) : '—'}</td>
-        <td class="est">${ee != null ? '$' + fv(ee) : '—'}</td>
-        <td class="${surp != null ? (surp >= 0 ? 'pos' : 'neg') : ''}">${surp != null ? (surp > 0 ? '+' : '') + fv(surp) + '%' : '—'}</td>
-        <td class="nu">${rev != null ? fb(rev) : '—'}</td>
-      </tr>`;
-    });
-    h += `</tbody></table>`;
-  }
 
   // ══ §4 KEY METRICS ════════════════════════════════════════════════════
-  h += `<div class="sh"><span>§4 · Key Metrics &amp; Financials</span></div>`;
+  h += `<div class="sh"><span>§4 · Key Metrics</span></div>`;
   h += `<div class="grid g4">
-    <div class="sc"><div class="sc-l">Revenue (TTM)</div>
-      <div class="sc-v v-ac">${fb(raw(F, 'totalRevenue'))}</div>
-      <div class="sc-s">Growth: ${fp(raw(F, 'revenueGrowth'))}</div>
+    <div class="sc"><div class="sc-l">Gross Margin</div>
+      <div class="sc-v v-gn">${d.gross_margin != null ? fp(d.gross_margin) : '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">Gross / Net Margin</div>
-      <div class="sc-v ${raw(F, 'grossMargins') > 0.5 ? 'v-up' : 'v-nu'}">${raw(F, 'grossMargins') != null ? fv(raw(F, 'grossMargins') * 100, 1) + '%' : '—'}</div>
-      <div class="sc-s">Net: ${raw(F, 'profitMargins') != null ? fv(raw(F, 'profitMargins') * 100, 1) + '%' : '—'}</div>
+    <div class="sc"><div class="sc-l">Net Margin</div>
+      <div class="sc-v ${pc(d.net_margin)}">${d.net_margin != null ? fp(d.net_margin) : '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">ROE / ROA</div>
-      <div class="sc-v ${raw(F, 'returnOnEquity') > 0.15 ? 'v-up' : 'v-nu'}">${raw(F, 'returnOnEquity') != null ? fv(raw(F, 'returnOnEquity') * 100, 1) + '%' : '—'}</div>
-      <div class="sc-s">ROA: ${raw(F, 'returnOnAssets') != null ? fv(raw(F, 'returnOnAssets') * 100, 1) + '%' : '—'}</div>
+    <div class="sc"><div class="sc-l">ROE</div>
+      <div class="sc-v ${pc(d.roe)}">${d.roe != null ? fp(d.roe) : '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">Free Cash Flow</div>
-      <div class="sc-v ${raw(F, 'freeCashflow') > 0 ? 'v-up' : 'v-dn'}">${fb(raw(F, 'freeCashflow'))}</div>
-      <div class="sc-s">Op CF: ${fb(raw(F, 'operatingCashflow'))}</div>
+    <div class="sc"><div class="sc-l">Beta</div>
+      <div class="sc-v ${d.beta > 1.5 ? 'v-or' : d.beta < 0.5 ? 'v-pu' : 'v-nu'}">${d.beta != null ? fv(d.beta,2) : '—'}</div>
+      <div class="sc-s">${d.avg_volume ? fn.format(d.avg_volume)+' avg vol' : '—'}</div>
     </div>
-  </div>
-  <div class="grid g4">
-    <div class="sc"><div class="sc-l">Debt / Equity</div>
-      <div class="sc-v ${raw(F, 'debtToEquity') > 1.5 ? 'v-or' : 'v-nu'}">${raw(F, 'debtToEquity') != null ? fv(raw(F, 'debtToEquity'), 1) : '—'}</div>
-      <div class="sc-s">Current ratio: ${raw(F, 'currentRatio') != null ? fv(raw(F, 'currentRatio'), 2) : '—'}</div>
+    <div class="sc"><div class="sc-l">Short Float</div>
+      <div class="sc-v ${d.short_float > 0.1 ? 'v-rd' : 'v-nu'}">${d.short_float != null ? fp(d.short_float) : '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">P/S · P/B</div>
-      <div class="sc-v v-gd">${raw(D, 'priceToSalesTrailing12Months') != null ? fv(raw(D, 'priceToSalesTrailing12Months'), 1) + 'x' : '—'}</div>
-      <div class="sc-s">P/B: ${raw(K, 'priceToBook') != null ? fv(raw(K, 'priceToBook'), 1) + 'x' : '—'}</div>
+    <div class="sc"><div class="sc-l">Inst. Owned</div>
+      <div class="sc-v v-pu">${d.inst_pct != null ? fp(d.inst_pct) : '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">Short Interest</div>
-      <div class="sc-v ${raw(K, 'shortPercentOfFloat') > 0.2 ? 'v-rd' : 'v-nu'}">${raw(K, 'shortPercentOfFloat') != null ? fv(raw(K, 'shortPercentOfFloat') * 100, 1) + '%' : '—'}</div>
-      <div class="sc-s">Days to cover: ${raw(K, 'shortRatio') != null ? fv(raw(K, 'shortRatio'), 1) : '—'}</div>
+    <div class="sc"><div class="sc-l">Volume</div>
+      <div class="sc-v v-nu">${d.volume ? fn.format(d.volume) : '—'}</div>
     </div>
-    <div class="sc"><div class="sc-l">Beta · Avg Vol</div>
-      <div class="sc-v ${q7?.beta > 1.5 ? 'v-or' : q7?.beta < 0.5 ? 'v-pu' : 'v-nu'}">${q7?.beta != null ? fv(q7?.beta, 2) : '—'}</div>
-      <div class="sc-s">${q7?.averageVolume != null ? fn.format(q7?.averageVolume) + ' avg' : '—'}</div>
+    <div class="sc"><div class="sc-l">52W Position</div>
+      <div class="sc-v v-ac">${(d.w52_high && d.w52_low && price) ? fv((price-d.w52_low)/(d.w52_high-d.w52_low)*100,0)+'%' : '—'}</div>
+      <div class="sc-s">of 52w range</div>
     </div>
   </div>`;
 
-  // ══ §5 OWNERSHIP & INSIDER ════════════════════════════════════════════
-  h += `<div class="sh"><span>§5 · Ownership &amp; Insider Transactions</span></div>`;
-  const instPct   = raw(MAJ, 'institutionsPercentHeld');
-  const insidePct = raw(MAJ, 'insidersPercentHeld');
-  h += `<div class="grid g3" style="margin-bottom:10px">
-    <div class="sc"><div class="sc-l">Institutional %</div>
-      <div class="sc-v v-ac">${instPct != null ? fv(instPct * 100, 1) + '%' : '—'}</div>
-      <div class="sc-s">Of shares outstanding<div class="pbar"><div class="pbar-f" style="width:${Math.min((instPct || 0) * 100, 100)}%;background:var(--ac)"></div></div></div>
-    </div>
-    <div class="sc"><div class="sc-l">Insider %</div>
-      <div class="sc-v v-gd">${insidePct != null ? fv(insidePct * 100, 1) + '%' : '—'}</div>
-      <div class="sc-s">Insider ownership<div class="pbar"><div class="pbar-f" style="width:${Math.min((insidePct || 0) * 100, 100)}%;background:var(--gd)"></div></div></div>
-    </div>
-    <div class="sc"><div class="sc-l">Float / Short</div>
-      <div class="sc-v v-nu">${fb(raw(K, 'floatShares'))?.replace('$', '') || '—'}</div>
-      <div class="sc-s">Short: ${fb(raw(K, 'sharesShort'))?.replace('$', '') || '—'}</div>
-    </div>
-  </div>`;
+  // ══ §5 NEWS ═══════════════════════════════════════════════════════════
+  // Combine AI news + Marketaux news
+  const aiNews = (d.recent_news || []).map(n => ({
+    title: n.title, source: n.source || '—', sentiment: n.sentiment, published_at: n.published, url: '#'
+  }));
+  const allNews = [...aiNews, ...(news||[])].slice(0,12);
 
-  if (TX.length) {
-    let nb = 0, ns = 0;
-    TX.forEach(t => {
-      const d = (t.transactionDescription || '').toLowerCase();
-      if (/(buy|purch|acqui)/i.test(d)) nb += Math.abs(raw(t, 'shares') || 0);
-      else if (/(sale|sell)/i.test(d))  ns += Math.abs(raw(t, 'shares') || 0);
-    });
-    const sig = nb > ns ? 'Net Buying' : ns > nb ? 'Net Selling' : 'Mixed';
-    const sc  = nb > ns ? 'bg-gn' : ns > nb ? 'bg-rd' : 'bg-or';
-    h += `<div style="margin-bottom:8px"><span class="badge ${sc}" style="font-size:9px">${sig}</span> <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd)">${fn.format(nb)} bought · ${fn.format(ns)} sold</span></div>`;
-    h += `<table><thead><tr><th>Date</th><th>Insider</th><th>Transaction</th><th>Shares</th><th>Value</th></tr></thead><tbody>`;
-    TX.slice(0, 12).forEach(t => {
-      const desc = t.transactionDescription || '';
-      const isBuy  = /(buy|purch|acqui)/i.test(desc);
-      const isSell = /(sale|sell)/i.test(desc);
-      h += `<tr>
-        <td class="nu">${fd(raw(t, 'startDate'))}</td>
-        <td style="font-weight:600;color:var(--tx)">${t.filerName || '—'}</td>
-        <td class="${isBuy ? 'pos' : isSell ? 'neg' : ''}">${desc}</td>
-        <td>${raw(t, 'shares') != null ? fn.format(raw(t, 'shares')) : '—'}</td>
-        <td class="est">${raw(t, 'value') != null ? fb(raw(t, 'value')) : '—'}</td>
-      </tr>`;
-    });
-    h += `</tbody></table>`;
-  } else {
-    h += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">Insider data loads after visiting <a href="https://finance.yahoo.com/quote/${sym}" target="_blank" style="color:var(--ac)">finance.yahoo.com/${sym}</a> once to set a session cookie</div>`;
-  }
-
-  // ══ §6 NEWS — MARKETAUX NLP ═══════════════════════════════════════════
-  h += `<div class="sh"><span>§6 · News Feed — Marketaux NLP Sentiment</span></div>`;
-  if (news.length) {
-    h += `<div class="news-feed">`;
-    news.slice(0, 20).forEach(n => {
-      const ent     = n.entities?.find(e => e.symbol?.toUpperCase() === sym) || n.entities?.[0];
-      const sent    = ent?.sentiment_score;
-      const dotCls  = sent > 0.1 ? 'gn' : sent < -0.1 ? 'rd' : 'or';
-      const sentLbl = sent != null ? (sent > 0.25 ? 'Positive' : sent < -0.25 ? 'Negative' : 'Neutral') : null;
-      const sentCls = sent > 0.25 ? 'sent-pos' : sent < -0.25 ? 'sent-neg' : 'sent-neu';
-      const tl      = (n.title || '').toLowerCase();
-      const tag     = tl.includes('upgrade') ? 'UPGRADE' : tl.includes('downgrade') ? 'DOWNGRADE' : tl.includes('earnings') || tl.includes(' eps') ? 'EARNINGS' : tl.includes('split') ? 'SPLIT' : '';
-      const tagCls  = tag === 'UPGRADE' ? 'bg-gn' : tag === 'DOWNGRADE' ? 'bg-rd' : tag === 'EARNINGS' ? 'bg-pu' : 'bg-gd';
-      h += `<a class="ni" href="${n.url || '#'}" target="_blank" rel="noopener">
-        <div class="ni-dot ${dotCls}"></div>
-        <div class="ni-body">
-          <div class="ni-title">${tag ? `<span class="badge ${tagCls}" style="margin-right:6px">${tag}</span>` : ''}${n.title || '—'}</div>
-          <div class="ni-meta">
-            <span class="ni-src">${n.source || '—'}</span>
-            <span>${ago(n.published_at)}</span>
-            ${sentLbl ? `<span class="ni-sent ${sentCls}">${sentLbl} (${fv(Math.abs(sent))})</span>` : ''}
-          </div>
+  if (allNews.length) {
+    h += `<div class="sh"><span>§5 · News & Sentiment</span></div>`;
+    h += `<div class="news-list">`;
+    allNews.forEach(n => {
+      const sent  = (n.sentiment || n.sentiment_score || '').toString();
+      const sntCls = sent.includes('pos') || parseFloat(sent) > 0.05 ? 'snt-p' :
+                     sent.includes('neg') || parseFloat(sent) < -0.05 ? 'snt-n' : 'snt-x';
+      const sntLbl = sent.includes('pos') ? '▲' : sent.includes('neg') ? '▼' : '◆';
+      const link   = n.url && n.url !== '#' ? n.url : (n.news_url || '#');
+      const pub    = n.published_at || n.published || '';
+      h += `<a class="news-item" href="${link}" target="_blank" rel="noopener">
+        <div class="news-top">
+          <span class="news-src">${n.source || n.entities?.[0]?.name || '—'}</span>
+          <span class="news-dt">${pub ? pub.slice(0,10) : '—'}</span>
+          <span class="snt ${sntCls}">${sntLbl}</span>
         </div>
+        <div class="news-title">${n.title || '—'}</div>
       </a>`;
     });
     h += `</div>`;
-  } else {
-    h += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);padding:8px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;margin-bottom:12px">No news found via Marketaux (free tier: 100 req/day)</div>`;
   }
 
-  h += `<div style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:var(--txm);margin-top:14px;padding:10px;background:var(--sf);border:1px solid var(--bd);border-radius:6px;line-height:1.7">
-    📊 Price &amp; Analyst data: <a href="https://finance.yahoo.com" target="_blank" rel="noopener" style="color:var(--ac)">Yahoo Finance v7/v8</a> (always works from any browser) ·
-    Deep fundamentals: Yahoo v10 (best after visiting yahoo.com once) ·
-    News: <a href="https://www.marketaux.com" target="_blank" rel="noopener" style="color:var(--ac)">Marketaux NLP</a> ·
-    Chart: TradingView · For research only — not financial advice.
-  </div></div>`;
+  h += `<div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--txd);padding:8px 0;text-align:right">
+    Source: ${source} · ${new Date().toLocaleString()}
+  </div>`;
+  h += `</div>`;
 
   document.getElementById('results').innerHTML = h;
+  renderAI(sym, d);
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  AI ANALYST NOTE
-// ══════════════════════════════════════════════════════════════════════════
-async function renderAI(sym, q7, d10) {
+
+// ── AI Analyst Note ────────────────────────────────────────────────────────
+async function renderAI(sym, d) {
   const box = document.getElementById('ai-box');
   if (!box) return;
   box.innerHTML = `<div class="ai-box"><div class="ai-hdr">🤖 AI Analyst Note — ${sym}</div>
     <div class="ai-thinking"><span class="dots"><span>●</span><span>●</span><span>●</span></span>Analysing…</div>
   </div>`;
-
-  const F   = d10.financialData || {};
-  const K   = d10.defaultKeyStatistics || {};
-  const RT  = d10.recommendationTrend?.trend || [];
-  const rec = RT[0] || {};
-  const tot = (rec.strongBuy || 0) + (rec.buy || 0) + (rec.hold || 0) + (rec.sell || 0) + (rec.strongSell || 0);
-
   const ctx = {
-    sym, name: q7?.longName || q7?.shortName || sym,
-    sector: q7?.sector, industry: q7?.industry,
-    price: q7?.regularMarketPrice, changePct: q7?.regularMarketChangePercent,
-    marketCap: q7?.marketCap, pe: q7?.trailingPE, fwdPe: q7?.forwardPE,
-    epsTTM: q7?.epsTrailingTwelveMonths, epsForward: q7?.epsForward,
-    w52h: q7?.fiftyTwoWeekHigh, w52l: q7?.fiftyTwoWeekLow, beta: q7?.beta,
-    targetMean: q7?.targetMeanPrice, targetHigh: q7?.targetHighPrice, targetLow: q7?.targetLowPrice,
-    analysts: q7?.numberOfAnalystOpinions, recommendation: q7?.recommendationKey,
-    bullishPct: tot ? Math.round(((rec.strongBuy || 0) + (rec.buy || 0)) / tot * 100) : null,
-    grossMargin: raw(F, 'grossMargins'), netMargin: raw(F, 'profitMargins'),
-    roe: raw(F, 'returnOnEquity'), fcf: raw(F, 'freeCashflow'),
-    revenue: raw(F, 'totalRevenue'), revenueGrowth: raw(F, 'revenueGrowth'),
-    debtEquity: raw(F, 'debtToEquity'), shortPct: raw(K, 'shortPercentOfFloat'),
+    sym, name: d.name||sym, sector: d.sector, industry: d.industry,
+    price: d.price, changePct: d.change_pct, marketCap: d.market_cap,
+    pe: d.pe_ttm, fwdPe: d.pe_fwd, epsTTM: d.eps_ttm, epsForward: d.eps_fwd,
+    w52h: d.w52_high, w52l: d.w52_low, beta: d.beta,
+    targetMean: d.target_mean, targetHigh: d.target_high, targetLow: d.target_low,
+    analysts: d.analyst_count, recommendation: d.recommendation,
+    grossMargin: d.gross_margin, netMargin: d.net_margin,
+    roe: d.roe, revenueGrowth: d.revenue_growth,
+    shortPct: d.short_float, instPct: d.inst_pct, earningsDate: d.earnings_date,
+    recentHeadlines: (d.recent_news||[]).slice(0,3).map(n=>n.title),
   };
-
-  const prompt = `You are a Wall Street equity analyst. Write a concise analyst note on ${sym} (${ctx.name}) using only the data below.\n\nDATA: ${JSON.stringify(ctx)}\n\nUse exactly these 6 bold sections:\n**SNAPSHOT** — Company and market position (2 sentences).\n**EARNINGS QUALITY** — EPS, margins, revenue growth with actual numbers (2-3 sentences).\n**ANALYST SENTIMENT** — Consensus, PT upside/downside, bull/bear ratio (2 sentences).\n**SMART MONEY** — Institutional/insider signals, short interest (2 sentences).\n**KEY RISKS** — 2-3 specific quantified risks.\n**CATALYST WATCH** — Next earnings window, key metric, known catalyst.\n\nDirect and opinionated. Use actual numbers. Under 280 words.`;
-
+  const prompt = `You are a Wall Street equity analyst. Write a concise analyst note on ${sym} (${ctx.name||sym}) using the data below.\n\nDATA: ${JSON.stringify(ctx)}\n\nUse exactly these 6 bold sections:\n**SNAPSHOT** — Company and market position (2 sentences).\n**EARNINGS QUALITY** — EPS, margins, revenue growth with actual numbers (2-3 sentences).\n**ANALYST SENTIMENT** — Consensus, PT upside/downside (2 sentences).\n**SMART MONEY** — Institutional/insider signals, short interest (2 sentences).\n**KEY RISKS** — 2-3 specific quantified risks.\n**CATALYST WATCH** — Next earnings, key metric, catalyst.\n\nDirect and opinionated. Under 280 words.`;
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }] }),
     });
     const j = await r.json();
-    const text = (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('') || '';
-    if (!text) { box.innerHTML = ''; return; }
-    const fmt = text
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>');
-    box.innerHTML = `<div class="ai-box"><div class="ai-hdr">🤖 AI Analyst Note — ${sym} · ${ctx.name}</div><div class="ai-body"><p>${fmt}</p></div></div>`;
-  } catch (e) {
-    box.innerHTML = '';
-    console.warn('[AI]', e.message);
-  }
+    const text = (j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    if (!text) { box.innerHTML=''; return; }
+    const fmt = text.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+    box.innerHTML = `<div class="ai-box"><div class="ai-hdr">🤖 AI Analyst Note — ${sym} · ${ctx.name||sym}</div><div class="ai-body"><p>${fmt}</p></div></div>`;
+  } catch(e) { box.innerHTML=''; console.warn('[AI]',e.message); }
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
