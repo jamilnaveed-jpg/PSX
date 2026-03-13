@@ -125,6 +125,9 @@ main{padding:16px 18px 60px;overflow-x:hidden}
 .card.verdict-WATCH{border-left:4px solid var(--watch)}
 .card.verdict-MONITOR{border-left:4px solid var(--monitor)}
 .card.verdict-SKIP{border-left:4px solid var(--skip);opacity:.75}
+.card.verdict-MOVER{border-left:4px solid var(--ac)}
+.new-criteria-badge{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--ac3);color:var(--ac);border:1px solid var(--ac2);letter-spacing:.04em}
+.v-MOVER{background:var(--ac3);color:var(--ac);border:1px solid var(--ac2)}
 
 /* Card header */
 .ch{display:flex;align-items:center;gap:12px;padding:12px 16px 10px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
@@ -489,10 +492,20 @@ function renderCard(c){
       <span class="ch-sym" onclick="openTV('${sym}')" title="Open on TradingView">${sym}</span>
       <span class="ch-name">${c.company||'—'}</span>
       <span class="ch-timing ${timingCls}">${timingLabel}</span>
-      <span class="verdict-badge v-${c.verdict}">${c.verdict==='STRONG'?'⚡ ':c.verdict==='WATCH'?'👁 ':c.verdict==='MONITOR'?'📊 ':'🚫 '}${c.verdict}</span>
+      <span class="verdict-badge v-${c.verdict}">${c.verdict==='STRONG'?'⚡ ':c.verdict==='WATCH'?'👁 ':c.verdict==='MONITOR'?'📊 ':c.verdict==='MOVER'?'🚀 ':'🚫 '}${c.verdict}</span>
       ${(c.setup_types||[]).length?`<span class="setup-badge">Setup ${setups}</span>`:''}
+      ${c.is_new_criteria_mover?`<span class="new-criteria-badge">🚀 NEW CRITERIA${c.new_criteria_passes_pct&&c.new_criteria_passes_dol?' (4%+$5)':c.new_criteria_passes_pct?' (4%+)':' ($5+)'}</span>`:''}
       ${scoreDots(c.magna_score)}
     </div>
+
+    <!-- New Criteria detail strip (if applicable) -->
+    ${c.is_new_criteria_mover?`<div style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:5px 10px;background:var(--ac3);border-bottom:1px solid var(--ac2);color:var(--ac);display:flex;gap:12px;flex-wrap:wrap">
+      <span>📍 Session: <b>${c.session||'—'}</b></span>
+      ${c.session_chgpct!=null?`<span>Move: <b>${c.session_chgpct>0?'+':''}${c.session_chgpct.toFixed(1)}%</b></span>`:''}
+      ${c.session_chg!=null?`<span>$-Move: <b>${c.session_chg>0?'+':''}$${Math.abs(c.session_chg).toFixed(2)}</b></span>`:''}
+      <span>Trigger: ${c.new_criteria_passes_pct?'<b>≥4% ✓</b>':''} ${c.new_criteria_passes_dol?'<b>≥$5 ✓</b>':''}</span>
+      <span style="color:var(--txd)">MAGNA53 score: ${c.magna_score}/5 — <b>${c.verdict}</b></span>
+    </div>`:''}
 
     <!-- Price / Gap row -->
     <div class="pr">
@@ -556,6 +569,7 @@ function renderSummaryTable(candidates){
         <th style="padding:7px 12px;text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd)">Neglect</th>
         <th style="padding:7px 12px;text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd)">Score</th>
         <th style="padding:7px 12px;text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd)">Verdict</th>
+        <th style="padding:7px 12px;text-align:center;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ac)">🚀 New</th>
       </tr>
     </thead>
     <tbody>`;
@@ -575,6 +589,7 @@ function renderSummaryTable(candidates){
       <td style="padding:6px 12px;text-align:center;font-size:10px">${negStr}</td>
       <td style="padding:6px 12px;text-align:center">${scoreDots(c.magna_score)}</td>
       <td style="padding:6px 12px;text-align:center"><span style="${vStyle}">${c.verdict}</span></td>
+      <td style="padding:6px 12px;text-align:center">${c.is_new_criteria_mover?`<span style="color:var(--ac);font-weight:700;font-size:9px">${c.new_criteria_passes_pct?'4%':''} ${c.new_criteria_passes_dol?'$5':''}</span>`:'<span style="color:var(--txm)">—</span>'}</td>
     </tr>`;
   });
   h+=`</tbody></table></div>`;
@@ -592,12 +607,15 @@ function renderMain(){
   }
 
   const candidates=day.candidates||[];
-  const filtered=activeFilter==='ALL'?candidates:candidates.filter(c=>c.verdict===activeFilter);
+  const filtered=activeFilter==='ALL'?candidates:
+    activeFilter==='MOVER'?candidates.filter(c=>c.is_new_criteria_mover):
+    candidates.filter(c=>c.verdict===activeFilter);
 
   // Stats
   const strong=candidates.filter(c=>c.verdict==='STRONG').length;
   const watch=candidates.filter(c=>c.verdict==='WATCH').length;
   const monitor=candidates.filter(c=>c.verdict==='MONITOR').length;
+  const moversCount=candidates.filter(c=>c.is_new_criteria_mover).length;
   const earningCount=day.total_earnings||candidates.length;
 
   // Update upd
@@ -614,6 +632,7 @@ function renderMain(){
     <div class="stat s-gn"><div class="stat-lbl">⚡ STRONG</div><div class="stat-val">${strong}</div><div class="stat-sub">all criteria met</div></div>
     <div class="stat s-gd"><div class="stat-lbl">👁 WATCH</div><div class="stat-val">${watch}</div><div class="stat-sub">3-4 criteria met</div></div>
     <div class="stat s-rd"><div class="stat-lbl">📊 MONITOR</div><div class="stat-val">${monitor}</div><div class="stat-sub">partial match</div></div>
+    <div class="stat s-ac"><div class="stat-lbl">🚀 NEW CRITERIA</div><div class="stat-val">${moversCount}</div><div class="stat-sub">pre/post movers</div></div>
   </div>`;
 
   // Filter tabs
@@ -622,6 +641,7 @@ function renderMain(){
     <div class="ft ft-strong${activeFilter==='STRONG'?' on':''}" onclick="setFilter('STRONG')">⚡ Strong (${strong})</div>
     <div class="ft ft-watch${activeFilter==='WATCH'?' on':''}" onclick="setFilter('WATCH')">👁 Watch (${watch})</div>
     <div class="ft ft-monitor${activeFilter==='MONITOR'?' on':''}" onclick="setFilter('MONITOR')">📊 Monitor (${monitor})</div>
+    <div class="ft${activeFilter==='MOVER'?' on':''}" style="${activeFilter==='MOVER'?'background:var(--ac);color:#fff;':''}border-color:var(--ac2)" onclick="setFilter('MOVER')">🚀 New Criteria (${moversCount})</div>
   </div>`;
 
   if(!filtered.length){
