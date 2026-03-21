@@ -74,34 +74,7 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .sec-title::after{content:'';flex:1;height:1px;background:var(--bd)}
 
 /* ── CREDENTIAL PANEL ── */
-.cred-banner{background:var(--gdbg);border:1px solid var(--gdbr);border-radius:8px;padding:12px 16px;margin-bottom:18px;display:flex;gap:12px;align-items:flex-start}
-.cred-ico{font-size:18px;flex-shrink:0;margin-top:1px}
-.cred-body{flex:1;font-size:11.5px;line-height:1.7}
 .cred-body strong{color:var(--gd)}
-.cred-body code{font-family:'JetBrains Mono',monospace;background:var(--sf3);padding:1px 6px;border-radius:3px;font-size:10.5px;color:var(--ac)}
-
-/* ── SUBSCRIPTION TOGGLES ── */
-.sub-row{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-.sub-toggle{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--sf);cursor:pointer;transition:all .2s;user-select:none;min-width:180px}
-.sub-toggle.active{border-color:var(--ac);background:var(--ac3)}
-.sub-toggle.active .sub-dot{background:var(--gn);box-shadow:0 0 6px var(--gn)}
-.sub-dot{width:8px;height:8px;border-radius:50%;background:var(--txm);transition:all .2s;flex-shrink:0}
-.sub-name{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;color:var(--txd);transition:color .2s}
-.sub-toggle.active .sub-name{color:var(--ac)}
-.sub-tag{font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 5px;border-radius:3px;background:var(--sf3);color:var(--txd)}
-.sub-toggle.active .sub-tag{background:var(--ac3);color:var(--ac)}
-.sub-cred-btn{font-family:'JetBrains Mono',monospace;font-size:8.5px;padding:2px 7px;border-radius:4px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s;margin-left:auto}
-.sub-cred-btn:hover{color:var(--ac);border-color:var(--ac)}
-
-/* ── WEEK SELECTOR ── */
-.week-row{display:flex;align-items:center;gap:8px;margin-bottom:18px}
-.week-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
-.week-input{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);padding:4px 10px;cursor:pointer;transition:border-color .15s}
-.week-input:focus{outline:none;border-color:var(--ac)}
-.week-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s}
-.week-btn:hover{color:var(--ac);border-color:var(--ac)}
-.save-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--go-bg);color:var(--go);border:1px solid var(--go-br);opacity:0;transition:opacity .3s}
-.save-badge.show{opacity:1}
 
 /* ── 5-DAY BUCKET GRID ── */
 .bucket-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:28px}
@@ -123,27 +96,8 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .bucket-add-btn{width:100%;font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:5px;background:transparent;border:none;border-top:1px solid var(--bd);color:var(--txd);cursor:pointer;transition:all .15s;text-align:center}
 .bucket-add-btn:hover{background:var(--sf2);color:var(--ac)}
 /* Fetch row inside each bucket */
-.bucket-fetch-row{display:flex;gap:4px;padding:5px 8px;border-top:1px solid var(--bd);background:var(--sf3)}
-.bfetch-btn{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s;flex:1;white-space:nowrap}
-.bfetch-btn:hover{color:var(--ac);border-color:var(--ac)}
-.bfetch-btn.loading{color:var(--or);border-color:var(--orbr);cursor:wait}
-.bfetch-btn.ok{color:var(--gn);border-color:var(--gnbr);background:var(--gnbg)}
-.bfetch-btn.err{color:var(--rd);border-color:var(--rdbr)}
-.bfetch-status{font-family:'JetBrains Mono',monospace;font-size:8.5px;padding:3px 7px;border-radius:4px;color:var(--txd);align-self:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}
 /* Helper status banner */
-.helper-banner{display:flex;align-items:center;gap:10px;padding:8px 14px;border:1px solid var(--bd);border-radius:7px;background:var(--sf2);margin-bottom:14px;font-family:'JetBrains Mono',monospace;font-size:10px;transition:all .3s}
-.helper-banner.online{border-color:var(--gnbr);background:var(--gnbg)}
-.helper-banner.offline{border-color:var(--bd);opacity:.8}
-.helper-dot{width:7px;height:7px;border-radius:50%;background:var(--txm);flex-shrink:0;transition:background .3s}
-.helper-banner.online .helper-dot{background:var(--gn);box-shadow:0 0 5px var(--gn)}
-.helper-txt{flex:1;color:var(--txd)}
-.helper-banner.online .helper-txt{color:var(--gn)}
-.helper-cmd{background:var(--sf3);border:1px solid var(--bd2);border-radius:4px;padding:2px 8px;font-size:9.5px;color:var(--ac);cursor:pointer;transition:all .15s;white-space:nowrap}
-.helper-cmd:hover{background:var(--ac3)}
 /* Fetch all week button */
-.fetch-week-btn{font-family:'JetBrains Mono',monospace;font-size:9.5px;padding:4px 12px;border-radius:5px;border:1px solid var(--bd2);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s}
-.fetch-week-btn:hover{color:var(--ac);border-color:var(--ac)}
-.fetch-week-btn.loading{color:var(--or);cursor:wait}
 /* Spinner */
 @keyframes spin2{to{transform:rotate(360deg)}}
 .spin2{display:inline-block;width:10px;height:10px;border:2px solid var(--bd2);border-top-color:var(--ac);border-radius:50%;animation:spin2 .7s linear infinite;vertical-align:middle;margin-right:4px}
@@ -229,26 +183,16 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .act-btn.danger{color:var(--rd);border-color:var(--rdbr)}
 .act-btn.danger:hover{background:var(--rdbg)}
 
-/* Credential modal */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:20px}
-.modal-bg.hidden{display:none}
-.modal{background:var(--sf);border:1px solid var(--bd2);border-radius:12px;padding:24px;max-width:500px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,.5)}
-.modal-title{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--tx);margin-bottom:6px}
-.modal-sub{font-size:11px;color:var(--txd);margin-bottom:18px;line-height:1.6}
-.modal-sub strong{color:var(--tx)}
-.modal-field{margin-bottom:14px}
-.modal-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin-bottom:4px}
-.modal-inp{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:5px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:12px;padding:7px 10px;transition:border-color .15s}
-.modal-inp:focus{outline:none;border-color:var(--ac)}
-.modal-warn{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--or);background:var(--orbg);border:1px solid var(--orbr);border-radius:5px;padding:8px 12px;margin-bottom:14px;line-height:1.6}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end}
-.modal-btn{font-family:'JetBrains Mono',monospace;font-size:10px;padding:6px 16px;border-radius:5px;cursor:pointer;transition:all .15s}
-.modal-btn.cancel{background:var(--sf2);border:1px solid var(--bd2);color:var(--txd)}
-.modal-btn.cancel:hover{color:var(--tx);border-color:var(--bd3)}
-.modal-btn.save{background:var(--ac3);border:1px solid var(--ac2);color:var(--ac)}
-.modal-btn.save:hover{background:var(--ac);color:#fff}
-.modal-btn.danger{background:var(--rdbg);border:1px solid var(--rdbr);color:var(--rd)}
-
+/* ── SIP RESOURCES GRID ── */
+.sip-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:900px){.sip-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.sip-grid{grid-template-columns:1fr}}
+.sip-group{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:12px 14px}
+.sip-group-hdr{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--bd)}
+.sip-link{display:block;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--txd);text-decoration:none;padding:3px 0;transition:color .12s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sip-link:hover{color:var(--ac)}
+.sip-link::before{content:'↗ ';color:var(--bd3)}
+.sip-link:hover::before{color:var(--ac)}
 /* EP empty state */
 .ep-empty{padding:48px;text-align:center;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px}
 .ep-empty-ico{font-size:32px;display:block;margin-bottom:12px;opacity:.4}
@@ -280,64 +224,69 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
   <div id="upd-label">MAGNA53 EP Screener</div>
 </header>
 
-<!-- Credential Modal -->
-<div class="modal-bg hidden" id="cred-modal">
-  <div class="modal">
-    <div class="modal-title" id="modal-title">Configure Subscription</div>
-    <div class="modal-sub">
-      <strong>🔒 Security Notice:</strong> Credentials are stored <strong>only in your browser's localStorage</strong> — never sent to any server.
-      This page has no external connections. Use a <strong>read-only / research account</strong> where possible.
-      Clear credentials anytime with the "Clear" button below.
-    </div>
-    <div class="modal-warn">⚠ Never enter your primary banking password. Use a dedicated research account with 2FA. These credentials are stored locally in plain text — treat this as a personal device only.</div>
-    <div class="modal-field">
-      <div class="modal-lbl">Username / Email</div>
-      <input class="modal-inp" id="cred-user" type="text" autocomplete="off" spellcheck="false" placeholder="your@email.com">
-    </div>
-    <div class="modal-field">
-      <div class="modal-lbl">Password (stored locally only)</div>
-      <input class="modal-inp" id="cred-pass" type="password" autocomplete="off" placeholder="••••••••••">
-    </div>
-    <div class="modal-field">
-      <div class="modal-lbl">Notes (optional)</div>
-      <input class="modal-inp" id="cred-notes" type="text" placeholder="e.g. trial ends Mar 31, linked to Gmail">
-    </div>
-    <div class="modal-actions">
-      <button class="modal-btn danger" onclick="clearCred()">🗑 Clear</button>
-      <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
-      <button class="modal-btn save" onclick="saveCred()">💾 Save Locally</button>
-    </div>
-  </div>
-</div>
 
 <div class="page">
 
-  <!-- SECTION 1: Subscriptions -->
-  <div class="sec-title">§1 · Subscription Toggles</div>
-
-  <div class="cred-banner">
-    <div class="cred-ico">🔐</div>
-    <div class="cred-body">
-      <strong>How to store credentials safely:</strong> Click the <code>⚙ Creds</code> button on any subscription below.
-      Credentials are saved to <code>localStorage</code> only — <strong>never transmitted</strong>.
-      Use a dedicated research browser profile or private window.
-      Revoke or change passwords on the subscription site if you ever suspect exposure.
-      For maximum safety, store only a reminder note (e.g. <code>saved in Bitwarden</code>) rather than the actual password.
+  <!-- SECTION 1: SIP Resources -->
+  <div class="sec-title">§1 · SIP Resources</div>
+  <div class="sip-grid">
+    <div class="sip-group">
+      <div class="sip-group-hdr">📅 Earnings Calendars</div>
+      <a class="sip-link" href="https://www.thestockcatalyst.com/EarningsCalendars" target="_blank">The Stock Catalyst — Earnings Calendars</a>
+      <a class="sip-link" href="https://www.earningswhispers.com/calendar" target="_blank">Earnings Whispers — Calendar</a>
+      <a class="sip-link" href="https://www.zacks.com/earnings/earnings-reports" target="_blank">Zacks Earnings Reports</a>
+      <a class="sip-link" href="https://www.zacks.com/earnings/earnings-calendar" target="_blank">Zacks Earnings Calendar</a>
+      <a class="sip-link" href="https://www.marketbeat.com/ratings/" target="_blank">MarketBeat — Ratings</a>
+    </div>
+    <div class="sip-group">
+      <div class="sip-group-hdr">🌅 Pre / Post Market</div>
+      <a class="sip-link" href="https://www.wsj.com/market-data/stocks/extendedhours" target="_blank">WSJ — Extended Hours Movers</a>
+      <a class="sip-link" href="https://goo.gl/9ZYmW7" target="_blank">WSJ — Post Market Winners</a>
+      <a class="sip-link" href="https://yolostocks.live/" target="_blank">YoloStocks Live</a>
+      <a class="sip-link" href="https://hosting.briefing.com/cschwab/InDepth/InPlay.htm" target="_blank">Briefing — InPlay (Schwab)</a>
+      <a class="sip-link" href="https://www.briefing.com/stock-market-update" target="_blank">Briefing — Market Update</a>
+    </div>
+    <div class="sip-group">
+      <div class="sip-group-hdr">📰 News &amp; Research</div>
+      <a class="sip-link" href="https://newsfilter.io/" target="_blank">NewsFilter.io — Deep Dive &amp; News</a>
+      <a class="sip-link" href="https://thefly.com/news.php" target="_blank">TheFly.com — News</a>
+      <a class="sip-link" href="https://www.marketwatch.com/" target="_blank">MarketWatch</a>
+      <a class="sip-link" href="https://www.cnbc.com/world/" target="_blank">CNBC World</a>
+      <a class="sip-link" href="https://seekingalpha.com/" target="_blank">Seeking Alpha</a>
+      <a class="sip-link" href="https://www.bloomberg.com/" target="_blank">Bloomberg</a>
+      <a class="sip-link" href="https://www.barrons.com/" target="_blank">Barron's</a>
+      <a class="sip-link" href="https://www.investors.com/" target="_blank">IBD — Investor's Business Daily</a>
+    </div>
+    <div class="sip-group">
+      <div class="sip-group-hdr">🏛 Institutional Ownership</div>
+      <a class="sip-link" href="https://www.nasdaq.com/market-activity/stocks/TICKER/institutional-holdings" target="_blank" title="Replace TICKER">Nasdaq — Institutional Holdings</a>
+      <a class="sip-link" href="https://fintel.io/so/us/TICKER" target="_blank" title="Replace TICKER">Fintel — Inst. Ownership</a>
+      <a class="sip-link" href="https://www.cmlviz.com/stocks/TICKER" target="_blank" title="Replace TICKER">CML Viz — Smart Money</a>
+      <a class="sip-link" href="https://finance.yahoo.com/quote/TICKER/holders" target="_blank" title="Replace TICKER">Yahoo Finance — Holders</a>
+      <a class="sip-link" href="https://capedge.com/" target="_blank">Capedge — Ownership History</a>
+    </div>
+    <div class="sip-group">
+      <div class="sip-group-hdr">🔍 Stock Research</div>
+      <a class="sip-link" href="https://www.thestockcatalyst.com" target="_blank">The Stock Catalyst</a>
+      <a class="sip-link" href="https://earningswhispers.com/epsdetails/" target="_blank">Earnings Whispers — EPS Details</a>
+      <a class="sip-link" href="https://www.briefing.com/" target="_blank">Briefing.com</a>
+      <a class="sip-link" href="https://www.zacks.com/" target="_blank">Zacks</a>
+      <a class="sip-link" href="https://www.marketbeat.com/" target="_blank">MarketBeat</a>
+      <a class="sip-link" href="https://www.fool.com/" target="_blank">The Motley Fool</a>
+    </div>
+    <div class="sip-group">
+      <div class="sip-group-hdr">📊 More SIP Resources</div>
+      <a class="sip-link" href="https://www.nasdaq.com/" target="_blank">Nasdaq.com</a>
+      <a class="sip-link" href="https://finance.yahoo.com/" target="_blank">Yahoo Finance</a>
+      <a class="sip-link" href="https://www.wsj.com/" target="_blank">Wall Street Journal</a>
+      <a class="sip-link" href="https://www.forbes.com/" target="_blank">Forbes</a>
+      <a class="sip-link" href="https://www.nytimes.com/" target="_blank">New York Times</a>
+      <a class="sip-link" href="https://www.fool.com/" target="_blank">Motley Fool</a>
     </div>
   </div>
 
-  <div class="sub-row" id="sub-row"></div>
-
   <!-- SECTION 2: Weekly Triage Buckets -->
   <div class="sec-title">§2 · Weekly Triage Buckets</div>
-
-  <!-- Helper status banner -->
-  <div class="helper-banner offline" id="helper-banner">
-    <div class="helper-dot"></div>
-    <div class="helper-txt" id="helper-txt">Briefing.com helper: not running — tickers must be pasted manually</div>
-    <span class="helper-cmd" onclick="copyHelperCmd()" title="Copy start command">📋 Copy start cmd</span>
-    <span class="helper-cmd" onclick="checkHelper()" title="Re-check connection">↺ Retry</span>
-  </div>
 
   <div class="week-row">
     <span class="week-lbl">Week of</span>
@@ -345,7 +294,6 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
     <button class="week-btn" onclick="prevWeek()">‹ Prev</button>
     <button class="week-btn" onclick="nextWeek()">Next ›</button>
     <button class="week-btn" onclick="thisWeek()">Today</button>
-    <button class="fetch-week-btn" id="fetch-week-btn" onclick="fetchWholeWeek()" title="Fetch all 5 days from Briefing.com">🔄 Fetch Week from Briefing</button>
     <button class="week-btn" style="color:var(--ac);border-color:var(--ac2)" onclick="saveAll()">💾 Save</button>
     <span class="save-badge" id="save-badge">Saved ✓</span>
   </div>
@@ -367,13 +315,6 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 // ── SECURITY: no external fetch, all data in localStorage ─────────────────────
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
-const SUBS = [
-  {id:'briefing', name:'Briefing.com', tag:'Earnings Narrative', url:'https://www.briefing.com'},
-  {id:'marketsurge', name:'MarketSurge', tag:'Technical & Institutional', url:'https://marketsurge.investors.com'},
-  {id:'stockbee', name:'StockBee.biz', tag:'Community Sentiment', url:'https://stockbee.biz'},
-];
-
-let activeSub = null;   // for credential modal
 let activeWeek = mondayOf(new Date());
 let activeTicker = null;
 
@@ -426,75 +367,6 @@ function weekKey(){return 'ep_week_'+activeWeek;}
 function loadWeek(){return lsGetJSON(weekKey(),{tickers:{},research:{}});}
 function saveWeek(data){lsSetJSON(weekKey(),data);}
 
-// ── Subscription toggles ──────────────────────────────────────────────────────
-function renderSubRow(){
-  const el=document.getElementById('sub-row');
-  const states=lsGetJSON('ep_subs',{briefing:true,marketsurge:false,stockbee:false});
-  let h='';
-  SUBS.forEach(s=>{
-    const on=!!states[s.id];
-    h+=`<div class="sub-toggle${on?' active':''}" id="subtog-${s.id}" onclick="toggleSub('${s.id}')">
-      <div class="sub-dot"></div>
-      <div>
-        <div class="sub-name">${s.name}</div>
-        <div class="sub-tag">${s.tag}</div>
-      </div>
-      <button class="sub-cred-btn" onclick="event.stopPropagation();openCredModal('${s.id}')" title="Store credentials locally">⚙ Creds</button>
-    </div>`;
-  });
-  el.innerHTML=h;
-}
-function toggleSub(id){
-  const states=lsGetJSON('ep_subs',{});
-  states[id]=!states[id];
-  lsSetJSON('ep_subs',states);
-  renderSubRow();
-  if(activeTicker)renderResearch(activeTicker);
-}
-function subActive(id){
-  return !!(lsGetJSON('ep_subs',{})[id]);
-}
-
-// ── Credential modal ──────────────────────────────────────────────────────────
-function openCredModal(subId){
-  activeSub=subId;
-  const sub=SUBS.find(s=>s.id===subId);
-  document.getElementById('modal-title').textContent=`⚙ ${sub.name} — Local Credentials`;
-  const saved=lsGetJSON('ep_cred_'+subId,{});
-  document.getElementById('cred-user').value=saved.user||'';
-  document.getElementById('cred-pass').value=saved.pass||'';
-  document.getElementById('cred-notes').value=saved.notes||'';
-  document.getElementById('cred-modal').classList.remove('hidden');
-}
-function closeModal(){
-  document.getElementById('cred-modal').classList.add('hidden');
-  activeSub=null;
-}
-function saveCred(){
-  if(!activeSub)return;
-  const data={
-    user: document.getElementById('cred-user').value,
-    pass: document.getElementById('cred-pass').value,
-    notes: document.getElementById('cred-notes').value,
-    saved: new Date().toISOString(),
-  };
-  lsSetJSON('ep_cred_'+activeSub,data);
-  closeModal();
-  showSaveBadge();
-}
-function clearCred(){
-  if(!activeSub)return;
-  lsDel('ep_cred_'+activeSub);
-  document.getElementById('cred-user').value='';
-  document.getElementById('cred-pass').value='';
-  document.getElementById('cred-notes').value='';
-  closeModal();
-}
-// Close modal on background click
-document.getElementById('cred-modal').addEventListener('click',function(e){
-  if(e.target===this)closeModal();
-});
-
 // ── Week navigation ───────────────────────────────────────────────────────────
 function thisWeek(){
   activeWeek=mondayOf(new Date());
@@ -538,23 +410,11 @@ function renderBuckets(){
     const date=addDays(activeWeek,i);
     const today=isToday(date);
     const tickers=data.tickers[day]||[];
-    const fetchState=bucketFetchState[day]||'idle'; // idle | loading | ok | err
-    const fetchMsg=bucketFetchMsg[day]||'';
     h+=`<div class="bucket${today?' today':''}" id="bucket-${day}">
       <div class="bucket-hdr">
         <span class="bucket-day">${day.slice(0,3)}</span>
         <span class="bucket-date">${fmtShort(date)}</span>
         ${tickers.length?`<span class="bucket-count">${tickers.length}</span>`:''}
-      </div>
-      <!-- Briefing.com auto-fetch row -->
-      <div class="bucket-fetch-row">
-        <button class="bfetch-btn${fetchState==='loading'?' loading':fetchState==='ok'?' ok':fetchState==='err'?' err':''}"
-          id="fbtn-${day}" onclick="fetchBriefingDay('${day}','${date}')"
-          title="Fetch earnings symbols from Briefing.com for ${date}">
-          ${fetchState==='loading'?'<span class="spin2"></span>Fetching…':fetchState==='ok'?'✅ Fetched':'📡 Fetch from Briefing'}
-        </button>
-        <div class="bfetch-status" id="fstatus-${day}" title="${fetchMsg}">${fetchMsg}</div>
-      </div>
       <textarea class="bucket-input" id="ta-${day}" placeholder="Or paste tickers manually:\nAAPL MSFT NVDA\n(space, comma, or newline)" rows="3"
         onblur="parseBucket('${day}')" onkeydown="if(event.key==='Enter'&&event.ctrlKey)parseBucket('${day}')"
       >${data.raw&&data.raw[day]?data.raw[day]:tickers.join(' ')}</textarea>
@@ -597,11 +457,10 @@ function removeChip(day,ticker){
 
 // ── Research Panel ────────────────────────────────────────────────────────────
 const SOURCES = [
-  {id:'briefing',    label:'📰 Briefing.com', sub:'briefing'},
-  {id:'marketsurge', label:'📊 MarketSurge',  sub:'marketsurge'},
-  {id:'stockbee',    label:'🐝 StockBee',     sub:'stockbee'},
-  {id:'social',      label:'📡 Social/News',  sub:null},
-  {id:'report',      label:'📋 EP Report',    sub:null},
+  {id:'earnings',    label:'📰 Earnings Data'},
+  {id:'chart',       label:'📊 Chart & Inst.'},
+  {id:'social',      label:'📡 Social/News'},
+  {id:'report',      label:'📋 EP Report'},
 ];
 
 const MAGNA = [
@@ -613,31 +472,31 @@ const MAGNA = [
 ];
 
 const CHECKLIST = {
-  briefing: [
-    'Read the full earnings press release narrative',
+  earnings: [
+    'Check Earnings Whispers for EPS estimate vs. actual',
+    'Read Briefing.com market update for earnings narrative',
     'Note EPS surprise % vs. consensus estimate',
-    'Extract revenue growth % YoY',
-    'Record specific guidance wording (Upgraded / Reiterated / Lowered)',
-    'Identify any forward-looking revenue or EPS guidance range',
+    'Extract revenue growth % YoY from press release',
+    'Record guidance wording: Upgraded / Reiterated / Lowered',
+    'Check Zacks earnings report for forward estimates',
+    'Scan TheFly.com for post-earnings analyst commentary',
   ],
-  marketsurge: [
-    'Open weekly chart — identify EP section on chart',
-    'Record Institutional Ownership % (current vs. last quarter)',
-    'Note RS (Relative Strength) Rating out of 99',
-    'Record Accumulation/Distribution Grade (A+ to E)',
+  chart: [
+    'Check WSJ Extended Hours for pre/post market move',
+    'Note gap % and volume vs. average (YoloStocks / Finviz)',
     'Confirm price action: gap and hold, or gap and fade?',
-  ],
-  stockbee: [
-    'Search ticker on StockBee momentum lists',
-    'Classify EP Type (Type 1 / Type 2 / Continuation)',
-    'Capture key community commentary on setup quality',
-    'Note any prior EP history for this ticker',
+    'Check institutional ownership trend (Fintel / Nasdaq)',
+    'Note short interest % float (potential short squeeze)',
+    'Check MarketBeat for recent analyst ratings changes',
+    'Review insider transactions if available',
   ],
   social: [
     'Scan X (Twitter) for real-time sentiment — use $TICKER',
+    'Check NewsFilter.io for deep-dive news coverage',
     'Check financial news for upgrade/downgrade alerts',
     'Note any unusual options activity or dark pool prints',
     'Search for any pending catalysts (FDA, contract, etc.)',
+    'Check WSJ post-market winners list',
   ],
 };
 
@@ -652,7 +511,7 @@ function getResearchData(ticker){
     rep_story:'',rep_eps_beat:'',rep_rev_beat:'',rep_guidance:'',
     rep_news:'',rep_social:'',
     rep_short_interest:'',rep_inst_trend:'',rep_chart_url:'',
-    activeTab:'briefing',
+    activeTab:'earnings',
   };
 }
 function saveResearchData(ticker,rd){
@@ -706,19 +565,15 @@ function renderResearch(ticker, day, date){
     <!-- Source tabs -->
     <div class="src-tabs">
       ${SOURCES.map(s=>{
-        const disabled=s.sub&&!subActive(s.sub);
-        return `<div class="src-tab${activeTab===s.id?' on':''}${disabled?' disabled':''}" onclick="${disabled?`showSubRequired('${s.sub}')`:''}" id="tab-${s.id}-${ticker}"
-          ${!disabled?`onclick="switchTab('${ticker}','${s.id}')"`:''}>
-          ${s.label}${s.sub&&!subActive(s.sub)?` <span style="font-size:8px;opacity:.6">(off)</span>`:''}
-        </div>`;
+        return `<div class="src-tab${activeTab===s.id?' on':''}" id="tab-${s.id}-${ticker}"
+          onclick="switchTab('${ticker}','${s.id}')">${s.label}</div>`;
       }).join('')}
     </div>`;
-
-  // ── Briefing.com tab ──
-  h+=`<div class="src-content${activeTab==='briefing'?' on':''}" id="sc-briefing-${ticker}">
+  // ── Earnings Data tab ──
+  h+=`<div class="src-content${activeTab==='earnings'?' on':''}" id="sc-earnings-${ticker}">
     <div class="src-row">
       <div class="src-lbl">The Story <span class="required">required</span></div>
-      <textarea class="src-ta" rows="3" placeholder="Narrative summary from the earnings press release…"
+      <textarea class="src-ta" rows="3" placeholder="Narrative summary from earnings press release / Briefing.com…"
         oninput="saveField('${ticker}','briefing_story',this.value)">${rd.briefing_story||''}</textarea>
     </div>
     <div class="src-mini">
@@ -733,7 +588,7 @@ function renderResearch(ticker, day, date){
           oninput="saveField('${ticker}','briefing_surprise_rev',this.value)">
       </div>
       <div>
-        <div class="src-lbl">Guidance Wording</div>
+        <div class="src-lbl">Guidance</div>
         <select class="src-select" onchange="saveField('${ticker}','briefing_guidance',this.value)">
           <option value="">— select —</option>
           <option value="Upgraded" ${rd.briefing_guidance==='Upgraded'?'selected':''}>Upgraded 📈</option>
@@ -745,22 +600,25 @@ function renderResearch(ticker, day, date){
     </div>
     <div class="src-row" style="margin-top:10px">
       <div class="src-lbl">Additional Notes</div>
-      <textarea class="src-ta" rows="2" placeholder="Any other details from the press release…"
+      <textarea class="src-ta" rows="2" placeholder="Any other details from the press release or Zacks report…"
         oninput="saveField('${ticker}','briefing_notes',this.value)">${rd.briefing_notes||''}</textarea>
     </div>
-    ${checklist('${ticker}','briefing',rd)}
+    ${checklist('${ticker}','earnings',rd)}
     <div class="ext-links">
-      <a class="ext-btn${!subActive('briefing')?' disabled':''}" href="https://www.briefing.com/stock-market/earnings-analysis" target="_blank" rel="noopener noreferrer">↗ Briefing Earnings</a>
-      <a class="ext-btn" href="https://finance.yahoo.com/quote/${ticker}/financials" target="_blank" rel="noopener noreferrer">↗ Yahoo Financials</a>
+      <a class="ext-btn" href="https://earningswhispers.com/epsdetails/${ticker}" target="_blank" rel="noopener">↗ Earnings Whispers</a>
+      <a class="ext-btn" href="https://www.briefing.com/stock-market-update" target="_blank" rel="noopener">↗ Briefing Update</a>
+      <a class="ext-btn" href="https://www.zacks.com/stock/quote/${ticker}/detailed-earning-estimates" target="_blank" rel="noopener">↗ Zacks Earnings</a>
+      <a class="ext-btn" href="https://thefly.com/news.php?Id=${ticker}" target="_blank" rel="noopener">↗ TheFly News</a>
+      <a class="ext-btn" href="https://finance.yahoo.com/quote/${ticker}/financials" target="_blank" rel="noopener">↗ Yahoo Financials</a>
     </div>
   </div>`;
 
-  // ── MarketSurge tab ──
-  h+=`<div class="src-content${activeTab==='marketsurge'?' on':''}" id="sc-marketsurge-${ticker}">
+  // ── Chart & Inst. tab ──
+  h+=`<div class="src-content${activeTab==='chart'?' on':''}" id="sc-chart-${ticker}">
     <div class="src-mini" style="margin-bottom:12px">
       <div>
-        <div class="src-lbl">RS Rating (1–99)</div>
-        <input class="src-num" type="number" min="1" max="99" placeholder="85" value="${rd.ms_rs||''}"
+        <div class="src-lbl">Gap % (Pre/Post)</div>
+        <input class="src-num" type="text" placeholder="+12.5%" value="${rd.ms_rs||''}"
           oninput="saveField('${ticker}','ms_rs',this.value)">
       </div>
       <div>
@@ -769,55 +627,29 @@ function renderResearch(ticker, day, date){
           oninput="saveField('${ticker}','ms_inst_own',this.value)">
       </div>
       <div>
-        <div class="src-lbl">Acc/Dist Grade</div>
-        <select class="src-select" onchange="saveField('${ticker}','ms_acc',this.value)">
-          <option value="">— select —</option>
-          ${['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','E'].map(g=>`<option value="${g}"${rd.ms_acc===g?' selected':''}>${g}</option>`).join('')}
-        </select>
+        <div class="src-lbl">Short Interest %</div>
+        <input class="src-num" type="text" placeholder="8.2% float" value="${rd.ms_acc||''}"
+          oninput="saveField('${ticker}','ms_acc',this.value)">
       </div>
     </div>
     <div class="src-row">
-      <div class="src-lbl">EP Section on Chart <span class="required">required</span></div>
-      <textarea class="src-ta" rows="2" placeholder="Describe the EP section: weekly base, prior earnings reaction, breakout level…"
+      <div class="src-lbl">Chart Notes <span class="required">required</span></div>
+      <textarea class="src-ta" rows="2" placeholder="Gap and hold / fade? Volume vs avg? Key price levels…"
         oninput="saveField('${ticker}','ms_ep_type',this.value)">${rd.ms_ep_type||''}</textarea>
     </div>
     <div class="src-row">
-      <div class="src-lbl">Chart / Notes</div>
-      <textarea class="src-ta" rows="2" placeholder="Price action notes, key levels, volume analysis…"
+      <div class="src-lbl">Institutional Trend</div>
+      <textarea class="src-ta" rows="2" placeholder="Accumulating / Distributing — check Fintel, Nasdaq, Yahoo Holders…"
         oninput="saveField('${ticker}','ms_notes',this.value)">${rd.ms_notes||''}</textarea>
     </div>
-    ${checklist('${ticker}','marketsurge',rd)}
+    ${checklist('${ticker}','chart',rd)}
     <div class="ext-links">
-      <a class="ext-btn${!subActive('marketsurge')?' disabled':''}" href="https://marketsurge.investors.com" target="_blank" rel="noopener noreferrer">↗ MarketSurge</a>
-      <a class="ext-btn" href="https://finance.yahoo.com/chart/${ticker}" target="_blank" rel="noopener noreferrer">↗ Yahoo Chart</a>
-    </div>
-  </div>`;
-
-  // ── StockBee tab ──
-  h+=`<div class="src-content${activeTab==='stockbee'?' on':''}" id="sc-stockbee-${ticker}">
-    <div class="src-row">
-      <div class="src-lbl">EP Type</div>
-      <select class="src-select" style="max-width:240px" onchange="saveField('${ticker}','sb_ep_type',this.value)">
-        <option value="">— select EP type —</option>
-        <option value="Type 1" ${rd.sb_ep_type==='Type 1'?'selected':''}>Type 1 — First big earnings gap</option>
-        <option value="Type 2" ${rd.sb_ep_type==='Type 2'?'selected':''}>Type 2 — Continuation after prior EP</option>
-        <option value="Continuation" ${rd.sb_ep_type==='Continuation'?'selected':''}>Continuation — Trend following EP</option>
-        <option value="Failed" ${rd.sb_ep_type==='Failed'?'selected':''}>Failed EP — Gap faded</option>
-      </select>
-    </div>
-    <div class="src-row">
-      <div class="src-lbl">Community Commentary <span class="optional">optional</span></div>
-      <textarea class="src-ta" rows="3" placeholder="Key comments from StockBee momentum lists or forum…"
-        oninput="saveField('${ticker}','sb_commentary',this.value)">${rd.sb_commentary||''}</textarea>
-    </div>
-    <div class="src-row">
-      <div class="src-lbl">Notes</div>
-      <textarea class="src-ta" rows="2" placeholder="Prior EP history, momentum rank…"
-        oninput="saveField('${ticker}','sb_notes',this.value)">${rd.sb_notes||''}</textarea>
-    </div>
-    ${checklist('${ticker}','stockbee',rd)}
-    <div class="ext-links">
-      <a class="ext-btn${!subActive('stockbee')?' disabled':''}" href="https://stockbee.biz" target="_blank" rel="noopener noreferrer">↗ StockBee.biz</a>
+      <a class="ext-btn" href="https://www.wsj.com/market-data/stocks/extendedhours" target="_blank" rel="noopener">↗ WSJ Extended Hours</a>
+      <a class="ext-btn" href="https://fintel.io/so/us/${ticker}" target="_blank" rel="noopener">↗ Fintel Inst. Ownership</a>
+      <a class="ext-btn" href="https://www.nasdaq.com/market-activity/stocks/${ticker.toLowerCase()}/institutional-holdings" target="_blank" rel="noopener">↗ Nasdaq Holders</a>
+      <a class="ext-btn" href="https://finance.yahoo.com/quote/${ticker}/holders" target="_blank" rel="noopener">↗ Yahoo Holders</a>
+      <a class="ext-btn" href="https://www.marketbeat.com/stocks/NASDAQ/${ticker}/analyst-ratings/" target="_blank" rel="noopener">↗ MarketBeat Ratings</a>
+      <a class="ext-btn" href="https://finviz.com/quote.ashx?t=${ticker}" target="_blank" rel="noopener">↗ Finviz Chart</a>
     </div>
   </div>`;
 
@@ -840,9 +672,12 @@ function renderResearch(ticker, day, date){
     </div>
     ${checklist('${ticker}','social',rd)}
     <div class="ext-links">
-      <a class="ext-btn" href="https://twitter.com/search?q=%24${ticker}" target="_blank" rel="noopener noreferrer">↗ X: $${ticker}</a>
-      <a class="ext-btn" href="https://finviz.com/quote.ashx?t=${ticker}" target="_blank" rel="noopener noreferrer">↗ Finviz</a>
-      <a class="ext-btn" href="https://www.marketbeat.com/stocks/NASDAQ/${ticker}/analyst-ratings/" target="_blank" rel="noopener noreferrer">↗ Analyst Ratings</a>
+      <a class="ext-btn" href="https://twitter.com/search?q=%24${ticker}" target="_blank" rel="noopener">↗ X: $${ticker}</a>
+      <a class="ext-btn" href="https://newsfilter.io/" target="_blank" rel="noopener">↗ NewsFilter.io</a>
+      <a class="ext-btn" href="https://thefly.com/news.php" target="_blank" rel="noopener">↗ TheFly.com</a>
+      <a class="ext-btn" href="https://goo.gl/9ZYmW7" target="_blank" rel="noopener">↗ WSJ Post-Market</a>
+      <a class="ext-btn" href="https://www.marketbeat.com/stocks/NASDAQ/${ticker}/analyst-ratings/" target="_blank" rel="noopener">↗ MarketBeat Ratings</a>
+      <a class="ext-btn" href="https://yolostocks.live/" target="_blank" rel="noopener">↗ YoloStocks Live</a>
     </div>
   </div>`;
 
@@ -929,12 +764,10 @@ function renderResearch(ticker, day, date){
 
   document.getElementById('research-area').innerHTML=h;
 
-  // Wire up tab clicks properly after render
+  // Wire up tab clicks after render
   SOURCES.forEach(s=>{
     const el=document.getElementById(`tab-${s.id}-${ticker}`);
-    if(el&&!(s.sub&&!subActive(s.sub))){
-      el.onclick=()=>switchTab(ticker,s.id);
-    }
+    if(el) el.onclick=()=>switchTab(ticker,s.id);
   });
 }
 
@@ -1040,7 +873,7 @@ function copyReport(ticker){
     `Chart: ${rd.rep_chart_url||'—'}`,
     ``,
     `RS Rating: ${rd.ms_rs||'—'}   Acc/Dist: ${rd.ms_acc||'—'}`,
-    `StockBee EP Type: ${rd.sb_ep_type||'—'}`,
+    `Gap %: ${rd.ms_rs||'—'} · Short Int: ${rd.ms_acc||'—'}`,
     `Verdict: ${rd.ep_verdict||'Pending'}`,
   ];
   navigator.clipboard.writeText(lines.join('\n')).then(()=>{
@@ -1061,150 +894,8 @@ function showSaveBadge(txt='Saved ✓'){
   setTimeout(()=>el.classList.remove('show'),2000);
 }
 
-function showSubRequired(subId){
-  const sub=SUBS.find(s=>s.id===subId);
-  alert(`${sub.name} is currently toggled OFF.\n\nEnable it in the subscription toggles at the top of the page.`);
-}
-
-// ── Briefing.com Helper — fetch state ────────────────────────────────────────
-// The Python helper runs locally at http://localhost:5050
-// It logs into Briefing.com using stored credentials and returns earnings tickers.
-// If helper is offline, all fetch buttons show but are no-ops with a clear message.
-
-const HELPER_URL = 'http://localhost:5050';
-let helperOnline = false;
-let bucketFetchState = {};   // day -> 'idle'|'loading'|'ok'|'err'
-let bucketFetchMsg   = {};   // day -> status string shown under button
-
-// Check if the local Python helper is running
-async function checkHelper(){
-  const banner = document.getElementById('helper-banner');
-  const txt    = document.getElementById('helper-txt');
-  try {
-    const r = await fetch(HELPER_URL + '/ping', { method:'GET', signal: AbortSignal.timeout(2500) });
-    if(r.ok){
-      const j = await r.json();
-      helperOnline = true;
-      banner.className = 'helper-banner online';
-      txt.textContent = `✓ Briefing.com helper online — v${j.version||'1.0'} · ${j.status||'ready'}`;
-    } else {
-      throw new Error('bad status');
-    }
-  } catch {
-    helperOnline = false;
-    banner.className = 'helper-banner offline';
-    txt.textContent = 'Briefing.com helper: not running — start it to auto-fetch tickers (manual paste still works)';
-  }
-}
-
-// Copy the terminal command to start the helper
-function copyHelperCmd(){
-  const cmd = 'python briefing_helper.py';
-  navigator.clipboard.writeText(cmd).then(()=>showSaveBadge('Command copied!')).catch(()=>{});
-}
-
-// ── Fetch tickers for ONE day ─────────────────────────────────────────────────
-async function fetchBriefingDay(day, date){
-  if(!helperOnline){
-    // Show a clear actionable error rather than silently failing
-    bucketFetchState[day] = 'err';
-    bucketFetchMsg[day]   = 'Helper offline';
-    renderBuckets();
-    const banner = document.getElementById('helper-banner');
-    banner.style.animation = 'none';
-    setTimeout(()=>{ banner.style.animation=''; }, 10);
-    banner.scrollIntoView({ behavior:'smooth', block:'nearest' });
-    return;
-  }
-
-  // Check Briefing credentials stored
-  const cred = lsGetJSON('ep_cred_briefing', {});
-  if(!cred.user || !cred.pass){
-    alert('No Briefing.com credentials stored.\n\nClick ⚙ Creds on the Briefing.com subscription toggle to save them first.');
-    return;
-  }
-
-  bucketFetchState[day] = 'loading';
-  bucketFetchMsg[day]   = 'Contacting…';
-  renderBuckets();
-
-  try {
-    const body = JSON.stringify({
-      date,
-      username: cred.user,
-      password: cred.pass,
-    });
-
-    const r = await fetch(HELPER_URL + '/earnings', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-      signal:  AbortSignal.timeout(30000),   // 30 s — login can be slow
-    });
-
-    const j = await r.json();
-
-    if(!r.ok || j.error){
-      throw new Error(j.error || `HTTP ${r.status}`);
-    }
-
-    // j.tickers = ['AAPL','NVDA', …]
-    // j.meta    = { total, bmo, amc, source }
-    const incoming = (j.tickers || []).map(t => t.toUpperCase().trim()).filter(Boolean);
-
-    // Merge with any manually-entered tickers (union, preserve order)
-    const data = loadWeek();
-    if(!data.tickers) data.tickers = {};
-    if(!data.raw)     data.raw     = {};
-    const existing = data.tickers[day] || [];
-    const merged   = [...new Set([...existing, ...incoming])];
-    data.tickers[day] = merged;
-    data.raw[day]     = merged.join(' ');
-    saveWeek(data);
-
-    const meta = j.meta || {};
-    bucketFetchState[day] = 'ok';
-    bucketFetchMsg[day]   = `${incoming.length} found` + (meta.bmo != null ? ` (${meta.bmo} BMO / ${meta.amc} AMC)` : '');
-    renderBuckets();
-
-    if(activeTicker && merged.includes(activeTicker)) renderResearch(activeTicker);
-
-  } catch(e){
-    bucketFetchState[day] = 'err';
-    bucketFetchMsg[day]   = e.message.length > 20 ? e.message.slice(0,20)+'…' : e.message;
-    renderBuckets();
-    console.error('[fetchBriefingDay]', day, e);
-  }
-}
-
-// ── Fetch the entire week at once ─────────────────────────────────────────────
-async function fetchWholeWeek(){
-  if(!helperOnline){
-    alert('The Briefing.com helper is not running.\n\nStart it with:  python briefing_helper.py\n\nThen click Retry in the status banner.');
-    return;
-  }
-  const btn = document.getElementById('fetch-week-btn');
-  if(btn){ btn.classList.add('loading'); btn.textContent='🔄 Fetching week…'; }
-
-  // Fire all 5 days in sequence (not parallel — be polite to Briefing.com)
-  for(let i = 0; i < 5; i++){
-    const day  = DAYS[i];
-    const date = addDays(activeWeek, i);
-    await fetchBriefingDay(day, date);
-    // Small pause between requests
-    await new Promise(res => setTimeout(res, 600));
-  }
-
-  if(btn){ btn.classList.remove('loading'); btn.textContent='🔄 Fetch Week from Briefing'; }
-  showSaveBadge('Week fetched ✓');
-}
-
 // ── Init ─────────────────────────────────────────────────────────────────────
 thisWeek();
-renderSubRow();
-checkHelper();
-// Re-check helper every 30 s in case user starts it after page load
-setInterval(checkHelper, 30000);
 </script>
 </body>
 </html>
