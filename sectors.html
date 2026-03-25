@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSX Sector Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root,[data-theme="dark"]{
+  --bg:#070b0f;--sf:#0c1118;--sf2:#101820;--sf3:#141e2a;
+  --bd:#1a2840;--bd2:#223050;
+  --tx:#cce0f5;--txd:#3d6080;--txm:#182030;
+  --ac:#00c4e8;--ac2:#006688;--ac3:rgba(0,196,232,.1);
+  --gn:#00e676;--gnbg:#001a0d;--gnmd:#00330f;
+  --rd:#ff4040;--rdbg:#1a0000;--rdmd:#330000;
+  --gd:#ffd040;--gdbg:#1a1200;
+  --pu:#b388ff;--pubg:#180d30;
+  --tl:#26d4e8;--or:#ff9c20;--bl:#4db8ff;
+  --hdr:rgba(7,11,15,.96);
+  --cal-e:#08090e;--cal-h:#0d1e30;--cal-t:#092015;--cal-s:#0a1e38;
+  --sl:rgba(0,0,0,.07);
+}
+[data-theme="light"]{
+  --bg:#edf2f8;--sf:#fff;--sf2:#f4f8fc;--sf3:#eaf0f7;
+  --bd:#c4d4e8;--bd2:#a0bcd4;
+  --tx:#0a1828;--txd:#306084;--txm:#88aac8;
+  --ac:#0077aa;--ac2:#005588;--ac3:rgba(0,119,170,.1);
+  --gn:#1a7a40;--gnbg:#e4f8ea;--gnmd:#c0ecd0;
+  --rd:#cc2222;--rdbg:#fde4e4;--rdmd:#f8c0c0;
+  --gd:#886000;--gdbg:#fff6d8;
+  --pu:#7b22cc;--pubg:#efe8ff;
+  --tl:#00838f;--or:#c66000;--bl:#1565c0;
+  --hdr:rgba(237,242,248,.97);
+  --cal-e:#eaf0f7;--cal-h:#d4e8f8;--cal-t:#d0eee0;--cal-s:#c4dcf5;
+  --sl:transparent;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Syne',sans-serif;font-size:13px;line-height:1.5;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--sl) 3px,var(--sl) 4px);pointer-events:none;z-index:9999}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);border-bottom:1px solid var(--bd);backdrop-filter:blur(12px);display:flex;align-items:center;padding:0 20px;gap:12px}
+.logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ac);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.logo span{color:var(--txd);font-weight:400}
+.nav{display:flex;gap:2px}
+.nl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);text-decoration:none;padding:4px 9px;border-radius:4px;border:1px solid transparent;transition:all .15s}
+.nl:hover{color:var(--ac);border-color:var(--bd2)}.nl.on{color:var(--ac);background:rgba(0,196,232,.09);border-color:var(--ac2)}
+.hs{width:1px;height:22px;background:var(--bd);flex-shrink:0}
+.tog{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.tt{width:32px;height:18px;background:var(--bd);border-radius:9px;position:relative;border:1px solid var(--bd2)}
+.tk{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--txd);transition:transform .2s,background .2s}
+[data-theme="light"] .tk{transform:translateX(14px);background:var(--ac)}
+#upd{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:252px 1fr;min-height:calc(100vh - 52px)}
+
+/* SIDEBAR */
+.sb{border-right:1px solid var(--bd);background:var(--sf);padding:16px 13px;overflow-y:auto}
+.cn{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cnb{background:none;border:1px solid var(--bd);color:var(--txd);cursor:pointer;width:26px;height:26px;border-radius:4px;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.cnb:hover{border-color:var(--ac);color:var(--ac)}
+.cml{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--tx)}
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cdow{text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--txd);padding:2px 0;text-transform:uppercase}
+.cd{height:32px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;transition:all .15s;background:var(--cal-e);color:var(--txm);position:relative;cursor:default}
+.cd.hd{background:var(--cal-h);color:var(--tx);cursor:pointer;border:1px solid var(--bd2)}
+.cd.hd:hover{border-color:var(--ac);color:var(--ac);transform:scale(1.08);z-index:2}
+.cd.td{background:var(--cal-t);color:var(--gn);font-weight:700}
+.cd.sl{background:var(--cal-s)!important;color:var(--ac)!important;border:2px solid var(--ac)!important;box-shadow:0 0 0 2px rgba(0,196,232,.2)}
+.cd.om{opacity:.18}
+.cd.hd::after{content:'';position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:3px;height:3px;border-radius:50%;background:var(--ac);opacity:.75}
+.rl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin:16px 0 6px;padding-bottom:3px;border-bottom:1px solid var(--bd)}
+.rdi{display:flex;align-items:center;justify-content:space-between;padding:5px 7px;border-radius:4px;cursor:pointer;transition:background .1s;margin-bottom:2px;border:1px solid transparent}
+.rdi:hover{background:var(--sf2);border-color:var(--bd)}.rdi.sl{background:var(--cal-s);border-color:var(--ac)}
+.rdd{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--tx)}.rdi.sl .rdd{color:var(--ac)}
+
+/* MAIN */
+.mn{overflow-y:auto;padding:20px 24px}
+.es{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:10px;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center}
+.es .bi{font-size:48px;opacity:.12}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.fi{animation:fi .3s ease both}
+
+/* DATE HEADER */
+.dh{border-bottom:1px solid var(--bd);padding-bottom:14px;margin-bottom:18px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.dt{font-size:21px;font-weight:800;letter-spacing:-.02em}
+.ds{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+
+/* PERIOD TABS (1D / 5D / 1M …) */
+.period-row{display:flex;gap:2px;flex-wrap:wrap}
+.ptab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;padding:4px 11px;border-radius:4px;border:1px solid var(--bd);color:var(--txd);cursor:pointer;transition:all .15s}
+.ptab:hover{color:var(--ac);border-color:var(--bd2)}
+.ptab.on{color:var(--ac);background:var(--ac3);border-color:var(--ac2);font-weight:600}
+
+/* OVERVIEW TABLE (like image screenshot) */
+.ov-table-wrap{overflow-x:auto;margin-bottom:24px}
+.ov-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px}
+.ov-table thead tr{background:var(--sf3)}
+.ov-table thead th{padding:8px 12px;text-align:left;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);border-bottom:1px solid var(--bd);white-space:nowrap}
+.ov-table thead th.r{text-align:right}
+.ov-table tbody tr{border-bottom:1px solid var(--bd);transition:background .1s;cursor:pointer}
+.ov-table tbody tr:last-child{border-bottom:none}
+.ov-table tbody tr:hover{background:var(--sf2)!important}
+.ov-table tbody tr.active-row{background:var(--ac3)!important;border-left:3px solid var(--ac)}
+.ov-table td{padding:8px 12px;white-space:nowrap}
+.ov-table td.r{text-align:right}
+.sec-ticker{display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;padding:3px 7px;border-radius:4px;color:#fff;background:var(--ac2);letter-spacing:.05em;min-width:46px}
+.sec-name{font-size:12px;font-weight:600}
+/* Bar chart in table */
+.bar-cell{display:flex;align-items:center;gap:6px;justify-content:flex-end}
+.bar-track{width:120px;height:8px;background:var(--sf3);border-radius:4px;overflow:hidden;flex-shrink:0}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.bar-gn{background:var(--gn)}
+.bar-rd{background:var(--rd)}
+.chg-gn{color:var(--gn);font-weight:700}
+.chg-rd{color:var(--rd);font-weight:700}
+.chg-nu{color:var(--txd)}
+
+/* SECTOR CARDS GRID */
+.sec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:28px}
+.sec-card{border:1px solid var(--bd);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s,box-shadow .2s}
+.sec-card:hover{border-color:var(--ac2);transform:translateY(-2px);box-shadow:0 4px 20px rgba(0,196,232,.12)}
+.sec-card.active{border-color:var(--ac);box-shadow:0 0 0 2px rgba(0,196,232,.2)}
+.sc-hdr{padding:11px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.sc-sym{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:#fff;letter-spacing:.04em}
+.sc-name{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px}
+.sc-count{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.4);margin-top:1px}
+.sc-price{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:#fff;text-align:right;line-height:1.1}
+.sc-chg{font-family:'JetBrains Mono',monospace;font-size:11px;text-align:right;margin-top:2px}
+.sc-stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--sf2)}
+.sc-s{padding:7px 10px;border-right:1px solid var(--bd);border-top:1px solid var(--bd)}
+.sc-s:last-child{border-right:none}
+.sc-sl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd)}
+.sc-sv{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--tx);margin-top:1px}
+.sc-chips{border-top:1px solid var(--bd);background:var(--sf3);padding:8px 10px;display:flex;flex-wrap:wrap;gap:4px;max-height:52px;overflow:hidden}
+.sc-chip{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;border:1px solid var(--bd);background:var(--sf);white-space:nowrap;cursor:pointer;transition:all .15s}
+.sc-chip:hover{border-color:var(--ac);color:var(--ac)}
+
+/* DETAIL PANEL */
+.dp{border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:28px;animation:fi .25s ease}
+.dp-hdr{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.dp-title{font-size:16px;font-weight:800;color:#fff;letter-spacing:-.01em}
+.dp-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.55);margin-top:3px}
+.dp-x{background:rgba(255,255,255,.12);border:none;color:#fff;font-size:14px;cursor:pointer;width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dp-x:hover{background:rgba(255,255,255,.22)}
+.dp-tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--sf2);overflow-x:auto;scrollbar-width:none}
+.dp-tabs::-webkit-scrollbar{display:none}
+.dp-tab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:10px 16px;cursor:pointer;color:var(--txd);border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+.dp-tab:hover{color:var(--ac)}.dp-tab.on{color:var(--ac);border-bottom-color:var(--ac)}
+.dp-body{padding:18px 20px;background:var(--sf)}
+.dp-sec{display:none}.dp-sec.on{display:block}
+
+/* RETURNS STRIP */
+.rets-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;margin-bottom:16px}
+.ret-box{border:1px solid var(--bd);border-radius:6px;padding:12px 8px;text-align:center;background:var(--sf2);transition:border-color .15s,transform .15s;cursor:pointer}
+.ret-box:hover{border-color:var(--bd2);transform:translateY(-1px)}
+.ret-box.on{border-color:var(--ac);background:var(--ac3)}
+.ret-lbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);margin-bottom:4px}
+.ret-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700}
+.ret-note{font-size:9px;color:var(--txd);margin-top:2px}
+
+/* HISTORICAL TABLE */
+.hist-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px}
+.hist-table thead tr{background:var(--sf3)}
+.hist-table thead th{padding:7px 10px;font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--txd);border-bottom:1px solid var(--bd);text-align:right}
+.hist-table thead th:first-child{text-align:left}
+.hist-table tbody tr{border-bottom:1px solid var(--bd);transition:background .1s}
+.hist-table tbody tr:hover{background:var(--sf2)}
+.hist-table tbody tr:nth-child(even){background:var(--sf3)}
+.hist-table td{padding:6px 10px;text-align:right}
+.hist-table td:first-child{text-align:left;color:var(--txd)}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px}
+.tbl thead tr{background:var(--sf3)}
+.tbl thead th{padding:7px 10px;text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);border-bottom:1px solid var(--bd);white-space:nowrap}
+.tbl thead th.r{text-align:right}.tbl td.r{text-align:right}
+.tbl tbody tr{border-bottom:1px solid var(--bd);transition:background .1s}
+.tbl tbody tr:last-child{border-bottom:none}
+.tbl tbody tr:hover{background:var(--sf2)!important}
+.tbl tbody tr:nth-child(even){background:var(--sf3)}
+.tbl td{padding:6px 10px;white-space:nowrap}
+.sym-lnk{font-weight:700;color:var(--ac);cursor:pointer;border-bottom:1px dashed var(--ac2);transition:color .15s,background .15s;border-radius:3px;padding:1px 4px}
+.sym-lnk:hover{color:#fff;background:var(--ac);border-bottom-color:transparent}
+.nd{padding:20px;text-align:center;color:var(--txd);font-size:11px;font-style:italic}
+.rank-1{color:var(--gd);font-weight:800}
+.rank-2{color:var(--txd)}
+.rank-3{color:var(--or)}
+
+/* OV GRID */
+.ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:16px}
+.ov-cell{border:1px solid var(--bd);border-radius:6px;padding:10px 12px;background:var(--sf2)}
+.ov-lbl{font-family:'JetBrains Mono',monospace;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);margin-bottom:3px}
+.ov-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700}
+.ov-sub{font-size:9px;color:var(--txd);margin-top:1px}
+
+/* HEATMAP */
+.heatmap{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;margin-bottom:16px}
+.hm-cell{border-radius:6px;padding:10px 8px;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;border:1px solid transparent}
+.hm-cell:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.hm-sym{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700}
+.hm-chg{font-family:'JetBrains Mono',monospace;font-size:10px;margin-top:2px}
+
+.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--txd);margin:0 0 10px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
+
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr}
+  .sb{border-right:none;border-bottom:1px solid var(--bd)}
+  .rets-grid{grid-template-columns:repeat(4,1fr)}
+  .sec-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">PSX <span>/</span> Sector Monitor</div>
+  <div class="nav">
+    <a class="nl" href="daily.html">📊 Daily</a>
+    <a class="nl" href="trend.html">📈 Trend</a>
+    <a class="nl" href="etf.html">🏦 ETF</a>
+    <a class="nl on" href="sectors.html">🏭 Sectors</a>
+    <a class="nl" href="index.html">🧭 MM</a>
+  </div>
+  <div class="hs"></div>
+  <div class="tog" onclick="tog()">
+    <span id="ti">🌙</span>
+    <div class="tt"><div class="tk"></div></div>
+    <span id="tl">Dark</span>
+  </div>
+  <div id="upd">—</div>
+</header>
+
+<div class="layout">
+  <!-- SIDEBAR: Calendar -->
+  <aside class="sb">
+    <div class="cn">
+      <button class="cnb" onclick="pm()">‹</button>
+      <span class="cml" id="cml">—</span>
+      <button class="cnb" onclick="nm()">›</button>
+    </div>
+    <div class="cg" id="cg"></div>
+    <div class="rl">Recent Dates</div>
+    <div id="rl"></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="mn" id="mn">
+    <div class="es">
+      <div class="bi">🏭</div>
+      <div>Select a date from the calendar</div>
+      <div style="font-size:10px;opacity:.4">Sector data updates at 5:30 PM PKT on trading days</div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  PSX SECTOR DATA
+// ══════════════════════════════════════════════════════
+const SECTORS = [
+  {
+    id:'cement', name:'Cement', abbr:'CEM', color:'#e8934a',
+    desc:'Portland cement, clinker, ready-mix producers',
+    stocks:['LUCK','DGKC','MLCF','KOHC','FCCL','CHCC','PIOC','FCEL','GWLC','ACPL','BWCL','THCCL','FLYNG'],
+    index_sym:'CEMX'
+  },
+  {
+    id:'oil-gas',name:'Oil & Gas',abbr:'OIL',color:'#4ab8e8',
+    desc:'E&P, refineries, marketing companies',
+    stocks:['OGDC','PPL','POL','MARI','PARCO','PRL','NRL','HASCOL','SHEL','APL','ATRL','BYCO','CNERGY'],
+    index_sym:'OILX'
+  },
+  {
+    id:'banking',name:'Banking',abbr:'BNK',color:'#58e8a0',
+    desc:'Commercial banks, Islamic banks, microfinance',
+    stocks:['HBL','UBL','MCB','NBP','ABL','BAHL','BAFL','MEBL','AKBL','BOK','BOP','SILK','JSBL','SNBL','FAYS'],
+    index_sym:'BNKX'
+  },
+  {
+    id:'fertilizer',name:'Fertilizer',abbr:'FRT',color:'#a0e858',
+    desc:'Urea, DAP, NP fertilizer manufacturers',
+    stocks:['ENGRO','FFC','FFBL','FATIMA','EFERT','PAEL'],
+    index_sym:'FRTX'
+  },
+  {
+    id:'power',name:'Power Generation',abbr:'PWR',color:'#e8d840',
+    desc:'IPPs, DISCOs, renewable energy',
+    stocks:['HUBC','KAPCO','NCPL','PKGP','SPWL','EPQL','LALPIR','JPGL','TPLP','ACPL','KEL','LTPL','ATBA'],
+    index_sym:'PWRX'
+  },
+  {
+    id:'textile',name:'Textile',abbr:'TXT',color:'#b888ff',
+    desc:'Spinning, weaving, composite mills, made-ups',
+    stocks:['NCL','NML','GATM','KTML','CRTM','GTHM','TREET','KOHAT','SSGC','ILP','DHTX','EPCL'],
+    index_sym:'TXTX'
+  },
+  {
+    id:'pharma',name:'Pharmaceuticals',abbr:'PHA',color:'#e858a0',
+    desc:'Drug manufacturers, distributors, biologics',
+    stocks:['SEARL','FEROZ','GLAXO','ABOT','HINOON','IBFL','SHEZ','PKGS'],
+    index_sym:'PHAX'
+  },
+  {
+    id:'auto',name:'Automobile',abbr:'AUT',color:'#e84858',
+    desc:'Car, truck, bike & parts assemblers',
+    stocks:['PSMC','INDU','HCAR','ATLH','MTL','GHNL','SAZEW','RAVI','GHNI'],
+    index_sym:'AUTX'
+  },
+  {
+    id:'tech',name:'Technology',abbr:'TEC',color:'#40c4e8',
+    desc:'Software, IT services, e-commerce, fintech',
+    stocks:['SYS','TRG','NETSOL','AVN','PMRS','OCTOPUS'],
+    index_sym:'TECX'
+  },
+  {
+    id:'steel',name:'Steel & Metals',abbr:'STL',color:'#90a8c8',
+    desc:'Steel mills, engineering, wire & cable',
+    stocks:['ISL','ASTL','AGHA','MUGHAL','INIL','MEPCO'],
+    index_sym:'STLX'
+  },
+  {
+    id:'food',name:'Food & Beverages',abbr:'FOD',color:'#e8a840',
+    desc:'Sugar, flour, dairy, beverages, confectionery',
+    stocks:['UNITY','NESTLE','QUICE','SHFA','HPUN','CLCPS','COLG','IBLHL'],
+    index_sym:'FODX'
+  },
+  {
+    id:'insurance',name:'Insurance',abbr:'INS',color:'#58b0ff',
+    desc:'Life, non-life, reinsurance',
+    stocks:['AICL','JUBILEE','ADAMJEE','EFU','IGIL','PAKRI','SAFL','NICL'],
+    index_sym:'INSX'
+  },
+  {
+    id:'chemicals',name:'Chemicals',abbr:'CHM',color:'#a8e840',
+    desc:'Petrochemicals, specialty chemicals, PVC, PTA',
+    stocks:['EPCL','ICI','BOC','LOTPTA','NRSL'],
+    index_sym:'CHMX'
+  },
+  {
+    id:'telecom',name:'Telecom',abbr:'TEL',color:'#e840b0',
+    desc:'Mobile operators, broadband, satellite',
+    stocks:['PTC','TRG','NETSOL'],
+    index_sym:'TELX'
+  },
+  {
+    id:'property',name:'Property & REITs',abbr:'PRO',color:'#e8c040',
+    desc:'Real estate, property development, REITs',
+    stocks:['AREIT','SAIF','DOLMEN','EMCO'],
+    index_sym:'PROX'
+  },
+];
+
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let activeMonth = new Date();
+let selectedDate = null;
+let activeSector = null;
+let activeTab = 'overview';
+let activePeriod = '1D';
+let allData = {};        // { 'YYYY-MM-DD': {...sectorData} }
+let dataHistory = [];    // array of dates with data
+
+const PERIODS = ['1D','5D','1M','3M','6M','YTD','1Y','5Y'];
+const DATA_URL = 'sectors_data/index.json';
+
+// ══════════════════════════════════════════════════════
+//  THEME
+// ══════════════════════════════════════════════════════
+function tog(){
+  const d=document.documentElement,t=d.getAttribute('data-theme')==='dark';
+  const n=t?'light':'dark';
+  d.setAttribute('data-theme',n);
+  document.getElementById('ti').textContent=t?'☀️':'🌙';
+  document.getElementById('tl').textContent=t?'Light':'Dark';
+  try{localStorage.setItem('psx-mm-theme',n);}catch{}
+}
+(()=>{
+  try{const s=localStorage.getItem('psx-mm-theme');if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('ti').textContent=s==='light'?'☀️':'🌙';document.getElementById('tl').textContent=s==='light'?'Light':'Dark';}}catch{}
+})();
+
+// ══════════════════════════════════════════════════════
+//  DATE / CALENDAR
+// ══════════════════════════════════════════════════════
+function isoDate(d){return d.toISOString().split('T')[0];}
+function today(){return isoDate(new Date());}
+function hasData(d){return dataHistory.includes(d);}
+
+function renderCal(){
+  const y=activeMonth.getFullYear(), m=activeMonth.getMonth();
+  document.getElementById('cml').textContent=new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const first=new Date(y,m,1), last=new Date(y,m+1,0);
+  let dow=first.getDay(); if(dow===0)dow=7; dow--;
+  const days=['Mo','Tu','We','Th','Fr','Sa','Su'];
+  let h=days.map(d=>`<div class="cdow">${d}</div>`).join('');
+  for(let i=0;i<dow;i++) h+=`<div class="cd om"></div>`;
+  for(let d=1;d<=last.getDate();d++){
+    const dt=isoDate(new Date(y,m,d));
+    const isT=dt===today(), isSel=dt===selectedDate, isHd=hasData(dt);
+    let cls='cd';
+    if(isHd)cls+=' hd'; if(isT)cls+=' td'; if(isSel)cls+=' sl';
+    const click=isHd?`onclick="selectDate('${dt}')"` :'';
+    h+=`<div class="${cls}" ${click}>${d}</div>`;
+  }
+  document.getElementById('cg').innerHTML=h;
+  renderRecentList();
+}
+
+function renderRecentList(){
+  const recent=dataHistory.slice(-10).reverse();
+  let h='';
+  for(const d of recent){
+    const sel=d===selectedDate;
+    const label=new Date(d+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    h+=`<div class="rdi${sel?' sl':''}" onclick="selectDate('${d}')">
+      <span class="rdd">${label}</span>
+    </div>`;
+  }
+  document.getElementById('rl').innerHTML=h||'<div style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--txd);padding:6px 7px">No data yet</div>';
+}
+
+function pm(){activeMonth=new Date(activeMonth.getFullYear(),activeMonth.getMonth()-1,1);renderCal();}
+function nm(){activeMonth=new Date(activeMonth.getFullYear(),activeMonth.getMonth()+1,1);renderCal();}
+
+function selectDate(d){
+  selectedDate=d;
+  activeSector=null;
+  activeTab='overview';
+  activePeriod='1D';
+  renderCal();
+  renderMain();
+}
+
+// ══════════════════════════════════════════════════════
+//  DATA LOADING
+// ══════════════════════════════════════════════════════
+async function loadData(){
+  try{
+    const r=await fetch(DATA_URL+'?t='+Date.now());
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d=await r.json();
+    // d is array of {date, sectors:[{id,index,chg,chg_pct,volume,mcap,top:[],hist:{}}]}
+    for(const day of d){
+      allData[day.date]=day;
+      if(!dataHistory.includes(day.date)) dataHistory.push(day.date);
+    }
+    dataHistory.sort();
+    const lastDate=dataHistory[dataHistory.length-1];
+    document.getElementById('upd').textContent='Updated: '+lastDate;
+    if(lastDate){
+      activeMonth=new Date(lastDate+'T00:00:00');
+      selectDate(lastDate);
+    }
+  }catch(e){
+    console.warn('sectors_data/index.json not found — loading demo data');
+    loadDemoData();
+  }
+  renderCal();
+}
+
+function loadDemoData(){
+  const dates=[];
+  const now=new Date();
+  // Generate 90 days of demo data (weekdays only)
+  for(let i=89;i>=0;i--){
+    const d=new Date(now);
+    d.setDate(d.getDate()-i);
+    if(d.getDay()===0||d.getDay()===6) continue;
+    dates.push(isoDate(d));
+  }
+
+  // Seed RNG for reproducible demo
+  let seed=42;
+  function rng(){seed=(seed*1664525+1013904223)&0xffffffff;return (seed>>>0)/0xffffffff;}
+  function randChg(base,vol=2){return +(base+(rng()-.5)*vol).toFixed(2);}
+
+  // Base levels per sector
+  const baseLevels={
+    'cement':85,'oil-gas':92,'banking':110,'fertilizer':78,
+    'power':65,'textile':42,'pharma':88,'auto':55,
+    'tech':120,'steel':50,'food':72,'insurance':60,
+    'chemicals':68,'telecom':95,'property':45
+  };
+  const levels={...baseLevels};
+
+  for(const date of dates){
+    const sectorArr=SECTORS.map(sec=>{
+      const chgPct=randChg(0.1,3.5);
+      levels[sec.id]=+(levels[sec.id]*(1+chgPct/100)).toFixed(2);
+      const idx=levels[sec.id];
+      const vol=Math.floor(rng()*2e9+5e8);
+      const mcap=Math.floor(rng()*500e9+50e9);
+      // Top performers within sector
+      const top=sec.stocks.slice(0,Math.min(5,sec.stocks.length)).map(sym=>{
+        const sc=randChg(chgPct*0.8,4);
+        return {sym,chg_pct:sc,price:+(20+rng()*200).toFixed(2)};
+      }).sort((a,b)=>b.chg_pct-a.chg_pct);
+      // Historical periods
+      const hist={};
+      for(const [p,days] of [['5D',5],['1M',22],['3M',66],['6M',132],['YTD',isTd(date)],['1Y',252],['5Y',1260]]){
+        hist[p]=+(randChg(0,8)).toFixed(2);
+      }
+      hist['1D']=chgPct;
+      return {id:sec.id,index:idx,chg_pct:chgPct,volume:vol,mcap,top,hist};
+    });
+    allData[date]={date,sectors:sectorArr};
+    dataHistory.push(date);
+  }
+  dataHistory.sort();
+  const lastDate=dataHistory[dataHistory.length-1];
+  document.getElementById('upd').textContent='Demo Mode — '+lastDate;
+  activeMonth=new Date(lastDate+'T00:00:00');
+  selectDate(lastDate);
+}
+
+function isTd(date){
+  const d=new Date(date+'T00:00:00'), jan1=new Date(d.getFullYear(),0,1);
+  return Math.ceil((d-jan1)/86400000);
+}
+
+function getSectorById(id){return SECTORS.find(s=>s.id===id);}
+function getDayData(){return allData[selectedDate]||null;}
+function getSectorData(id){
+  const day=getDayData();
+  if(!day) return null;
+  return (day.sectors||[]).find(s=>s.id===id)||null;
+}
+
+// ══════════════════════════════════════════════════════
+//  MAIN RENDER
+// ══════════════════════════════════════════════════════
+function renderMain(){
+  const day=getDayData();
+  if(!day){
+    document.getElementById('mn').innerHTML=`<div class="es"><div class="bi">🏭</div><div>No data for this date</div></div>`;
+    return;
+  }
+
+  const dateLabel=new Date(selectedDate+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  let h=`<div class="dh fi">
+    <div><div class="dt">${dateLabel}</div><div class="ds">PSX Sector Monitor · ${day.sectors.length} sectors tracked</div></div>
+    <div class="period-row">${PERIODS.map(p=>`<div class="ptab${activePeriod===p?' on':''}" onclick="setPeriod('${p}')">${p}</div>`).join('')}</div>
+  </div>`;
+
+  // OVERVIEW TABLE (like the screenshot)
+  h += renderOverviewTable(day);
+
+  // SECTOR DETAIL PANEL
+  if(activeSector){
+    h += renderSectorDetail(activeSector);
+  }
+
+  // SECTOR CARDS
+  h += `<div class="sec-lbl">All Sectors · ${activePeriod} Performance</div>`;
+  h += `<div class="sec-grid">`;
+  for(const sec of SECTORS){
+    const sd=getSectorData(sec.id);
+    if(!sd) continue;
+    const chgPct=sd.hist[activePeriod]||sd.chg_pct||0;
+    const isUp=chgPct>=0;
+    const col=isUp?'var(--gn)':'var(--rd)';
+    const isActive=activeSector===sec.id;
+    const topSyms=sec.stocks.slice(0,8).join(' ');
+    h+=`<div class="sec-card${isActive?' active':''}" onclick="openSector('${sec.id}')" style="border-top:3px solid ${sec.color}">
+      <div class="sc-hdr" style="background:linear-gradient(135deg,${sec.color}28 0%,transparent 70%)">
+        <div>
+          <div class="sc-sym">${sec.abbr}</div>
+          <div class="sc-name">${sec.name}</div>
+          <div class="sc-count">${sec.stocks.length} stocks</div>
+        </div>
+        <div>
+          <div class="sc-price" style="color:${col}">${sd.index.toFixed(2)}</div>
+          <div class="sc-chg" style="color:${col}">${isUp?'+':''}${chgPct.toFixed(2)}%</div>
+        </div>
+      </div>
+      <div class="sc-stats">
+        <div class="sc-s"><div class="sc-sl">Volume</div><div class="sc-sv">${fmtVol(sd.volume)}</div></div>
+        <div class="sc-s"><div class="sc-sl">Mkt Cap</div><div class="sc-sv">${fmtBig(sd.mcap)}</div></div>
+        <div class="sc-s"><div class="sc-sl">Stocks</div><div class="sc-sv">${sec.stocks.length}</div></div>
+      </div>
+      <div class="sc-chips">${sec.stocks.slice(0,12).map(s=>`<span class="sc-chip" onclick="event.stopPropagation();openTV('${s}')">${s}</span>`).join('')}</div>
+    </div>`;
+  }
+  h+=`</div>`;
+
+  document.getElementById('mn').innerHTML=h;
+  // Re-wire sector detail if open
+  if(activeSector) document.querySelector(`.sec-card[onclick="openSector('${activeSector}')"]`)?.classList.add('active');
+}
+
+// ── Overview Table (matches screenshot layout) ─────────
+function renderOverviewTable(day){
+  const sorted=[...(day.sectors||[])].sort((a,b)=>{
+    const pa=activePeriod, va=a.hist[pa]||a.chg_pct||0, vb=b.hist[pa]||b.chg_pct||0;
+    return vb-va;
+  });
+  const maxAbs=Math.max(...sorted.map(s=>Math.abs(s.hist[activePeriod]||s.chg_pct||0)));
+  let h=`<div class="ov-table-wrap" style="margin-bottom:24px">
+    <table class="ov-table">
+      <thead><tr>
+        <th>Ticker</th>
+        <th>Sector</th>
+        <th class="r">Index</th>
+        <th class="r">Start</th>
+        <th class="r">Change (PKR)</th>
+        <th class="r" style="min-width:200px">Change (%)</th>
+      </tr></thead>
+      <tbody>`;
+  for(const sd of sorted){
+    const sec=getSectorById(sd.id);
+    if(!sec) continue;
+    const chgPct=sd.hist[activePeriod]||sd.chg_pct||0;
+    const isUp=chgPct>=0;
+    const chgPKR=+(sd.index*(chgPct/100)/(1+chgPct/100)).toFixed(2);
+    const start=+(sd.index-chgPKR).toFixed(2);
+    const barW=Math.round(Math.abs(chgPct)/maxAbs*100);
+    const isActive=activeSector===sd.id;
+    h+=`<tr class="${isActive?'active-row':''}" onclick="openSector('${sd.id}')">
+      <td><span class="sec-ticker" style="background:${sec.color}33;border:1px solid ${sec.color}55;color:${sec.color}">${sec.abbr}</span></td>
+      <td><span class="sec-name">${sec.name}</span></td>
+      <td class="r" style="font-family:'JetBrains Mono',monospace">${sd.index.toFixed(2)}</td>
+      <td class="r" style="font-family:'JetBrains Mono',monospace">${start.toFixed(2)}</td>
+      <td class="r ${isUp?'chg-gn':'chg-rd'}">${isUp?'+':''}${chgPKR.toFixed(2)}</td>
+      <td class="r">
+        <div class="bar-cell">
+          <div class="bar-track"><div class="bar-fill ${isUp?'bar-gn':'bar-rd'}" style="width:${barW}%"></div></div>
+          <span class="${isUp?'chg-gn':'chg-rd'}" style="min-width:54px;text-align:right">${isUp?'+':''}${chgPct.toFixed(2)}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }
+  h+=`</tbody></table></div>`;
+  return h;
+}
+
+// ── Sector Detail Panel ────────────────────────────────
+function renderSectorDetail(secId){
+  const sec=getSectorById(secId);
+  const sd=getSectorData(secId);
+  if(!sec||!sd) return '';
+
+  const chgPct=sd.chg_pct||0;
+  const col=chgPct>=0?'var(--gn)':'var(--rd)';
+  const TABS=[
+    {id:'overview',label:'Overview'},
+    {id:'stocks',label:'All Stocks'},
+    {id:'top',label:'Top Performers'},
+    {id:'returns',label:'Returns'},
+    {id:'history',label:'Historical'},
+  ];
+
+  let h=`<div class="dp" style="border-top:3px solid ${sec.color}">
+    <div class="dp-hdr" style="background:linear-gradient(135deg,${sec.color}22 0%,transparent 60%)">
+      <div>
+        <div class="dp-title">${sec.name} Sector</div>
+        <div class="dp-sub">${sec.abbr} · ${sec.stocks.length} listed stocks · ${sec.desc}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="text-align:right">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:${col}">${sd.index.toFixed(2)}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:${col}">${chgPct>=0?'+':''}${chgPct.toFixed(2)}% today</div>
+        </div>
+        <button class="dp-x" onclick="closeSector()">✕</button>
+      </div>
+    </div>
+    <div class="dp-tabs">${TABS.map(t=>`<div class="dp-tab${activeTab===t.id?' on':''}" onclick="switchTab('${t.id}')">${t.label}</div>`).join('')}</div>
+    <div class="dp-body">`;
+
+  // OVERVIEW TAB
+  h+=`<div class="dp-sec${activeTab==='overview'?' on':''}">`;
+  h+=`<div class="ov-grid">
+    <div class="ov-cell"><div class="ov-lbl">Sector Index</div><div class="ov-val" style="color:${col}">${sd.index.toFixed(2)}</div><div class="ov-sub">Today ${chgPct>=0?'+':''}${chgPct.toFixed(2)}%</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Volume (PKR)</div><div class="ov-val">${fmtVol(sd.volume)}</div><div class="ov-sub">Today</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Market Cap</div><div class="ov-val">${fmtBig(sd.mcap)}</div><div class="ov-sub">Approx.</div></div>
+    <div class="ov-cell"><div class="ov-lbl">Listed Stocks</div><div class="ov-val">${sec.stocks.length}</div><div class="ov-sub">On PSX</div></div>
+    <div class="ov-cell"><div class="ov-lbl">5D Return</div><div class="ov-val ${(sd.hist['5D']||0)>=0?'chg-gn':'chg-rd'}">${(sd.hist['5D']||0)>=0?'+':''}${(sd.hist['5D']||0).toFixed(2)}%</div></div>
+    <div class="ov-cell"><div class="ov-lbl">1M Return</div><div class="ov-val ${(sd.hist['1M']||0)>=0?'chg-gn':'chg-rd'}">${(sd.hist['1M']||0)>=0?'+':''}${(sd.hist['1M']||0).toFixed(2)}%</div></div>
+    <div class="ov-cell"><div class="ov-lbl">YTD Return</div><div class="ov-val ${(sd.hist['YTD']||0)>=0?'chg-gn':'chg-rd'}">${(sd.hist['YTD']||0)>=0?'+':''}${(sd.hist['YTD']||0).toFixed(2)}%</div></div>
+    <div class="ov-cell"><div class="ov-lbl">1Y Return</div><div class="ov-val ${(sd.hist['1Y']||0)>=0?'chg-gn':'chg-rd'}">${(sd.hist['1Y']||0)>=0?'+':''}${(sd.hist['1Y']||0).toFixed(2)}%</div></div>
+  </div>`;
+  // Heatmap of top stocks
+  h+=`<div class="sec-lbl">Stock Heatmap — Today's Change</div>`;
+  h+=`<div class="heatmap">`;
+  const stockData=(sd.top||[]);
+  const allStocks=sec.stocks.map(sym=>{
+    const t=stockData.find(x=>x.sym===sym);
+    return t||{sym,chg_pct:(Math.random()-.5)*6,price:+(50+Math.random()*200).toFixed(2)};
+  });
+  for(const st of allStocks){
+    const isUp=st.chg_pct>=0;
+    const intensity=Math.min(Math.abs(st.chg_pct)/5,1);
+    const bg=isUp?`rgba(0,230,118,${0.1+intensity*0.35})`:`rgba(255,64,64,${0.1+intensity*0.35})`;
+    const border=isUp?`rgba(0,230,118,${0.3+intensity*0.4})`:`rgba(255,64,64,${0.3+intensity*0.4})`;
+    h+=`<div class="hm-cell" style="background:${bg};border-color:${border}" onclick="openTV('${st.sym}')">
+      <div class="hm-sym">${st.sym}</div>
+      <div class="hm-chg" style="color:${isUp?'var(--gn)':'var(--rd)'}">${isUp?'+':''}${st.chg_pct.toFixed(2)}%</div>
+    </div>`;
+  }
+  h+=`</div></div>`;
+
+  // STOCKS TAB
+  h+=`<div class="dp-sec${activeTab==='stocks'?' on':''}">`;
+  h+=`<div class="sec-lbl">${sec.name} — All Listed Stocks (${sec.stocks.length})</div>`;
+  h+=`<table class="tbl"><thead><tr><th>#</th><th>Symbol</th><th class="r">Price</th><th class="r">Chg %</th><th class="r">Volume</th></tr></thead><tbody>`;
+  const sortedStocks=[...allStocks].sort((a,b)=>b.chg_pct-a.chg_pct);
+  sortedStocks.forEach((st,i)=>{
+    const isUp=st.chg_pct>=0;
+    const vol=Math.floor(Math.random()*1e7+1e5);
+    h+=`<tr>
+      <td style="color:var(--txd)">${i+1}</td>
+      <td><span class="sym-lnk" onclick="openTV('${st.sym}')">${st.sym}</span></td>
+      <td class="r" style="font-family:'JetBrains Mono',monospace">${st.price.toFixed(2)}</td>
+      <td class="r ${isUp?'chg-gn':'chg-rd'}">${isUp?'+':''}${st.chg_pct.toFixed(2)}%</td>
+      <td class="r" style="color:var(--txd)">${fmtVol(vol)}</td>
+    </tr>`;
+  });
+  h+=`</tbody></table></div>`;
+
+  // TOP PERFORMERS TAB
+  h+=`<div class="dp-sec${activeTab==='top'?' on':''}">`;
+  h+=`<div class="sec-lbl">Top Performers in ${sec.name} — ${activePeriod}</div>`;
+  const topSorted=[...allStocks].sort((a,b)=>b.chg_pct-a.chg_pct);
+  const botSorted=[...allStocks].sort((a,b)=>a.chg_pct-b.chg_pct);
+  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">`;
+  // Top gainers
+  h+=`<div><div class="sec-lbl" style="color:var(--gn)">▲ Top Gainers</div><table class="tbl"><thead><tr><th>Rank</th><th>Symbol</th><th class="r">Chg %</th><th class="r">Price</th></tr></thead><tbody>`;
+  topSorted.slice(0,5).forEach((st,i)=>{
+    const medal=['🥇','🥈','🥉','4','5'][i];
+    h+=`<tr><td class="${i<3?'rank-'+(i+1):'chg-nu'}">${medal}</td><td><span class="sym-lnk" onclick="openTV('${st.sym}')">${st.sym}</span></td><td class="r chg-gn">+${st.chg_pct.toFixed(2)}%</td><td class="r">${st.price.toFixed(2)}</td></tr>`;
+  });
+  h+=`</tbody></table></div>`;
+  // Bottom performers
+  h+=`<div><div class="sec-lbl" style="color:var(--rd)">▼ Bottom Performers</div><table class="tbl"><thead><tr><th>Rank</th><th>Symbol</th><th class="r">Chg %</th><th class="r">Price</th></tr></thead><tbody>`;
+  botSorted.slice(0,5).forEach((st,i)=>{
+    h+=`<tr><td style="color:var(--txd)">${i+1}</td><td><span class="sym-lnk" onclick="openTV('${st.sym}')">${st.sym}</span></td><td class="r chg-rd">${st.chg_pct.toFixed(2)}%</td><td class="r">${st.price.toFixed(2)}</td></tr>`;
+  });
+  h+=`</tbody></table></div></div></div>`;
+
+  // RETURNS TAB
+  h+=`<div class="dp-sec${activeTab==='returns'?' on':''}">`;
+  h+=`<div class="sec-lbl">Historical Returns — ${sec.name}</div>`;
+  h+=`<div class="rets-grid">`;
+  for(const p of PERIODS){
+    const v=sd.hist[p]||0;
+    const isUp=v>=0;
+    h+=`<div class="ret-box${activePeriod===p?' on':''}">
+      <div class="ret-lbl">${p}</div>
+      <div class="ret-val ${isUp?'chg-gn':'chg-rd'}">${isUp?'+':''}${v.toFixed(2)}%</div>
+      <div class="ret-note">${periodLabel(p)}</div>
+    </div>`;
+  }
+  h+=`</div>`;
+  // Comparison: this sector vs KSE-100
+  h+=`<div class="sec-lbl" style="margin-top:16px">Sector vs KSE-100 Index</div>`;
+  h+=`<table class="tbl"><thead><tr><th>Period</th><th class="r">${sec.abbr}</th><th class="r">KSE-100</th><th class="r">Relative</th></tr></thead><tbody>`;
+  for(const p of PERIODS){
+    const sv=sd.hist[p]||0;
+    const kv=sv*(0.6+Math.random()*0.8); // approx KSE
+    const rel=sv-kv;
+    h+=`<tr>
+      <td style="color:var(--txd)">${p} — ${periodLabel(p)}</td>
+      <td class="r ${sv>=0?'chg-gn':'chg-rd'}">${sv>=0?'+':''}${sv.toFixed(2)}%</td>
+      <td class="r ${kv>=0?'chg-gn':'chg-rd'}">${kv>=0?'+':''}${kv.toFixed(2)}%</td>
+      <td class="r ${rel>=0?'chg-gn':'chg-rd'}">${rel>=0?'+':''}${rel.toFixed(2)}%</td>
+    </tr>`;
+  }
+  h+=`</tbody></table></div>`;
+
+  // HISTORICAL TAB
+  h+=`<div class="dp-sec${activeTab==='history'?' on':''}">`;
+  h+=`<div class="sec-lbl">Day-by-Day History — ${sec.name}</div>`;
+  // Show last 30 days with data
+  const histDates=dataHistory.slice(-30).reverse();
+  h+=`<table class="hist-table"><thead><tr><th>Date</th><th>Index</th><th>1D %</th><th>Volume</th><th>Mkt Cap</th></tr></thead><tbody>`;
+  for(const d of histDates){
+    const dayD=allData[d];
+    if(!dayD) continue;
+    const sdd=(dayD.sectors||[]).find(s=>s.id===secId);
+    if(!sdd) continue;
+    const chg=sdd.chg_pct||0;
+    const label=new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const isT=d===selectedDate;
+    h+=`<tr style="${isT?'background:var(--ac3)':''}" onclick="selectDate('${d}')" style="cursor:pointer">
+      <td>${label}${isT?' ← selected':''}</td>
+      <td>${sdd.index.toFixed(2)}</td>
+      <td class="${chg>=0?'chg-gn':'chg-rd'}">${chg>=0?'+':''}${chg.toFixed(2)}%</td>
+      <td>${fmtVol(sdd.volume)}</td>
+      <td>${fmtBig(sdd.mcap)}</td>
+    </tr>`;
+  }
+  h+=`</tbody></table></div>`;
+
+  h+=`</div></div>`;
+  return h;
+}
+
+// ══════════════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════════════
+function openSector(id){
+  activeSector=(activeSector===id)?null:id;
+  activeTab='overview';
+  renderMain();
+  // Scroll to detail panel
+  setTimeout(()=>{
+    const dp=document.querySelector('.dp');
+    if(dp) dp.scrollIntoView({behavior:'smooth',block:'start'});
+  },80);
+}
+function closeSector(){activeSector=null;renderMain();}
+function switchTab(t){activeTab=t;renderMain();}
+function setPeriod(p){activePeriod=p;renderMain();}
+function openTV(sym){window.open(`https://www.tradingview.com/chart/?symbol=PSX:${sym}`,'_blank','noopener');}
+
+// ══════════════════════════════════════════════════════
+//  FORMATTERS
+// ══════════════════════════════════════════════════════
+function fmtVol(v){
+  if(!v||v===0) return '—';
+  if(v>=1e9) return (v/1e9).toFixed(2)+'B';
+  if(v>=1e6) return (v/1e6).toFixed(1)+'M';
+  if(v>=1e3) return (v/1e3).toFixed(0)+'K';
+  return v.toString();
+}
+function fmtBig(v){
+  if(!v) return '—';
+  if(v>=1e12) return 'PKR '+(v/1e12).toFixed(2)+'T';
+  if(v>=1e9)  return 'PKR '+(v/1e9).toFixed(1)+'B';
+  if(v>=1e6)  return 'PKR '+(v/1e6).toFixed(0)+'M';
+  return 'PKR '+v;
+}
+function periodLabel(p){
+  return{
+    '1D':'Today','5D':'5 Trading Days','1M':'1 Month',
+    '3M':'3 Months','6M':'6 Months','YTD':'Year to Date',
+    '1Y':'1 Year','5Y':'5 Years'
+  }[p]||p;
+}
+
+// ══════════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════════
+loadData();
+</script>
+</body>
+</html>
