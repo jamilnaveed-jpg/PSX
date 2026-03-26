@@ -1,0 +1,77 @@
+name: PSX Sector Monitor
+
+# ══════════════════════════════════════════════════════════════════
+#  PSX Market Hours: 9:30 AM – 3:30 PM PKT (UTC+5)
+#  This runs at 5:30 PM PKT = 12:30 UTC — exactly 2 hours after close
+#  Gives price data time to settle and all ticks to be final
+# ══════════════════════════════════════════════════════════════════
+
+on:
+  schedule:
+    # 5:30 PM PKT = 12:30 UTC — Mon to Fri (PSX trading days)
+    - cron: '30 12 * * 1-5'
+
+  # Also allow manual trigger (e.g. to backfill a missed day)
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Override date YYYY-MM-DD (leave blank for today)'
+        required: false
+        default: ''
+      demo:
+        description: 'Generate demo data (no live fetch)'
+        type: boolean
+        default: false
+
+jobs:
+  sector-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run Sector Monitor
+        run: |
+          if [ "${{ github.event.inputs.demo }}" = "true" ]; then
+            python psx_sector_monitor.py --demo ${{ github.event.inputs.date && format('--date {0}', github.event.inputs.date) || '' }}
+          elif [ -n "${{ github.event.inputs.date }}" ]; then
+            python psx_sector_monitor.py --date "${{ github.event.inputs.date }}"
+          else
+            python psx_sector_monitor.py
+          fi
+
+      - name: Check for data changes
+        id: changes
+        run: |
+          git add sectors_data/
+          git diff --staged --quiet || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push sector data
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name  "PSX Sector Bot"
+          git config user.email "bot@psx-sector.local"
+          DATE=$(python -c "import datetime; print(datetime.date.today().isoformat())")
+          git commit -m "Sector data: $DATE — 2h post-close (5:30 PM PKT)"
+          git push
+
+      - name: Summary
+        run: |
+          echo "## PSX Sector Monitor" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(python -c 'import datetime; print(datetime.date.today())')" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** 5:30 PM PKT (2h after PSX close)" >> $GITHUB_STEP_SUMMARY
+          if [ -f sectors_data/index.json ]; then
+            DAYS=$(python -c "import json; d=json.load(open('sectors_data/index.json')); print(len(d))")
+            echo "**History:** $DAYS trading days in index" >> $GITHUB_STEP_SUMMARY
+          fi
