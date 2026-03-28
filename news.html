@@ -76,6 +76,23 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
 .status-pill.ok{border-color:var(--gnmd);color:var(--gn);background:var(--gnbg)}
 .status-pill.err{border-color:var(--rdmd);color:var(--rd);background:var(--rdbg)}
 
+/* API Key panel */
+.apikey-box{border:1px solid var(--bd);border-radius:6px;overflow:hidden;background:var(--sf2)}
+.apikey-hdr{padding:8px 12px;background:var(--gdbg);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:6px;justify-content:space-between}
+.apikey-hdr-title{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gd);font-weight:700}
+.apikey-body{padding:10px 12px}
+.apikey-wrap{position:relative;margin-bottom:8px}
+.apikey-inp{width:100%;background:var(--sf3);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:10px;padding:7px 36px 7px 10px;outline:none;transition:border-color .15s}
+.apikey-inp:focus{border-color:var(--ac)}
+.apikey-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--txd);cursor:pointer;font-size:13px;line-height:1}
+.apikey-save{width:100%;background:var(--ac);border:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:6px;border-radius:4px;cursor:pointer;letter-spacing:.08em;transition:opacity .15s}
+.apikey-save:hover{opacity:.85}
+.apikey-note{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);line-height:1.5;margin-top:6px}
+.apikey-note a{color:var(--ac)}
+.apikey-status{display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;font-size:9px;padding:4px 8px;border-radius:4px}
+.apikey-ok{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnmd)}
+.apikey-missing{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdmd)}
+
 /* Recent tickers */
 .sect-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txd);padding-bottom:6px;border-bottom:1px solid var(--bd)}
 .recent-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
@@ -251,6 +268,28 @@ header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);borde
   <!-- LEFT PANEL -->
   <aside class="lp">
 
+    <!-- API Key Panel -->
+    <div class="apikey-box" id="apikey-box">
+      <div class="apikey-hdr">
+        <span class="apikey-hdr-title">🔑 Anthropic API Key</span>
+        <span id="apikey-status-badge" class="apikey-status apikey-missing">Not set</span>
+      </div>
+      <div class="apikey-body" id="apikey-body">
+        <div class="apikey-wrap">
+          <input class="apikey-inp" id="apikey-inp" type="password"
+            placeholder="sk-ant-api03-…"
+            autocomplete="off" spellcheck="false">
+          <button class="apikey-eye" onclick="toggleApiKeyVis()" id="eye-btn">👁</button>
+        </div>
+        <button class="apikey-save" onclick="saveApiKey()">💾 Save Key Locally</button>
+        <div class="apikey-note">
+          Key stored in your browser only — never sent anywhere except<br>
+          <a href="https://api.anthropic.com" target="_blank">api.anthropic.com</a> directly.
+          Get a key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+        </div>
+      </div>
+    </div>
+
     <!-- Search -->
     <div>
       <div class="search-box">
@@ -340,6 +379,51 @@ const MODEL = 'claude-sonnet-4-20250514';
 let busy = false;
 let recent = [];
 try { recent = JSON.parse(localStorage.getItem('psx-news-recent') || '[]'); } catch {}
+
+// ── API Key management ─────────────────────────────────────────────
+function getApiKey(){ try{return localStorage.getItem('psx-news-apikey')||'';}catch{return '';} }
+function saveApiKey(){
+  const v=document.getElementById('apikey-inp').value.trim();
+  if(!v){alert('Please enter your Anthropic API key (starts with sk-ant-)');return;}
+  if(!v.startsWith('sk-')){alert('API key should start with sk-ant-\nGet one at console.anthropic.com');return;}
+  try{localStorage.setItem('psx-news-apikey',v);}catch{}
+  updateApiKeyUI();
+  document.getElementById('apikey-body').style.display='none';
+  document.getElementById('apikey-box').style.borderColor='var(--gnmd)';
+}
+function toggleApiKeyVis(){
+  const inp=document.getElementById('apikey-inp');
+  const showing=inp.type==='text';
+  inp.type=showing?'password':'text';
+  document.getElementById('eye-btn').textContent=showing?'👁':'🙈';
+}
+function updateApiKeyUI(){
+  const key=getApiKey();
+  const badge=document.getElementById('apikey-status-badge');
+  const body=document.getElementById('apikey-body');
+  const box=document.getElementById('apikey-box');
+  if(key){
+    badge.textContent='✓ Set';
+    badge.className='apikey-status apikey-ok';
+    body.style.display='none';
+    box.style.borderColor='var(--gnmd)';
+    document.getElementById('apikey-inp').value=key;
+  } else {
+    badge.textContent='Not set';
+    badge.className='apikey-status apikey-missing';
+    body.style.display='block';
+  }
+}
+// Click badge to re-show the key input
+function toggleApiKeyPanel(){
+  const body=document.getElementById('apikey-body');
+  body.style.display=body.style.display==='none'?'block':'none';
+}
+(()=>{
+  const badge=document.getElementById('apikey-status-badge');
+  if(badge) badge.onclick=toggleApiKeyPanel;
+  updateApiKeyUI();
+})();
 
 // ── Theme ──────────────────────────────────────────────────────────
 function tog(){
@@ -495,16 +579,33 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
 Search psxterminal.com, businessrecorder.com, dawn.com, thenews.com.pk, brecorder.com, psx.com.pk for accurate PSX data.
 Use null for any field you cannot find. Return ONLY the JSON.`;
 
+    const apiKey=getApiKey();
+    if(!apiKey){
+      document.getElementById('apikey-body').style.display='block';
+      document.getElementById('apikey-inp').focus();
+      throw new Error('API key required — enter your Anthropic key in the panel on the left (sk-ant-…)');
+    }
     const r1=await fetch(ANT,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({
         model:MODEL, max_tokens:3000,
         tools:[{type:'web_search_20250305',name:'web_search'}],
         messages:[{role:'user',content:prompt1}]
       })
     });
-    if(!r1.ok) throw new Error('API '+r1.status);
+    if(!r1.ok){
+      const errJ=await r1.json().catch(()=>({error:{message:'HTTP '+r1.status}}));
+      const msg=errJ?.error?.message||'HTTP '+r1.status;
+      if(r1.status===401) throw new Error('Invalid API key — check your key at console.anthropic.com');
+      if(r1.status===429) throw new Error('Rate limit hit — wait a moment and try again');
+      throw new Error('Anthropic API error: '+msg);
+    }
     const j1=await r1.json();
     const txt1=(j1.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
     const s1=txt1.indexOf('{'), e1=txt1.lastIndexOf('}');
@@ -785,7 +886,12 @@ Be direct and opinionated. Use actual PKR numbers. Under 300 words.`;
 
     const r=await fetch(ANT,{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': getApiKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({model:MODEL,max_tokens:1000,messages:[{role:'user',content:prompt}]})
     });
     const j=await r.json();
