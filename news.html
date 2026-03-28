@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSX News Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root,[data-theme="dark"]{
+  --bg:#080c10;--sf:#0d1117;--sf2:#111820;--sf3:#161e28;
+  --bd:#1c2840;--bd2:#243050;
+  --tx:#d0e4f4;--txd:#4a6a90;--txm:#1e3050;
+  --ac:#00b8e0;--ac2:#0077aa;--ac3:rgba(0,184,224,.1);
+  --gn:#00e676;--gnbg:#001a0d;--gnmd:#003d1a;
+  --rd:#ff3d3d;--rdbg:#1a0000;--rdmd:#3d0000;
+  --gd:#ffcc00;--gdbg:#1a1000;
+  --pu:#b388ff;--pubg:#1a0d33;
+  --or:#ff9800;--tl:#26c6da;
+  --hdr:rgba(8,12,16,.95);
+  --sl:rgba(0,0,0,.06);
+}
+[data-theme="light"]{
+  --bg:#f0f4f8;--sf:#fff;--sf2:#f7f9fb;--sf3:#eef2f6;
+  --bd:#d0dae8;--bd2:#b8c8d8;
+  --tx:#1a2a3a;--txd:#4a6a8a;--txm:#a0b8cc;
+  --ac:#0077aa;--ac2:#005588;--ac3:rgba(0,119,170,.1);
+  --gn:#1a7a40;--gnbg:#e8f8ee;--gnmd:#c0ecd0;
+  --rd:#cc2222;--rdbg:#fdeaea;--rdmd:#f8c0c0;
+  --gd:#996600;--gdbg:#fff8e0;
+  --pu:#7b22cc;--pubg:#f0e8ff;
+  --or:#c66000;--tl:#007a8a;
+  --hdr:rgba(240,244,248,.97);
+  --sl:transparent;
+}
+
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Syne',sans-serif;font-size:13px;line-height:1.5;min-height:100vh;transition:background .25s,color .25s}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--sl) 3px,var(--sl) 4px);pointer-events:none;z-index:9999}
+
+/* ── HEADER ─────────────────────────────────────────── */
+header{position:sticky;top:0;z-index:200;height:52px;background:var(--hdr);border-bottom:1px solid var(--bd);backdrop-filter:blur(10px);display:flex;align-items:center;padding:0 20px;gap:12px}
+.logo{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--ac);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.logo span{color:var(--txd);font-weight:400}
+.nav{display:flex;gap:2px}
+.nl{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);text-decoration:none;padding:4px 9px;border-radius:4px;border:1px solid transparent;transition:all .15s}
+.nl:hover{color:var(--ac);border-color:var(--bd2)}
+.nl.on{color:var(--ac);background:rgba(0,184,224,.1);border-color:var(--ac2)}
+.hs{width:1px;height:22px;background:var(--bd);flex-shrink:0}
+.tog{display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.tt{width:32px;height:18px;background:var(--bd);border-radius:9px;position:relative;border:1px solid var(--bd2)}
+.tk{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--txd);transition:transform .2s,background .2s}
+[data-theme="light"] .tk{transform:translateX(14px);background:var(--ac)}
+#upd{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+.layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 52px)}
+
+/* ── LEFT PANEL ─────────────────────────────────────── */
+.lp{border-right:1px solid var(--bd);background:var(--sf);padding:18px 14px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+
+/* Search box */
+.search-box{position:relative}
+.sym-inp{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:10px 44px 10px 14px;outline:none;transition:border-color .15s}
+.sym-inp::placeholder{font-size:11px;font-weight:400;letter-spacing:.04em;text-transform:none;color:var(--txd)}
+.sym-inp:focus{border-color:var(--ac)}
+.lkp-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--ac);border:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;padding:5px 10px;border-radius:4px;cursor:pointer;transition:opacity .15s;letter-spacing:.06em}
+.lkp-btn:hover{opacity:.85}
+.lkp-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Status pill */
+.status-pill{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 10px;border-radius:8px;border:1px solid var(--bd);color:var(--txd);transition:all .2s}
+.status-pill.loading{border-color:var(--ac2);color:var(--ac);background:var(--ac3)}
+.status-pill.ok{border-color:var(--gnmd);color:var(--gn);background:var(--gnbg)}
+.status-pill.err{border-color:var(--rdmd);color:var(--rd);background:var(--rdbg)}
+
+/* Recent tickers */
+.sect-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--txd);padding-bottom:6px;border-bottom:1px solid var(--bd)}
+.recent-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.rc{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:3px 9px;border-radius:4px;border:1px solid var(--bd);background:var(--sf2);color:var(--txd);cursor:pointer;transition:all .15s;letter-spacing:.06em;display:flex;align-items:center;gap:4px}
+.rc:hover{border-color:var(--ac);color:var(--ac)}
+.rc .rx{opacity:.4;font-size:9px}
+.rc:hover .rx{opacity:.8}
+
+/* Quick-pick PSX bluechips */
+.qp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:2px}
+.qp{font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:700;padding:6px 4px;border-radius:4px;border:1px solid var(--bd);background:var(--sf3);color:var(--txd);cursor:pointer;text-align:center;transition:all .15s;letter-spacing:.04em}
+.qp:hover{border-color:var(--ac);color:var(--ac);background:var(--ac3)}
+
+/* About panel */
+.about-box{border:1px solid var(--bd);border-radius:6px;padding:12px 14px;background:var(--sf2)}
+.about-box h4{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ac);margin-bottom:8px}
+.about-box p{font-size:11px;color:var(--txd);line-height:1.7;margin-bottom:6px}
+.about-box p:last-child{margin-bottom:0}
+.cap{display:inline-flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600}
+.cap-gn{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnmd)}
+.cap-rd{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdmd)}
+.cap-or{background:var(--gdbg);color:var(--gd);border:1px solid #3d3000}
+.cap-pu{background:var(--pubg);color:var(--pu);border:1px solid #3d2a66}
+.cap-ac{background:var(--ac3);color:var(--ac);border:1px solid var(--ac2)}
+
+/* ── MAIN PANEL ─────────────────────────────────────── */
+.mp{overflow-y:auto;padding:22px}
+
+/* Empty state */
+.es{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:10px;color:var(--txd);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center}
+.es .bi{font-size:52px;opacity:.1;line-height:1}
+
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fi{animation:fi .3s ease both}
+.sp{width:16px;height:16px;border:2px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+.lbar{width:200px;height:3px;background:var(--bd);border-radius:2px;overflow:hidden;margin-top:8px}
+.lbar-f{height:100%;background:var(--ac);border-radius:2px;animation:lbarf 2.5s ease-in-out infinite}
+@keyframes lbarf{0%{width:0}60%{width:85%}100%{width:100%}}
+
+/* Stock header */
+.stk-hdr{border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:18px;animation:fi .3s ease}
+.stk-top{padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.stk-sym{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--ac);letter-spacing:.08em}
+.stk-name{font-size:12px;color:var(--txd);margin-top:2px;line-height:1.4}
+.stk-sector{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:4px;background:var(--ac3);color:var(--ac);border:1px solid var(--ac2);margin-top:4px}
+.stk-price{text-align:right}
+.stk-pv{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;line-height:1}
+.stk-pc{font-family:'JetBrains Mono',monospace;font-size:12px;margin-top:3px}
+.stk-meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));background:var(--sf2);border-top:1px solid var(--bd)}
+.sm{padding:9px 14px;border-right:1px solid var(--bd)}
+.sm:last-child{border-right:none}
+.sm-l{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);margin-bottom:2px}
+.sm-v{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--tx)}
+
+/* Section header */
+.sh{display:flex;align-items:center;gap:8px;margin:20px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--bd)}
+.sh-ico{font-size:16px}
+.sh-ti{font-size:14px;font-weight:700}
+.sh-co{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 7px;border-radius:8px;background:var(--sf3);color:var(--txd);margin-left:4px}
+.sh-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);margin-left:auto}
+
+/* AI Brief */
+.ai-brief{border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:18px;animation:fi .3s ease}
+.ai-hdr{padding:10px 16px;background:linear-gradient(135deg,var(--ac3) 0%,transparent 70%);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px}
+.ai-hdr-ico{font-size:14px}
+.ai-hdr-title{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ac)}
+.ai-hdr-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);margin-left:auto}
+.ai-body{padding:16px 18px;background:var(--sf);font-size:12.5px;line-height:1.8;color:var(--tx)}
+.ai-body strong{color:var(--ac);font-weight:700}
+.ai-body p{margin-bottom:10px}
+.ai-body p:last-child{margin-bottom:0}
+.ai-think{display:flex;align-items:center;gap:10px;padding:20px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)}
+.dots span{animation:dots 1.4s infinite;display:inline-block}
+.dots span:nth-child(2){animation-delay:.2s}
+.dots span:nth-child(3){animation-delay:.4s}
+@keyframes dots{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* News grid */
+.news-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.ni{border:1px solid var(--bd);border-radius:6px;padding:12px 14px;transition:border-color .15s,background .15s;cursor:pointer;text-decoration:none;color:inherit;display:block}
+.ni:hover{border-color:var(--ac2);background:var(--sf2)}
+.ni.sent-pos{border-left:3px solid var(--gn)}
+.ni.sent-neg{border-left:3px solid var(--rd)}
+.ni.sent-neu{border-left:3px solid var(--bd2)}
+.ni-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.ni-src{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd)}
+.ni-date{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txm)}
+.ni-sent{font-family:'JetBrains Mono',monospace;font-size:8.5px;padding:1px 6px;border-radius:4px;font-weight:700}
+.ns-pos{background:var(--gnbg);color:var(--gn);border:1px solid var(--gnmd)}
+.ns-neg{background:var(--rdbg);color:var(--rd);border:1px solid var(--rdmd)}
+.ns-neu{background:var(--sf3);color:var(--txd);border:1px solid var(--bd)}
+.ni-title{font-size:12.5px;font-weight:600;line-height:1.4;color:var(--tx)}
+.ni-desc{font-size:11px;color:var(--txd);margin-top:4px;line-height:1.5}
+.ni-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.ni-tag{font-family:'JetBrains Mono',monospace;font-size:8.5px;padding:1px 6px;border-radius:3px;background:var(--sf3);color:var(--txm);border:1px solid var(--bd)}
+
+/* Ownership table */
+.own-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.own-box{border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.own-hdr{padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;border-bottom:1px solid var(--bd)}
+.own-hdr-buy{background:var(--gnbg);color:var(--gn)}
+.own-hdr-sell{background:var(--rdbg);color:var(--rd)}
+.own-row{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--bd);font-family:'JetBrains Mono',monospace;font-size:11px}
+.own-row:last-child{border-bottom:none}
+.own-row:hover{background:var(--sf2)}
+.own-name{color:var(--tx);font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px}
+.own-amt{font-weight:700;font-size:11px;min-width:60px;text-align:right}
+.own-pct{font-size:9px;color:var(--txd);margin-left:4px}
+.own-type{font-size:8px;padding:1px 5px;border-radius:3px;margin-left:4px}
+.ot-inst{background:var(--ac3);color:var(--ac);border:1px solid var(--ac2)}
+.ot-dir{background:var(--pubg);color:var(--pu);border:1px solid #3d2a66}
+.ot-fore{background:var(--gdbg);color:var(--gd);border:1px solid #3d3000}
+
+/* Flow meter */
+.flow-bar-wrap{border:1px solid var(--bd);border-radius:6px;padding:14px 16px;margin-bottom:20px}
+.flow-label{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;margin-bottom:8px}
+.flow-buy{color:var(--gn);font-weight:700}
+.flow-sell{color:var(--rd);font-weight:700}
+.flow-track{height:12px;border-radius:6px;background:var(--rdbg);overflow:hidden;border:1px solid var(--bd)}
+.flow-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--gn),#00c853);transition:width .8s ease}
+.flow-sub{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);margin-top:6px}
+
+/* Financial table */
+.fin-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:11px;margin-bottom:20px}
+.fin-table thead tr{background:var(--sf3)}
+.fin-table thead th{padding:7px 10px;text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--txd);border-bottom:1px solid var(--bd)}
+.fin-table thead th:not(:first-child){text-align:right}
+.fin-table tbody tr{border-bottom:1px solid var(--bd)}
+.fin-table tbody tr:last-child{border-bottom:none}
+.fin-table tbody tr:hover{background:var(--sf2)}
+.fin-table tbody tr:nth-child(even){background:var(--sf3)}
+.fin-table td{padding:7px 10px}
+.fin-table td:not(:first-child){text-align:right}
+.fin-table td:first-child{color:var(--txd)}
+.up{color:var(--gn);font-weight:600}.dn{color:var(--rd);font-weight:600}
+
+/* COGS summary */
+.cog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:20px}
+.cog{border:1px solid var(--bd);border-radius:6px;padding:10px 12px;background:var(--sf2)}
+.cog-l{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--txd);margin-bottom:3px}
+.cog-v{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--tx)}
+.cog-s{font-size:9px;color:var(--txd);margin-top:1px}
+
+/* Error box */
+.err-box{border:1px solid var(--rdmd);background:var(--rdbg);border-radius:6px;padding:12px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--rd);margin-bottom:16px}
+
+@media(max-width:900px){.layout{grid-template-columns:1fr}.lp{border-right:none;border-bottom:1px solid var(--bd)}.own-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">PSX <span>/</span> News</div>
+  <div class="nav">
+    <a class="nl" href="daily.html">📊 Daily</a>
+    <a class="nl" href="trend.html">📈 Trend</a>
+    <a class="nl" href="etf.html">🏦 ETF</a>
+    <a class="nl" href="sectors.html">🏭 Sectors</a>
+    <a class="nl on" href="news.html">📰 News</a>
+    <a class="nl" href="index.html">🧭 MM</a>
+  </div>
+  <div class="hs"></div>
+  <div class="tog" onclick="tog()">
+    <span id="ti">🌙</span>
+    <div class="tt"><div class="tk"></div></div>
+    <span id="tl">Dark</span>
+  </div>
+  <div id="upd">—</div>
+</header>
+
+<div class="layout">
+  <!-- LEFT PANEL -->
+  <aside class="lp">
+
+    <!-- Search -->
+    <div>
+      <div class="search-box">
+        <input class="sym-inp" id="sym-inp" type="text" maxlength="10"
+          placeholder="Enter PSX symbol e.g. OGDC"
+          oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/,'')"
+          onkeydown="if(event.key==='Enter')go()">
+        <button class="lkp-btn" id="lbtn" onclick="go()">GO</button>
+      </div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+        <span class="status-pill" id="status">Ready</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd)" id="ts-label"></span>
+      </div>
+    </div>
+
+    <!-- Recent -->
+    <div id="recent-section" style="display:none">
+      <div class="sect-lbl">Recent Lookups</div>
+      <div class="recent-chips" id="recent-chips"></div>
+    </div>
+
+    <!-- Quick picks: PSX blue chips -->
+    <div>
+      <div class="sect-lbl" style="margin-bottom:8px">PSX Blue Chips</div>
+      <div class="qp-grid">
+        <div class="qp" onclick="go('OGDC')">OGDC</div>
+        <div class="qp" onclick="go('LUCK')">LUCK</div>
+        <div class="qp" onclick="go('HBL')">HBL</div>
+        <div class="qp" onclick="go('ENGRO')">ENGRO</div>
+        <div class="qp" onclick="go('UBL')">UBL</div>
+        <div class="qp" onclick="go('PPL')">PPL</div>
+        <div class="qp" onclick="go('MCB')">MCB</div>
+        <div class="qp" onclick="go('FFC')">FFC</div>
+        <div class="qp" onclick="go('HUBC')">HUBC</div>
+        <div class="qp" onclick="go('NBP')">NBP</div>
+        <div class="qp" onclick="go('MARI')">MARI</div>
+        <div class="qp" onclick="go('SYS')">SYS</div>
+        <div class="qp" onclick="go('PSMC')">PSMC</div>
+        <div class="qp" onclick="go('POL')">POL</div>
+        <div class="qp" onclick="go('SEARL')">SEARL</div>
+        <div class="qp" onclick="go('TRG')">TRG</div>
+        <div class="qp" onclick="go('INDU')">INDU</div>
+        <div class="qp" onclick="go('DGKC')">DGKC</div>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="about-box">
+      <h4>What this page shows</h4>
+      <p>Powered by Claude AI + live web search. Enter any PSX ticker to get:</p>
+      <p>
+        <span class="cap cap-ac">📊 Price & Fundamentals</span><br><br>
+        <span class="cap cap-gn">▲ Who's Buying</span> institutional & director purchases<br><br>
+        <span class="cap cap-rd">▼ Who's Selling</span> insider disposals & block trades<br><br>
+        <span class="cap cap-or">📰 Latest News</span> PSX announcements, financials, results<br><br>
+        <span class="cap cap-pu">🧠 AI Brief</span> analyst summary & key risks
+      </p>
+      <p style="margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">Data via Claude AI web search · psxterminal.com · PSX filings</p>
+    </div>
+
+  </aside>
+
+  <!-- MAIN PANEL -->
+  <main class="mp" id="mp">
+    <div class="es">
+      <div class="bi">📰</div>
+      <div style="font-size:14px;font-weight:700;color:var(--tx);margin-bottom:4px">PSX Stock Intelligence</div>
+      <div>Enter a PSX ticker to get news, filings &amp; ownership data</div>
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
+        <span class="cap cap-gn">▲ Buyers</span>
+        <span class="cap cap-rd">▼ Sellers</span>
+        <span class="cap cap-or">📰 News</span>
+        <span class="cap cap-pu">🧠 AI Analysis</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  PSX NEWS INTELLIGENCE — Claude AI + web search
+// ══════════════════════════════════════════════════════════════════
+
+const ANT = 'https://api.anthropic.com/v1/messages';
+const MODEL = 'claude-sonnet-4-20250514';
+
+let busy = false;
+let recent = [];
+try { recent = JSON.parse(localStorage.getItem('psx-news-recent') || '[]'); } catch {}
+
+// ── Theme ──────────────────────────────────────────────────────────
+function tog(){
+  const d=document.documentElement, t=d.getAttribute('data-theme')==='dark';
+  const n=t?'light':'dark';
+  d.setAttribute('data-theme',n);
+  document.getElementById('ti').textContent=t?'☀️':'🌙';
+  document.getElementById('tl').textContent=t?'Light':'Dark';
+  try{localStorage.setItem('psx-mm-theme',n);}catch{}
+}
+(()=>{
+  try{
+    const s=localStorage.getItem('psx-mm-theme');
+    if(s){document.documentElement.setAttribute('data-theme',s);
+    document.getElementById('ti').textContent=s==='light'?'☀️':'🌙';
+    document.getElementById('tl').textContent=s==='light'?'Light':'Dark';}
+  }catch{}
+})();
+
+// ── Recent ─────────────────────────────────────────────────────────
+function addRecent(sym){
+  recent=[sym,...recent.filter(s=>s!==sym)].slice(0,8);
+  try{localStorage.setItem('psx-news-recent',JSON.stringify(recent));}catch{}
+  renderRecent();
+}
+function renderRecent(){
+  if(!recent.length){document.getElementById('recent-section').style.display='none';return;}
+  document.getElementById('recent-section').style.display='block';
+  document.getElementById('recent-chips').innerHTML=recent.map(s=>
+    `<div class="rc" onclick="go('${s}')"><span>${s}</span><span class="rx" onclick="event.stopPropagation();removeRecent('${s}')">✕</span></div>`
+  ).join('');
+}
+function removeRecent(s){recent=recent.filter(x=>x!==s);try{localStorage.setItem('psx-news-recent',JSON.stringify(recent));}catch{}renderRecent();}
+renderRecent();
+
+// ── Status ─────────────────────────────────────────────────────────
+function setStatus(msg, cls){
+  const el=document.getElementById('status');
+  el.textContent=msg; el.className='status-pill '+cls;
+}
+function setTs(msg){document.getElementById('ts-label').textContent=msg;}
+
+// ── Helpers ─────────────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtNum(n){if(!n)return'—';const a=Math.abs(n);if(a>=1e9)return(n/1e9).toFixed(2)+'B';if(a>=1e6)return(n/1e6).toFixed(1)+'M';if(a>=1e3)return(n/1e3).toFixed(0)+'K';return n.toFixed(2);}
+function sentCls(s){const sl=(s||'').toLowerCase();return sl.includes('pos')||sl.includes('bull')||sl.includes('buy')?'pos':sl.includes('neg')||sl.includes('bear')||sl.includes('sell')?'neg':'neu';}
+function pc(n){return n>=0?'up':'dn';}
+
+// ── Loading spinner ─────────────────────────────────────────────────
+function showLoading(sym){
+  const msgs=['🔍 Searching PSX filings…','📡 Scanning news sources…','🧠 Analysing ownership data…','📊 Compiling financial data…'];
+  let i=0;
+  document.getElementById('mp').innerHTML=`
+    <div class="es">
+      <div class="sp" style="width:28px;height:28px;border-width:3px"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ac);font-weight:600" id="ld-msg">${msgs[0]}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--txd)">Looking up <strong style="color:var(--ac)">${esc(sym)}</strong> on PSX</div>
+      <div class="lbar"><div class="lbar-f"></div></div>
+    </div>`;
+  const ticker=setInterval(()=>{i=(i+1)%msgs.length;const el=document.getElementById('ld-msg');if(el)el.textContent=msgs[i];else clearInterval(ticker);},2000);
+  return ticker;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  MAIN LOOKUP
+// ══════════════════════════════════════════════════════════════════
+async function go(sym){
+  sym=(sym||document.getElementById('sym-inp').value).trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if(!sym||busy)return;
+  busy=true;
+  document.getElementById('sym-inp').value=sym;
+  const btn=document.getElementById('lbtn');
+  btn.disabled=true; btn.textContent='…';
+  setStatus('Searching…','loading');
+  setTs('');
+
+  const ticker=showLoading(sym);
+
+  try{
+    // ── CALL 1: Stock data + news + ownership via Claude with web_search ──
+    const prompt1=`You are a financial data specialist for Pakistan Stock Exchange (PSX).
+Search the web for current data on PSX-listed stock: ${sym}
+
+Return ONLY a valid JSON object with this exact structure (no markdown, no explanation):
+{
+  "symbol": "${sym}",
+  "company": "Full company name",
+  "sector": "Sector name on PSX",
+  "price": 150.50,
+  "prev_close": 148.00,
+  "change": 2.50,
+  "change_pct": 1.69,
+  "high": 152.00,
+  "low": 149.00,
+  "volume": 1250000,
+  "market_cap": 45000000000,
+  "shares_outstanding": 300000000,
+  "pe_ratio": 12.5,
+  "eps": 12.04,
+  "book_value": 85.20,
+  "dividend_yield": 4.2,
+  "revenue_ttm": 120000000000,
+  "profit_ttm": 18000000000,
+  "profit_growth_pct": 15.5,
+  "revenue_growth_pct": 8.2,
+  "psx_url": "https://www.psx.com.pk/psx/themes/psx/downloads/quote/${sym}",
+  "news": [
+    {
+      "title": "Headline of news article",
+      "source": "Dawn / Business Recorder / The News / ARY News etc.",
+      "date": "2026-03-24",
+      "sentiment": "positive",
+      "summary": "2-3 sentence summary of the article",
+      "url": "https://...",
+      "tags": ["earnings", "results", "quarterly"]
+    }
+  ],
+  "buyers": [
+    {
+      "name": "Name of buyer (institution/person)",
+      "type": "Institutional / Director / Foreign / NBFC / Mutual Fund",
+      "shares": 500000,
+      "value_pkr": 75000000,
+      "date": "2026-03-20",
+      "note": "Brief context"
+    }
+  ],
+  "sellers": [
+    {
+      "name": "Name of seller",
+      "type": "Institutional / Director / Foreign / Promoter",
+      "shares": 200000,
+      "value_pkr": 30000000,
+      "date": "2026-03-18",
+      "note": "Brief context"
+    }
+  ],
+  "ownership": {
+    "promoter_pct": 45.2,
+    "institutional_pct": 28.5,
+    "foreign_pct": 8.3,
+    "public_pct": 18.0,
+    "directors_pct": 12.1
+  },
+  "quarterly_results": [
+    {"period": "Q2 FY2026", "revenue": 32000000000, "profit": 5200000000, "eps": 3.20, "change_pct": 18.5}
+  ],
+  "analyst_view": "brief analyst consensus paragraph",
+  "key_risks": ["Risk 1", "Risk 2", "Risk 3"],
+  "catalysts": ["Catalyst 1", "Catalyst 2"]
+}
+
+Search psxterminal.com, businessrecorder.com, dawn.com, thenews.com.pk, brecorder.com, psx.com.pk for accurate PSX data.
+Use null for any field you cannot find. Return ONLY the JSON.`;
+
+    const r1=await fetch(ANT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:MODEL, max_tokens:3000,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:prompt1}]
+      })
+    });
+    if(!r1.ok) throw new Error('API '+r1.status);
+    const j1=await r1.json();
+    const txt1=(j1.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const s1=txt1.indexOf('{'), e1=txt1.lastIndexOf('}');
+    if(s1===-1||e1===-1) throw new Error('No data returned for '+sym);
+    const data=JSON.parse(txt1.slice(s1,e1+1));
+
+    clearInterval(ticker);
+    addRecent(sym);
+    setStatus('Data Loaded','ok');
+    setTs(new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'}));
+    document.getElementById('upd').textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+    render(sym, data);
+
+    // ── CALL 2: AI Brief (after render, async) ──────────────────────
+    renderAIBrief(sym, data);
+
+  }catch(e){
+    clearInterval(ticker);
+    setStatus('Error','err');
+    document.getElementById('mp').innerHTML=`
+      <div class="err-box">⚠ ${esc(e.message)}</div>
+      <div class="es">
+        <div class="bi" style="font-size:36px">⚠</div>
+        <div>Could not load data for <strong style="color:var(--ac)">${esc(sym)}</strong></div>
+        <div style="font-size:10px">Check the ticker symbol and try again · Open F12 → Console for details</div>
+      </div>`;
+    console.error('[PSX News]',e);
+  }finally{
+    busy=false;
+    const btn=document.getElementById('lbtn');
+    btn.disabled=false; btn.textContent='GO';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════════════════
+function render(sym, d){
+  const isUp=(d.change_pct||0)>=0;
+  const cCol=isUp?'var(--gn)':'var(--rd)';
+  let h='<div class="fi">';
+
+  // ── Stock header ────────────────────────────────────────────────
+  h+=`<div class="stk-hdr" style="border-top:3px solid ${isUp?'var(--gn)':'var(--rd)'}">
+    <div class="stk-top">
+      <div>
+        <div class="stk-sym">${esc(sym)}</div>
+        <div class="stk-name">${esc(d.company||'—')}</div>
+        ${d.sector?`<span class="stk-sector">${esc(d.sector)}</span>`:''}
+      </div>
+      <div class="stk-price">
+        <div class="stk-pv" style="color:${cCol}">PKR ${fmtNum(d.price)||'—'}</div>
+        <div class="stk-pc" style="color:${cCol}">${isUp?'+':''}${fmtNum(d.change)} (${isUp?'+':''}${fmtNum(d.change_pct)}%)</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txd);margin-top:3px">Prev Close: PKR ${fmtNum(d.prev_close)||'—'}</div>
+      </div>
+    </div>
+    <div class="stk-meta">
+      <div class="sm"><div class="sm-l">Volume</div><div class="sm-v">${fmtNum(d.volume)||'—'}</div></div>
+      <div class="sm"><div class="sm-l">Mkt Cap</div><div class="sm-v">${fmtNum(d.market_cap)||'—'}</div></div>
+      <div class="sm"><div class="sm-l">P/E Ratio</div><div class="sm-v">${d.pe_ratio?fmtNum(d.pe_ratio)+'x':'—'}</div></div>
+      <div class="sm"><div class="sm-l">EPS</div><div class="sm-v">${d.eps?'PKR '+fmtNum(d.eps):'—'}</div></div>
+      <div class="sm"><div class="sm-l">52W H / L</div><div class="sm-v" style="font-size:11px">${fmtNum(d.high)||'—'} / ${fmtNum(d.low)||'—'}</div></div>
+      <div class="sm"><div class="sm-l">Div. Yield</div><div class="sm-v ${d.dividend_yield?'up':''}">${d.dividend_yield?d.dividend_yield.toFixed(1)+'%':'—'}</div></div>
+    </div>
+  </div>`;
+
+  // ── AI brief placeholder ────────────────────────────────────────
+  h+=`<div id="ai-brief-wrap"></div>`;
+
+  // ── Buy / Sell Flow meter ────────────────────────────────────────
+  const buyers=d.buyers||[]; const sellers=d.sellers||[];
+  const buyVol=buyers.reduce((s,b)=>s+(b.shares||0),0);
+  const sellVol=sellers.reduce((s,b)=>s+(b.shares||0),0);
+  const total=buyVol+sellVol||1;
+  const buyPct=Math.round(buyVol/total*100);
+  if(buyers.length||sellers.length){
+    h+=`<div class="sh"><span class="sh-ico">📊</span><span class="sh-ti">Order Flow</span><span class="sh-co">${buyers.length+sellers.length} transactions</span></div>
+    <div class="flow-bar-wrap">
+      <div class="flow-label">
+        <span class="flow-buy">▲ Buying — ${buyPct}% (${fmtNum(buyVol)} shares)</span>
+        <span class="flow-sell">▼ Selling — ${100-buyPct}% (${fmtNum(sellVol)} shares)</span>
+      </div>
+      <div class="flow-track"><div class="flow-fill" style="width:${buyPct}%"></div></div>
+      <div class="flow-sub">
+        <span>${buyers.length} buyer${buyers.length!==1?'s':''} · PKR ${fmtNum(buyers.reduce((s,b)=>s+(b.value_pkr||0),0))}</span>
+        <span>${sellers.length} seller${sellers.length!==1?'s':''} · PKR ${fmtNum(sellers.reduce((s,b)=>s+(b.value_pkr||0),0))}</span>
+      </div>
+    </div>`;
+  }
+
+  // ── Buyers / Sellers ────────────────────────────────────────────
+  if(buyers.length||sellers.length){
+    h+=`<div class="sh"><span class="sh-ico">🔄</span><span class="sh-ti">Ownership Transactions</span><span class="sh-sub">Recent PSX filings</span></div>`;
+    h+=`<div class="own-grid">`;
+
+    // Buyers
+    h+=`<div class="own-box">
+      <div class="own-hdr own-hdr-buy">▲ Recent Buyers</div>`;
+    if(!buyers.length){h+=`<div class="own-row"><span class="own-name" style="color:var(--txd)">No recent buying recorded</span></div>`;}
+    else{
+      for(const b of buyers){
+        const typeMap={'Institutional':'ot-inst','Director':'ot-dir','Foreign':'ot-fore'};
+        const tc=typeMap[b.type]||'ot-inst';
+        h+=`<div class="own-row">
+          <div>
+            <div class="own-name" title="${esc(b.note||'')}">${esc(b.name||'—')}</div>
+            <div style="font-size:9px;color:var(--txd);margin-top:1px">${esc(b.date||'')} ${b.type?`<span class='own-type ${tc}'>${esc(b.type)}</span>`:''}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="own-amt up">+${fmtNum(b.shares)}</div>
+            <div class="own-pct">PKR ${fmtNum(b.value_pkr)}</div>
+          </div>
+        </div>`;
+      }
+    }
+    h+=`</div>`;
+
+    // Sellers
+    h+=`<div class="own-box">
+      <div class="own-hdr own-hdr-sell">▼ Recent Sellers</div>`;
+    if(!sellers.length){h+=`<div class="own-row"><span class="own-name" style="color:var(--txd)">No recent selling recorded</span></div>`;}
+    else{
+      for(const s of sellers){
+        const typeMap={'Institutional':'ot-inst','Director':'ot-dir','Foreign':'ot-fore','Promoter':'ot-fore'};
+        const tc=typeMap[s.type]||'ot-inst';
+        h+=`<div class="own-row">
+          <div>
+            <div class="own-name" title="${esc(s.note||'')}">${esc(s.name||'—')}</div>
+            <div style="font-size:9px;color:var(--txd);margin-top:1px">${esc(s.date||'')} ${s.type?`<span class='own-type ${tc}'>${esc(s.type)}</span>`:''}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="own-amt dn">-${fmtNum(s.shares)}</div>
+            <div class="own-pct">PKR ${fmtNum(s.value_pkr)}</div>
+          </div>
+        </div>`;
+      }
+    }
+    h+=`</div></div>`;
+  }
+
+  // ── Ownership Breakdown ─────────────────────────────────────────
+  if(d.ownership){
+    const ow=d.ownership;
+    h+=`<div class="sh"><span class="sh-ico">🏛</span><span class="sh-ti">Shareholding Structure</span></div>`;
+    h+=`<div class="cog-grid">`;
+    const owFields=[
+      {k:'promoter_pct',l:'Promoter / Sponsor',col:'var(--pu)'},
+      {k:'institutional_pct',l:'Institutional',col:'var(--ac)'},
+      {k:'foreign_pct',l:'Foreign Investors',col:'var(--gd)'},
+      {k:'directors_pct',l:'Directors',col:'var(--or)'},
+      {k:'public_pct',l:'General Public',col:'var(--txd)'},
+    ];
+    for(const f of owFields){
+      const v=ow[f.k];
+      if(v==null) continue;
+      h+=`<div class="cog"><div class="cog-l">${esc(f.l)}</div>
+        <div class="cog-v" style="color:${f.col}">${v.toFixed(1)}%</div>
+        <div style="height:3px;border-radius:2px;background:var(--bd);margin-top:6px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(v,100)}%;background:${f.col};border-radius:2px;transition:width .6s ease"></div>
+        </div>
+      </div>`;
+    }
+    h+=`</div>`;
+  }
+
+  // ── Quarterly Results ───────────────────────────────────────────
+  const qr=d.quarterly_results||[];
+  if(qr.length){
+    h+=`<div class="sh"><span class="sh-ico">📈</span><span class="sh-ti">Quarterly Results</span><span class="sh-co">${qr.length} periods</span></div>`;
+    h+=`<table class="fin-table"><thead><tr>
+      <th>Period</th><th>Revenue</th><th>Profit</th><th>EPS (PKR)</th><th>YoY Chg</th>
+    </tr></thead><tbody>`;
+    for(const q of qr){
+      const isUp=(q.change_pct||0)>=0;
+      h+=`<tr>
+        <td>${esc(q.period||'—')}</td>
+        <td>${fmtNum(q.revenue)||'—'}</td>
+        <td>${fmtNum(q.profit)||'—'}</td>
+        <td>${q.eps?fmtNum(q.eps):'—'}</td>
+        <td class="${isUp?'up':'dn'}">${isUp?'+':''}${fmtNum(q.change_pct)||'—'}%</td>
+      </tr>`;
+    }
+    h+=`</tbody></table>`;
+  }
+
+  // ── News ────────────────────────────────────────────────────────
+  const news=d.news||[];
+  h+=`<div class="sh"><span class="sh-ico">📰</span><span class="sh-ti">Latest News</span>
+    <span class="sh-co">${news.length} article${news.length!==1?'s':''}</span>
+    <span class="sh-sub">PSX · Business Recorder · Dawn</span>
+  </div>`;
+  if(!news.length){
+    h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--txd);padding:14px 0">No news articles found for ${esc(sym)}</div>`;
+  }else{
+    h+=`<div class="news-grid">`;
+    for(const n of news){
+      const sc=sentCls(n.sentiment);
+      const tags=(n.tags||[]).slice(0,4);
+      const url=n.url&&n.url.startsWith('http')?n.url:'#';
+      h+=`<a class="ni sent-${sc}" href="${esc(url)}" target="_blank" rel="noopener">
+        <div class="ni-top">
+          <span class="ni-src">${esc(n.source||'—')}</span>
+          <span class="ni-date">${esc(n.date||'')}</span>
+          <span class="ni-sent ns-${sc}">${sc==='pos'?'▲ Positive':sc==='neg'?'▼ Negative':'◆ Neutral'}</span>
+        </div>
+        <div class="ni-title">${esc(n.title||'—')}</div>
+        ${n.summary?`<div class="ni-desc">${esc(n.summary)}</div>`:''}
+        ${tags.length?`<div class="ni-tags">${tags.map(t=>`<span class="ni-tag">${esc(t)}</span>`).join('')}</div>`:''}
+      </a>`;
+    }
+    h+=`</div>`;
+  }
+
+  // ── Key Risks & Catalysts ───────────────────────────────────────
+  const risks=d.key_risks||[]; const cats=d.catalysts||[];
+  if(risks.length||cats.length){
+    h+=`<div class="sh"><span class="sh-ico">⚖</span><span class="sh-ti">Risks &amp; Catalysts</span></div>`;
+    h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">`;
+    if(risks.length){
+      h+=`<div class="own-box"><div class="own-hdr own-hdr-sell">⚠ Key Risks</div>`;
+      for(const r of risks) h+=`<div class="own-row"><span style="font-size:11px;color:var(--tx)">${esc(r)}</span></div>`;
+      h+=`</div>`;
+    }
+    if(cats.length){
+      h+=`<div class="own-box"><div class="own-hdr own-hdr-buy">🚀 Catalysts</div>`;
+      for(const c of cats) h+=`<div class="own-row"><span style="font-size:11px;color:var(--tx)">${esc(c)}</span></div>`;
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  }
+
+  h+=`<div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--txm);padding:12px 0;border-top:1px solid var(--bd)">
+    Data sourced via Claude AI web search · PSX filings · businessrecorder.com · dawn.com · Generated ${new Date().toLocaleString('en-PK')}
+  </div>`;
+  h+=`</div>`;
+
+  document.getElementById('mp').innerHTML=h;
+}
+
+// ── AI Brief (async after main render) ─────────────────────────────
+async function renderAIBrief(sym, d){
+  const wrap=document.getElementById('ai-brief-wrap');
+  if(!wrap) return;
+  wrap.innerHTML=`<div class="ai-brief">
+    <div class="ai-hdr"><span class="ai-hdr-ico">🧠</span><span class="ai-hdr-title">AI Analysis</span><span class="ai-hdr-sub">Generating…</span></div>
+    <div class="ai-body"><div class="ai-think"><div class="sp"></div><span style="margin-left:8px">Claude is analysing ${esc(sym)} data…</span></div></div>
+  </div>`;
+
+  try{
+    const ctx={
+      sym, company:d.company, sector:d.sector,
+      price:d.price, change_pct:d.change_pct,
+      pe:d.pe_ratio, eps:d.eps, book_value:d.book_value,
+      mkt_cap:d.market_cap, div_yield:d.dividend_yield,
+      profit_growth:d.profit_growth_pct, rev_growth:d.revenue_growth_pct,
+      buyers_count:(d.buyers||[]).length, sellers_count:(d.sellers||[]).length,
+      top_buyer:(d.buyers||[])[0]?.name, top_seller:(d.sellers||[])[0]?.name,
+      ownership:d.ownership,
+      recent_news:(d.news||[]).slice(0,3).map(n=>n.title),
+      analyst_view:d.analyst_view,
+      risks:d.key_risks, catalysts:d.catalysts,
+    };
+
+    const prompt=`You are a senior equity analyst covering Pakistan Stock Exchange (PSX).
+Write a concise analyst brief on ${sym} (${ctx.company||sym}) using the data below.
+
+DATA: ${JSON.stringify(ctx)}
+
+Format exactly as 5 sections with bold headers:
+**COMPANY SNAPSHOT** — What the company does, its PSX sector, current market position (2 sentences).
+**PRICE & VALUATION** — Current price, P/E vs sector average, whether stock looks cheap/fair/expensive, dividend yield (2-3 sentences with specific numbers).
+**OWNERSHIP SIGNALS** — Who is buying, who is selling, what institutional/director activity tells us about smart money sentiment (2-3 sentences).
+**KEY RISKS** — Top 2-3 specific risks for this stock (1 line each).
+**TRADE OUTLOOK** — Short-term and medium-term outlook, key levels to watch, catalyst dates (2-3 sentences).
+
+Be direct and opinionated. Use actual PKR numbers. Under 300 words.`;
+
+    const r=await fetch(ANT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:MODEL,max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    const j=await r.json();
+    const txt=(j.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    if(!txt){wrap.innerHTML='';return;}
+    const fmt=txt.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+    wrap.innerHTML=`<div class="ai-brief">
+      <div class="ai-hdr">
+        <span class="ai-hdr-ico">🧠</span>
+        <span class="ai-hdr-title">AI Analysis — ${esc(sym)}</span>
+        <span class="ai-hdr-sub">Claude ${MODEL.split('-').slice(-1)[0]}</span>
+      </div>
+      <div class="ai-body"><p>${fmt}</p></div>
+    </div>`;
+  }catch(e){
+    console.warn('[AI Brief]',e);
+    wrap.innerHTML='';
+  }
+}
+
+// ── URL param auto-load ─────────────────────────────────────────────
+(()=>{
+  const urlSym=new URLSearchParams(location.search).get('sym')||location.hash.slice(1);
+  if(urlSym) go(urlSym.toUpperCase());
+})();
+</script>
+</body>
+</html>
