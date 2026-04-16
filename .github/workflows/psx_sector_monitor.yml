@@ -32,6 +32,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # FIX: Always fetch the full up-to-date branch so the runner
+          # never starts behind the remote — prevents the non-fast-forward
+          # push rejection that broke runs from 13 April onward.
+          fetch-depth: 0
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -64,7 +69,18 @@ jobs:
           git config user.email "bot@psx-sector.local"
           DATE=$(python -c "import datetime; print(datetime.date.today().isoformat())")
           git commit -m "Sector data: $DATE — 2h post-close (5:30 PM PKT)"
-          git push
+
+          # FIX: Pull remote changes (rebase) before pushing so we never
+          # hit a non-fast-forward rejection if the remote moved ahead
+          # (e.g. concurrent run, Pages deployment, or manual push).
+          # Retry up to 3 times in case of a tight race condition.
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            echo "Push attempt $i failed — retrying in 5s..."
+            sleep 5
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary
         run: |
