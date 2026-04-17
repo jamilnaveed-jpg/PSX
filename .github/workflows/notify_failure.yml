@@ -1,0 +1,61 @@
+name: PSX Failure Alert
+
+# ══════════════════════════════════════════════════════════════════
+#  Watches ALL other workflows in this repo.
+#  Sends an email immediately whenever any of them fail.
+#
+#  Requires three GitHub Secrets (Settings → Secrets → Actions):
+#    ALERT_EMAIL_FROM     — Gmail address used to send the alert
+#    ALERT_EMAIL_PASSWORD — Gmail App Password (16 chars, no spaces)
+#    ALERT_EMAIL_TO       — Address that receives the alert
+# ══════════════════════════════════════════════════════════════════
+
+on:
+  workflow_run:
+    # List every workflow name exactly as it appears in its `name:` field
+    workflows:
+      - "PSX Sector Monitor"
+      - "PSX Daily Scanner"
+      - "PSX Daily Stock Scanner"
+    types:
+      - completed   # fires on every completion — we filter to failure below
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+
+    # Only proceed if the watched workflow actually failed
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+
+    steps:
+      - name: Send failure alert email
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.ALERT_EMAIL_FROM }}
+          password: ${{ secrets.ALERT_EMAIL_PASSWORD }}
+
+          to:      ${{ secrets.ALERT_EMAIL_TO }}
+          from:    PSX Monitor Alert <${{ secrets.ALERT_EMAIL_FROM }}>
+          subject: "❌ PSX Action Failed: ${{ github.event.workflow_run.name }}"
+
+          # Plain-text body — clear, actionable, no extra setup needed
+          body: |
+            A PSX GitHub Actions workflow has FAILED.
+
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            Workflow  : ${{ github.event.workflow_run.name }}
+            Status    : ${{ github.event.workflow_run.conclusion }}
+            Branch    : ${{ github.event.workflow_run.head_branch }}
+            Run #     : ${{ github.event.workflow_run.run_number }}
+            Triggered : ${{ github.event.workflow_run.event }}
+            Started   : ${{ github.event.workflow_run.run_started_at }}
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+            View the full logs and error details here:
+            ${{ github.event.workflow_run.html_url }}
+
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            PSX Monitor · github.com/jamilnaveed-jpg/PSX
