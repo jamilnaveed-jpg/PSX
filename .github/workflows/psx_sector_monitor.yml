@@ -47,6 +47,10 @@ jobs:
         run: pip install requests
 
       - name: Run Sector Monitor
+        # FIX: continue-on-error so a closed market / holiday (exit 0 from
+        # the script) or a transient API blip doesn't fail the whole workflow.
+        # The script itself exits 0 on holidays and 1 only on real errors.
+        continue-on-error: true
         run: |
           if [ "${{ github.event.inputs.demo }}" = "true" ]; then
             python psx_sector_monitor.py --demo ${{ github.event.inputs.date && format('--date {0}', github.event.inputs.date) || '' }}
@@ -90,4 +94,6 @@ jobs:
           if [ -f sectors_data/index.json ]; then
             DAYS=$(python -c "import json; d=json.load(open('sectors_data/index.json')); print(len(d))")
             echo "**History:** $DAYS trading days in index" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status:** No data file — market closed or API unavailable" >> $GITHUB_STEP_SUMMARY
           fi

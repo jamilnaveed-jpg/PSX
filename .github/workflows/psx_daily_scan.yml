@@ -1,10 +1,23 @@
 name: PSX Daily Scanner (Web)
 
+# ══════════════════════════════════════════════════════════════════
+#  PSX Market Hours: 9:30 AM – 3:30 PM PKT (UTC+5)
+#  Runs at 3:35 PM PKT = 10:35 UTC — 5 min after close so all
+#  end-of-day ticks are finalised before we scrape.
+# ══════════════════════════════════════════════════════════════════
+
 on:
   schedule:
-    # 3:35 PM PKT = 10:35 AM UTC, Mon–Fri
+    # 3:35 PM PKT = 10:35 UTC, Mon–Fri
     - cron: '35 10 * * 1-5'
+
+  # Manual trigger — useful for backfilling missed days
   workflow_dispatch:
+    inputs:
+      date:
+        description: 'Override date YYYY-MM-DD (leave blank for today)'
+        required: false
+        default: ''
 
 jobs:
   scan:
@@ -17,6 +30,10 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          # FIX: Fetch full history so the runner never starts behind the
+          # remote — prevents non-fast-forward push rejections.
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,13 +44,49 @@ jobs:
         run: pip install requests
 
       - name: Run Daily Scanner
-        run: python psx_daily_scanner.py
-
-      - name: Commit scan data
+        # FIX: continue-on-error so a closed market / holiday (exit 0 from
+        # the script) or a transient API blip doesn't fail the whole workflow.
+        # The script itself exits 0 on holidays and 1 only on real errors.
+        continue-on-error: true
         run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            python psx_daily_scanner.py --date "${{ github.event.inputs.date }}"
+          else
+            python psx_daily_scanner.py
+          fi
+
+      - name: Check for data changes
+        id: changes
+        run: |
           git add daily_data/
-          git diff --cached --quiet || git commit -m "Daily scan $(date -u +'%Y-%m-%d')"
-          git pull --rebase origin main
-          git push
+          git diff --staged --quiet || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push scan data
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name  "PSX Daily Bot"
+          git config user.email "bot@psx-daily.local"
+          DATE=$(python -c "import datetime; print(datetime.date.today().isoformat())")
+          git commit -m "Daily scan: $DATE — 3:35 PM PKT"
+
+          # FIX: Pull remote changes (rebase) before pushing, then retry up
+          # to 3 times to handle tight race conditions or concurrent pushes.
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break
+            echo "Push attempt $i failed — retrying in 5s..."
+            sleep 5
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## PSX Daily Scanner" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(python -c 'import datetime; print(datetime.date.today())')" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** 3:35 PM PKT (5 min after PSX close)" >> $GITHUB_STEP_SUMMARY
+          if [ -f daily_data/index.json ]; then
+            DAYS=$(python -c "import json; d=json.load(open('daily_data/index.json')); print(len(d))")
+            echo "**History:** $DAYS trading days in index" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status:** No data file — market closed or API unavailable" >> $GITHUB_STEP_SUMMARY
+          fi
