@@ -41,7 +41,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests yfinance
 
       - name: Run Daily Scanner
         # FIX: continue-on-error so a closed market / holiday (exit 0 from
