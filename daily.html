@@ -199,8 +199,8 @@ table.st td:not(:first-child):not(:nth-child(2)){text-align:right}
 </div>
 
 <script>
-// TradingView chart opener
-function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
+// TradingView chart opener — FIXED: added PSX: prefix
+function openTV(sym){if(!sym)return;window.open(`https://www.tradingview.com/chart/?symbol=PSX:${sym.toUpperCase()}`,'_blank','noopener,noreferrer');}
 
 let dates=[],sel=null,cY=new Date().getFullYear(),cM=new Date().getMonth();
 
