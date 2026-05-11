@@ -2,14 +2,15 @@ name: PSX Sector Monitor
 
 # ══════════════════════════════════════════════════════════════════
 #  PSX Market Hours: 9:30 AM – 3:30 PM PKT (UTC+5)
-#  This runs at 5:30 PM PKT = 12:30 UTC — exactly 2 hours after close
-#  Gives price data time to settle and all ticks to be final
+#  This runs at 3:40 PM PKT = 10:40 AM UTC — 10 min after close
+#  (Changed from 5:30 PM to match working Trend Scanner timing)
 # ══════════════════════════════════════════════════════════════════
 
 on:
   schedule:
-    # 5:30 PM PKT = 12:30 UTC — Mon to Fri (PSX trading days)
-    - cron: '30 12 * * 1-5'
+    # 3:40 PM PKT = 10:40 AM UTC — Mon to Fri (PSX trading days)
+    # ALIGNED WITH TREND SCANNER (both now run at same time)
+    - cron: '40 10 * * 1-5'
 
   # Also allow manual trigger (e.g. to backfill a missed day)
   workflow_dispatch:
@@ -28,14 +29,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # FIX: Always fetch the full up-to-date branch so the runner
-          # never starts behind the remote — prevents the non-fast-forward
-          # push rejection that broke runs from 13 April onward.
+          # Fetch full history to prevent non-fast-forward push errors
+          # when remote has moved ahead (concurrent runs, deployments, etc.)
           fetch-depth: 0
 
       - name: Set up Python 3.11
@@ -44,16 +45,21 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: |
+          pip install requests beautifulsoup4
 
       - name: Run Sector Monitor
-        # FIX: continue-on-error so a closed market / holiday (exit 0 from
-        # the script) or a transient API blip doesn't fail the whole workflow.
-        # The script itself exits 0 on holidays and 1 only on real errors.
-        continue-on-error: true
+        # REMOVED: continue-on-error: true
+        # REASON: Was silently masking errors. We need to see real failures.
+        # If market is closed or API fails, the Python script should exit 0.
+        # Non-zero exits now properly fail the workflow for visibility.
         run: |
           if [ "${{ github.event.inputs.demo }}" = "true" ]; then
-            python psx_sector_monitor.py --demo ${{ github.event.inputs.date && format('--date {0}', github.event.inputs.date) || '' }}
+            if [ -n "${{ github.event.inputs.date }}" ]; then
+              python psx_sector_monitor.py --demo --date "${{ github.event.inputs.date }}"
+            else
+              python psx_sector_monitor.py --demo
+            fi
           elif [ -n "${{ github.event.inputs.date }}" ]; then
             python psx_sector_monitor.py --date "${{ github.event.inputs.date }}"
           else
@@ -63,8 +69,10 @@ jobs:
       - name: Check for data changes
         id: changes
         run: |
-          git add sectors_data/
-          git diff --staged --quiet || echo "changed=true" >> $GITHUB_OUTPUT
+          if [ -d "sectors_data" ]; then
+            git add sectors_data/
+            git diff --staged --quiet || echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit and push sector data
         if: steps.changes.outputs.changed == 'true'
@@ -72,17 +80,12 @@ jobs:
           git config user.name  "PSX Sector Bot"
           git config user.email "bot@psx-sector.local"
           DATE=$(python -c "import datetime; print(datetime.date.today().isoformat())")
-          git commit -m "Sector data: $DATE — 2h post-close (5:30 PM PKT)"
+          git commit -m "Sector data: $DATE — post-close (3:40 PM PKT)"
 
-          # FIX: Pull remote changes (rebase) before pushing so we never
-          # hit a non-fast-forward rejection if the remote moved ahead
-          # (e.g. concurrent run, Pages deployment, or manual push).
-          # Retry up to 3 times in case of a tight race condition.
-          for i in 1 2 3; do
-            git pull --rebase origin main && git push && break
-            echo "Push attempt $i failed — retrying in 5s..."
-            sleep 5
-          done
+          # SIMPLIFIED: Use proven pattern from working Trend Scanners
+          # This pattern is more robust and handles rebase conflicts cleanly
+          git pull --rebase origin main || git rebase --abort
+          git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -90,10 +93,10 @@ jobs:
         run: |
           echo "## PSX Sector Monitor" >> $GITHUB_STEP_SUMMARY
           echo "**Date:** $(python -c 'import datetime; print(datetime.date.today())')" >> $GITHUB_STEP_SUMMARY
-          echo "**Time:** 5:30 PM PKT (2h after PSX close)" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** 3:40 PM PKT (10 min post-close)" >> $GITHUB_STEP_SUMMARY
           if [ -f sectors_data/index.json ]; then
-            DAYS=$(python -c "import json; d=json.load(open('sectors_data/index.json')); print(len(d))")
+            DAYS=$(python -c "import json; d=json.load(open('sectors_data/index.json')); print(len(d))" 2>/dev/null || echo "N/A")
             echo "**History:** $DAYS trading days in index" >> $GITHUB_STEP_SUMMARY
           else
-            echo "**Status:** No data file — market closed or API unavailable" >> $GITHUB_STEP_SUMMARY
+            echo "**Status:** No data file — check workflow logs for errors" >> $GITHUB_STEP_SUMMARY
           fi
