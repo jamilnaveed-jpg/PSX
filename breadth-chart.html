@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>20% Up / Down Breadth Study</title>
+<style>
+  :root{
+    --bg:#0b0e11;
+    --panel:#12161b;
+    --grid:#1e242b;
+    --text:#c7ced6;
+    --dim:#6b7480;
+    --up:#22c55e;
+    --up-dim:#1a7a3e;
+    --down:#ef4444;
+    --down-dim:#8a2323;
+    --ma:#3b82f6;
+    --accent:#f5a623;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:'SF Mono','JetBrains Mono',Consolas,Menlo,monospace;}
+  #app{max-width:1400px;margin:0 auto;padding:20px 24px 40px;}
+  header{display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:1px solid var(--grid);padding-bottom:14px;margin-bottom:6px;flex-wrap:wrap;gap:10px;}
+  h1{font-size:15px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#e7ebef;margin:0;}
+  h1 span{color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;}
+  #status{font-size:11px;color:var(--dim);}
+  #status.live{color:var(--up);}
+  #status.err{color:var(--accent);}
+  .toolbar{display:flex;gap:8px;align-items:center;margin:14px 0 10px;flex-wrap:wrap;}
+  .toolbar button{background:var(--panel);border:1px solid var(--grid);color:var(--text);
+    font-family:inherit;font-size:11px;padding:6px 12px;border-radius:3px;cursor:pointer;letter-spacing:.03em;}
+  .toolbar button:hover{border-color:var(--dim);}
+  .toolbar button.active{border-color:var(--accent);color:var(--accent);}
+  #legend{display:flex;gap:18px;font-size:11px;color:var(--dim);margin-left:auto;}
+  #legend .dot{display:inline-block;width:8px;height:8px;border-radius:1px;margin-right:6px;}
+  #chartwrap{background:var(--panel);border:1px solid var(--grid);border-radius:4px;padding:8px 0 0;position:relative;}
+  svg{display:block;width:100%;height:auto;}
+  .gridline{stroke:var(--grid);stroke-width:1;}
+  .axislabel{fill:var(--dim);font-size:10px;font-family:inherit;}
+  .bar-up{fill:var(--up);}
+  .bar-down{fill:var(--down);}
+  .bar-up.dim{fill:var(--up-dim);}
+  .bar-down.dim{fill:var(--down-dim);}
+  .ma-line{fill:none;stroke:var(--ma);stroke-width:1.6;}
+  #tooltip{position:absolute;pointer-events:none;background:#1a2129;border:1px solid var(--grid);
+    border-radius:4px;padding:8px 10px;font-size:11px;color:var(--text);display:none;line-height:1.6;
+    box-shadow:0 4px 14px rgba(0,0,0,.4);white-space:nowrap;z-index:5;}
+  #tooltip .t-date{color:#e7ebef;font-weight:600;margin-bottom:2px;}
+  #tooltip .t-up{color:var(--up);}
+  #tooltip .t-down{color:var(--down);}
+  .crosshair{stroke:#3a4552;stroke-width:1;stroke-dasharray:2,3;}
+  #note{font-size:11px;color:var(--dim);margin-top:14px;line-height:1.6;}
+  #note code{background:var(--panel);border:1px solid var(--grid);padding:1px 5px;border-radius:3px;color:#e7ebef;}
+  #configRow{display:none;gap:8px;align-items:center;margin:10px 0;}
+  #configRow.show{display:flex;}
+  #configRow input{background:var(--panel);border:1px solid var(--grid);color:var(--text);
+    font-family:inherit;font-size:11px;padding:6px 8px;border-radius:3px;width:340px;}
+  #configRow button{background:var(--ma);border:none;color:#fff;font-family:inherit;font-size:11px;
+    padding:6px 12px;border-radius:3px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>20% Up / Down Breadth Study <span id="range"></span></h1>
+    <div id="status">loading…</div>
+  </header>
+
+  <div class="toolbar">
+    <button data-range="60" >3M</button>
+    <button data-range="130" >6M</button>
+    <button data-range="260" class="active">1Y</button>
+    <button data-range="99999" >ALL</button>
+    <button id="cfgBtn" style="margin-left:auto;">connect live sheet</button>
+    <div id="legend">
+      <span><span class="dot" style="background:var(--up)"></span>5-Day Up 20%</span>
+      <span><span class="dot" style="background:var(--down)"></span>5-Day Down 20%</span>
+      <span><span class="dot" style="background:var(--ma)"></span>20-day avg (Up)</span>
+    </div>
+  </div>
+
+  <div id="configRow">
+    <input id="gidInput" placeholder="Paste your sheet tab's gid (from the URL, e.g. 1666545433)">
+    <button id="cfgApply">Load from Google Sheet</button>
+  </div>
+
+  <div id="chartwrap">
+    <svg id="chart" viewBox="0 0 1360 460" preserveAspectRatio="none"></svg>
+    <div id="tooltip"></div>
+  </div>
+
+  <div id="note">
+    Reads the <b>Date</b>, <b>20% Up</b> and <b>20% Down</b> columns from your Market Monitor sheet automatically when
+    link sharing is set to "Anyone with the link – Viewer". Click <code>connect live sheet</code> and paste the gid of that
+    tab to enable live refresh; until then this shows the data as of the last sync. High Up with low Down = broad bullish
+    thrust; high Down with low Up = broad selling pressure; both elevated together = a choppy, whipsaw tape.
+  </div>
+</div>
+
+<script>
+const FILE_ID = "1TMy7k9K-6GK6reexO-KaO7mXhSdFWqp-MvY9dkqriJM";
+const FALLBACK_DATA = [{"date":"2025-09-25","up":64,"down":25},{"date":"2025-09-26","up":67,"down":20},{"date":"2025-09-29","up":56,"down":26},{"date":"2025-09-30","up":49,"down":35},{"date":"2025-10-01","up":55,"down":26},{"date":"2025-10-02","up":87,"down":18},{"date":"2025-10-03","up":113,"down":18},{"date":"2025-10-06","up":135,"down":17},{"date":"2025-10-07","up":127,"down":17},{"date":"2025-10-08","up":122,"down":13},{"date":"2025-10-09","up":117,"down":18},{"date":"2025-10-10","up":75,"down":37},{"date":"2025-10-13","up":97,"down":36},{"date":"2025-10-14","up":114,"down":28},{"date":"2025-10-15","up":104,"down":30},{"date":"2025-10-16","up":56,"down":45},{"date":"2025-10-17","up":65,"down":32},{"date":"2025-10-20","up":60,"down":34},{"date":"2025-10-21","up":42,"down":77},{"date":"2025-10-22","up":31,"down":118},{"date":"2025-10-23","up":48,"down":44},{"date":"2025-10-24","up":63,"down":24},{"date":"2025-10-27","up":56,"down":34},{"date":"2025-10-28","up":64,"down":27},{"date":"2025-10-29","up":110,"down":30},{"date":"2025-10-30","up":80,"down":42},{"date":"2025-10-31","up":69,"down":56},{"date":"2025-11-03","up":43,"down":72},{"date":"2025-11-04","up":38,"down":97},{"date":"2025-11-05","up":57,"down":72},{"date":"2025-11-06","up":56,"down":121},{"date":"2025-11-07","up":50,"down":112},{"date":"2025-11-10","up":80,"down":94},{"date":"2025-11-11","up":130,"down":66},{"date":"2025-11-12","up":92,"down":76},{"date":"2025-11-13","up":65,"down":66},{"date":"2025-11-14","up":50,"down":72},{"date":"2025-11-17","up":46,"down":103},{"date":"2025-11-18","up":40,"down":69},{"date":"2025-11-19","up":38,"down":92},{"date":"2025-11-20","up":42,"down":60},{"date":"2025-11-21","up":44,"down":48},{"date":"2025-11-24","up":68,"down":25},{"date":"2025-11-25","up":83,"down":26},{"date":"2025-11-26","up":111,"down":13},{"date":"2025-11-27","up":null,"down":null},{"date":"2025-11-28","up":203,"down":6},{"date":"2025-12-01","up":88,"down":7},{"date":"2025-12-02","up":47,"down":15},{"date":"2025-12-03","up":63,"down":13},{"date":"2025-12-04","up":75,"down":14},{"date":"2025-12-05","up":66,"down":23},{"date":"2025-12-08","up":111,"down":19},{"date":"2025-12-09","up":122,"down":17},{"date":"2025-12-10","up":85,"down":13},{"date":"2025-12-11","up":68,"down":19},{"date":"2025-12-12","up":59,"down":28},{"date":"2025-12-15","up":43,"down":37},{"date":"2025-12-16","up":38,"down":40},{"date":"2025-12-17","up":23,"down":81},{"date":"2025-12-18","up":30,"down":77},{"date":"2025-12-19","up":null,"down":null},{"date":"2025-12-22","up":75,"down":18},{"date":"2025-12-23","up":52,"down":22},{"date":"2025-12-24","up":94,"down":13},{"date":"2025-12-25","up":null,"down":null},{"date":"2025-12-26","up":47,"down":11},{"date":"2025-12-29","up":23,"down":12},{"date":"2025-12-30","up":16,"down":12},{"date":"2025-12-31","up":24,"down":10},{"date":"2026-01-01","up":null,"down":null},{"date":"2026-01-02","up":27,"down":15},{"date":"2026-01-05","up":62,"down":20},{"date":"2026-01-06","up":null,"down":null},{"date":"2026-01-07","up":111,"down":7},{"date":"2026-01-08","up":140,"down":20},{"date":"2026-01-09","up":119,"down":16},{"date":"2026-01-12","up":86,"down":10},{"date":"2026-01-13","up":73,"down":20},{"date":"2026-01-14","up":93,"down":29},{"date":"2026-01-15","up":73,"down":27},{"date":"2026-01-16","up":77,"down":27},{"date":"2026-01-19","up":null,"down":null},{"date":"2026-01-20","up":53,"down":30},{"date":"2026-01-21","up":69,"down":18},{"date":"2026-01-22","up":86,"down":14},{"date":"2026-01-23","up":78,"down":17},{"date":"2026-01-26","up":57,"down":20},{"date":"2026-01-27","up":70,"down":13},{"date":"2026-01-28","up":null,"down":null},{"date":"2026-01-29","up":35,"down":36},{"date":"2026-01-30","up":28,"down":64},{"date":"2026-02-02","up":37,"down":52},{"date":"2026-02-03","up":21,"down":78},{"date":"2026-02-04","up":39,"down":124},{"date":"2026-02-05","up":61,"down":51},{"date":"2026-02-06","up":62,"down":41},{"date":"2026-02-09","up":46,"down":32},{"date":"2026-02-10","up":64,"down":23},{"date":"2026-02-11","up":65,"down":27},{"date":"2026-02-12","up":58,"down":37},{"date":"2026-02-13","up":47,"down":27},{"date":"2026-02-16","up":42,"down":24},{"date":"2026-02-17","up":39,"down":31},{"date":"2026-02-18","up":25,"down":51},{"date":"2026-02-19","up":42,"down":49},{"date":"2026-02-20","up":32,"down":44},{"date":"2026-02-23","up":29,"down":27},{"date":"2026-02-24","up":32,"down":35},{"date":"2026-02-25","up":50,"down":26},{"date":"2026-02-26","up":45,"down":36},{"date":"2026-02-27","up":17,"down":27},{"date":"2026-03-02","up":122,"down":43},{"date":"2026-03-03","up":68,"down":39},{"date":"2026-03-04","up":68,"down":35},{"date":"2026-03-30","up":28,"down":72},{"date":"2026-03-31","up":40,"down":33},{"date":"2026-04-01","up":40,"down":36},{"date":"2026-04-02","up":53,"down":18},{"date":"2026-04-03","up":null,"down":null},{"date":"2026-04-06","up":85,"down":18},{"date":"2026-04-07","up":121,"down":13},{"date":"2026-04-08","up":72,"down":14},{"date":"2026-04-09","up":81,"down":16},{"date":"2026-04-10","up":66,"down":33},{"date":"2026-04-13","up":104,"down":17},{"date":"2026-04-14","up":144,"down":18},{"date":"2026-04-15","up":115,"down":10},{"date":"2026-04-16","up":131,"down":9},{"date":"2026-04-17","up":206,"down":13},{"date":"2026-04-20","up":167,"down":18},{"date":"2026-04-21","up":null,"down":null},{"date":"2026-04-22","up":95,"down":20},{"date":"2026-04-23","up":62,"down":23},{"date":"2026-04-24","up":67,"down":27},{"date":"2026-04-27","up":55,"down":27},{"date":"2026-04-28","up":55,"down":30},{"date":"2026-04-29","up":47,"down":50},{"date":"2026-04-30","up":56,"down":24},{"date":"2026-05-01","up":73,"down":18},{"date":"2026-05-04","up":68,"down":26},{"date":"2026-05-05","up":138,"down":22},{"date":"2026-05-06","up":213,"down":33},{"date":"2026-05-07","up":140,"down":49},{"date":"2026-05-08","up":147,"down":60},{"date":"2026-05-11","up":172,"down":70},{"date":"2026-05-12","up":130,"down":86},{"date":"2026-05-13","up":115,"down":88},{"date":"2026-05-14","up":121,"down":73},{"date":"2026-05-15","up":71,"down":53},{"date":"2026-05-18","up":null,"down":null},{"date":"2026-05-19","up":43,"down":74},{"date":"2026-05-20","up":51,"down":39},{"date":"2026-05-21","up":48,"down":24},{"date":"2026-05-25","up":null,"down":null},{"date":"2026-05-26","up":153,"down":9},{"date":"2026-05-27","up":235,"down":16},{"date":"2026-05-28","up":215,"down":14},{"date":"2026-05-29","up":141,"down":16},{"date":"2026-06-01","up":180,"down":17},{"date":"2026-06-02","up":121,"down":26},{"date":"2026-06-03","up":90,"down":37},{"date":"2026-06-04","up":63,"down":35},{"date":"2026-06-05","up":27,"down":100},{"date":"2026-06-08","up":30,"down":73},{"date":"2026-06-09","up":36,"down":162},{"date":"2026-06-10","up":38,"down":126},{"date":"2026-06-11","up":47,"down":64},{"date":"2026-06-12","up":80,"down":17},{"date":"2026-06-15","up":76,"down":21},{"date":"2026-06-16","up":68,"down":23},{"date":"2026-06-17","up":117,"down":25},{"date":"2026-06-18","up":83,"down":39},{"date":"2026-06-19","up":null,"down":null},{"date":"2026-06-22","up":91,"down":34},{"date":"2026-06-23","up":60,"down":27},{"date":"2026-06-24","up":69,"down":46},{"date":"2026-06-25","up":79,"down":47},{"date":"2026-06-26","up":84,"down":54},{"date":"2026-06-29","up":132,"down":41},{"date":"2026-06-30","up":130,"down":25},{"date":"2026-07-01","up":116,"down":15},{"date":"2026-07-02","up":130,"down":42},{"date":"2026-07-03","up":null,"down":null},{"date":"2026-07-06","up":67,"down":25},{"date":"2026-07-07","up":36,"down":77},{"date":"2026-07-08","up":29,"down":98},{"date":"2026-07-09","up":26,"down":37},{"date":"2026-07-10","up":29,"down":25},{"date":"2026-07-13","up":null,"down":null},{"date":"2026-07-14","up":28,"down":21},{"date":"2026-07-15","up":25,"down":26},{"date":"2026-07-16","up":26,"down":75},{"date":"2026-07-17","up":17,"down":45},{"date":"2026-07-20","up":17,"down":29},{"date":"2026-07-21","up":22,"down":21},{"date":"2026-07-22","up":21,"down":24},{"date":"2026-07-23","up":34,"down":22},{"date":"2026-07-24","up":15,"down":29},{"date":"2026-07-27","up":22,"down":18}];
+
+let allData = FALLBACK_DATA.slice();
+let currentRange = 260;
+
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for(let i=0;i<text.length;i++){
+    const c = text[i];
+    if(inQuotes){
+      if(c === '"'){
+        if(text[i+1] === '"'){ field += '"'; i++; } else { inQuotes = false; }
+      } else field += c;
+    } else {
+      if(c === '"') inQuotes = true;
+      else if(c === ','){ row.push(field); field=''; }
+      else if(c === '\n' || c === '\r'){
+        if(field.length || row.length){ row.push(field); rows.push(row); row=[]; field=''; }
+        if(c === '\r' && text[i+1] === '\n') i++;
+      } else field += c;
+    }
+  }
+  if(field.length || row.length){ row.push(field); rows.push(row); }
+  return rows;
+}
+
+function parseSheetRows(rows){
+  // find header row containing "20% Up" / "20% Down" / "Date"
+  let headerIdx = -1, cols = {};
+  for(let i=0;i<Math.min(rows.length,15);i++){
+    const r = rows[i].map(c => c.trim().toLowerCase());
+    const dateI = r.findIndex(c => c === 'date');
+    const upI = r.findIndex(c => c.includes('20%') && c.includes('up'));
+    const downI = r.findIndex(c => c.includes('20%') && c.includes('down'));
+    if(dateI >= 0 && upI >= 0 && downI >= 0){
+      headerIdx = i; cols = {date:dateI, up:upI, down:downI}; break;
+    }
+  }
+  if(headerIdx < 0) throw new Error('header not found');
+  const out = [];
+  for(let i=headerIdx+1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r || !r[cols.date]) continue;
+    const d = r[cols.date].trim();
+    const m = d.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(!m) continue;
+    const iso = `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+    const clean = v => {
+      if(v === undefined) return null;
+      v = v.trim().toLowerCase();
+      if(v === '' || v === 'x') return null;
+      const n = parseFloat(v);
+      return isNaN(n) ? null : n;
+    };
+    out.push({date: iso, up: clean(r[cols.up]), down: clean(r[cols.down])});
+  }
+  out.sort((a,b) => a.date.localeCompare(b.date));
+  const seen = new Set(), dedup = [];
+  for(const row of out){ if(seen.has(row.date)) continue; seen.add(row.date); dedup.push(row); }
+  while(dedup.length && dedup[dedup.length-1].up === null && dedup[dedup.length-1].down === null) dedup.pop();
+  return dedup;
+}
+
+async function tryLiveFetch(gid){
+  const url = `https://docs.google.com/spreadsheets/d/${FILE_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('fetch failed: ' + res.status);
+  const text = await res.text();
+  const rows = parseCSV(text);
+  return parseSheetRows(rows);
+}
+
+function setStatus(msg, cls){
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = cls || '';
+}
+
+async function init(){
+  const savedGid = localStorage.getItem('breadthGid');
+  if(savedGid){
+    document.getElementById('gidInput').value = savedGid;
+    try{
+      setStatus('syncing with sheet…');
+      const live = await tryLiveFetch(savedGid);
+      if(live.length){ allData = live; setStatus('● live — synced ' + new Date().toLocaleTimeString(), 'live'); }
+    } catch(e){
+      setStatus('using last saved snapshot (live sheet not reachable — check sharing settings)', 'err');
+    }
+  } else {
+    setStatus('showing last saved snapshot — click "connect live sheet" to enable auto-refresh');
+  }
+  render();
+}
+
+document.getElementById('cfgBtn').addEventListener('click', () => {
+  document.getElementById('configRow').classList.toggle('show');
+});
+document.getElementById('cfgApply').addEventListener('click', async () => {
+  const gid = document.getElementById('gidInput').value.trim();
+  if(!gid) return;
+  setStatus('connecting…');
+  try{
+    const live = await tryLiveFetch(gid);
+    if(!live.length) throw new Error('empty');
+    allData = live;
+    localStorage.setItem('breadthGid', gid);
+    setStatus('● live — synced ' + new Date().toLocaleTimeString(), 'live');
+    render();
+  } catch(e){
+    setStatus('could not read that tab — confirm link sharing is "Anyone with the link"', 'err');
+  }
+});
+
+document.querySelectorAll('.toolbar button[data-range]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toolbar button[data-range]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentRange = parseInt(btn.dataset.range, 10);
+    render();
+  });
+});
+
+function sma(vals, period){
+  const out = new Array(vals.length).fill(null);
+  let sum = 0, count = 0, buf = [];
+  for(let i=0;i<vals.length;i++){
+    const v = vals[i];
+    buf.push(v);
+    if(v !== null){ sum += v; count++; }
+    if(buf.length > period){
+      const rem = buf.shift();
+      if(rem !== null){ sum -= rem; count--; }
+    }
+    out[i] = count > 0 ? sum / count : null;
+  }
+  return out;
+}
+
+function render(){
+  const data = allData.slice(-currentRange);
+  document.getElementById('range').textContent =
+    data.length ? `— ${data[0].date} to ${data[data.length-1].date}` : '';
+
+  const svg = document.getElementById('chart');
+  const W = 1360, H = 460, padL = 42, padR = 12, padT = 18, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const midY = padT + plotH / 2;
+
+  const ups = data.map(d => d.up ?? 0);
+  const downs = data.map(d => d.down ?? 0);
+  const maxVal = Math.max(10, ...ups, ...downs);
+  const scale = (plotH/2 - 6) / maxVal;
+
+  const n = data.length;
+  const bw = Math.max(1, plotW / n * 0.7);
+  const step = plotW / n;
+
+  const maVals = sma(data.map(d => d.up), 20);
+
+  let svgParts = [];
+
+  // gridlines
+  [0, 0.25, 0.5, 0.75, 1].forEach(frac => {
+    const y = padT + plotH * frac;
+    svgParts.push(`<line class="gridline" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"/>`);
+  });
+  const topLabel = Math.round(maxVal);
+  svgParts.push(`<text class="axislabel" x="4" y="${padT+8}">${topLabel}</text>`);
+  svgParts.push(`<text class="axislabel" x="4" y="${midY+4}">0</text>`);
+  svgParts.push(`<text class="axislabel" x="4" y="${H-padB}">${topLabel}</text>`);
+
+  // bars
+  data.forEach((d, i) => {
+    const x = padL + i*step + (step-bw)/2;
+    if(d.up !== null){
+      const h = d.up * scale;
+      svgParts.push(`<rect class="bar-up" x="${x.toFixed(2)}" y="${(midY-h).toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" data-i="${i}"/>`);
+    }
+    if(d.down !== null){
+      const h = d.down * scale;
+      svgParts.push(`<rect class="bar-down" x="${x.toFixed(2)}" y="${midY.toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" data-i="${i}"/>`);
+    }
+  });
+
+  // zero line
+  svgParts.push(`<line class="gridline" x1="${padL}" y1="${midY}" x2="${W-padR}" y2="${midY}" style="stroke:#2c3644;stroke-width:1.2"/>`);
+
+  // moving average line (on the up side)
+  let path = '';
+  maVals.forEach((v, i) => {
+    if(v === null) return;
+    const x = padL + i*step + step/2;
+    const y = midY - v*scale;
+    path += (path === '' ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
+  });
+  if(path) svgParts.push(`<path class="ma-line" d="${path}"/>`);
+
+  // x-axis date labels (sparse)
+  const labelEvery = Math.max(1, Math.round(n / 10));
+  data.forEach((d, i) => {
+    if(i % labelEvery !== 0) return;
+    const x = padL + i*step + step/2;
+    const [y,m,dd] = d.date.split('-');
+    svgParts.push(`<text class="axislabel" x="${x.toFixed(1)}" y="${H-6}" text-anchor="middle">${m}/${dd}</text>`);
+  });
+
+  svg.innerHTML = svgParts.join('');
+
+  // hover interactivity
+  const tooltip = document.getElementById('tooltip');
+  const wrap = document.getElementById('chartwrap');
+  svg.onmousemove = (e) => {
+    const rect = svg.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const mx = (e.clientX - rect.left) * scaleX;
+    let idx = Math.floor((mx - padL) / step);
+    idx = Math.max(0, Math.min(n-1, idx));
+    const d = data[idx];
+    if(!d) return;
+    tooltip.style.display = 'block';
+    tooltip.style.left = Math.min(e.clientX - rect.left + 14, rect.width - 150) + 'px';
+    tooltip.style.top = (e.clientY - rect.top - 50) + 'px';
+    tooltip.innerHTML = `<div class="t-date">${d.date}</div>`+
+      `<div class="t-up">Up 20%: ${d.up ?? '—'}</div>`+
+      `<div class="t-down">Down 20%: ${d.down ?? '—'}</div>`;
+  };
+  svg.onmouseleave = () => { tooltip.style.display = 'none'; };
+}
+
+init();
+</script>
+</body>
+</html>
