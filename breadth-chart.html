@@ -3,119 +3,250 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>20% Up / Down Breadth Study</title>
+<title>Breadth Study Dashboard</title>
 <style>
   :root{
-    --bg:#0b0e11;
-    --panel:#12161b;
-    --grid:#1e242b;
-    --text:#c7ced6;
-    --dim:#6b7480;
+    --bg:#0a0d11;
+    --panel:#12161c;
+    --panel2:#161b22;
+    --grid:#232a34;
+    --text:#c9d1d9;
+    --dim:#6b7684;
+    --bright:#eef2f6;
     --up:#22c55e;
-    --up-dim:#1a7a3e;
-    --down:#ef4444;
-    --down-dim:#8a2323;
-    --ma:#3b82f6;
-    --accent:#f5a623;
+    --up-dim:#164a2a;
+    --down:#f0473e;
+    --down-dim:#5c1f1c;
+    --caution:#f5a623;
+    --warning:#f0473e;
+    --accent:#4c8dff;
+    --mono:'SF Mono','JetBrains Mono',Consolas,Menlo,monospace;
+    --sans:-apple-system,'Segoe UI',Inter,Arial,sans-serif;
   }
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-    font-family:'SF Mono','JetBrains Mono',Consolas,Menlo,monospace;}
-  #app{max-width:1400px;margin:0 auto;padding:20px 24px 40px;}
-  header{display:flex;justify-content:space-between;align-items:baseline;
-    border-bottom:1px solid var(--grid);padding-bottom:14px;margin-bottom:6px;flex-wrap:wrap;gap:10px;}
-  h1{font-size:15px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#e7ebef;margin:0;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--mono);}
+  a{color:var(--accent);}
+  #layout{display:grid;grid-template-columns:260px 1fr 260px;gap:16px;max-width:1680px;margin:0 auto;padding:18px 18px 60px;}
+  @media (max-width:1100px){ #layout{grid-template-columns:1fr;} .sidebar{order:3;} }
+
+  /* ---------- Header ---------- */
+  header{grid-column:1/-1;border-bottom:1px solid var(--grid);padding-bottom:14px;margin-bottom:4px;}
+  .htop{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;}
+  h1{font-size:15px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--bright);margin:0;font-family:var(--sans);}
   h1 span{color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0;}
   #status{font-size:11px;color:var(--dim);}
   #status.live{color:var(--up);}
-  #status.err{color:var(--accent);}
-  .toolbar{display:flex;gap:8px;align-items:center;margin:14px 0 10px;flex-wrap:wrap;}
-  .toolbar button{background:var(--panel);border:1px solid var(--grid);color:var(--text);
-    font-family:inherit;font-size:11px;padding:6px 12px;border-radius:3px;cursor:pointer;letter-spacing:.03em;}
-  .toolbar button:hover{border-color:var(--dim);}
-  .toolbar button.active{border-color:var(--accent);color:var(--accent);}
-  #legend{display:flex;gap:18px;font-size:11px;color:var(--dim);margin-left:auto;}
-  #legend .dot{display:inline-block;width:8px;height:8px;border-radius:1px;margin-right:6px;}
-  #chartwrap{background:var(--panel);border:1px solid var(--grid);border-radius:4px;padding:8px 0 0;position:relative;}
-  svg{display:block;width:100%;height:auto;}
-  .gridline{stroke:var(--grid);stroke-width:1;}
-  .axislabel{fill:var(--dim);font-size:10px;font-family:inherit;}
-  .bar-up{fill:var(--up);}
-  .bar-down{fill:var(--down);}
-  .bar-up.dim{fill:var(--up-dim);}
-  .bar-down.dim{fill:var(--down-dim);}
-  .ma-line{fill:none;stroke:var(--ma);stroke-width:1.6;}
-  #tooltip{position:absolute;pointer-events:none;background:#1a2129;border:1px solid var(--grid);
-    border-radius:4px;padding:8px 10px;font-size:11px;color:var(--text);display:none;line-height:1.6;
-    box-shadow:0 4px 14px rgba(0,0,0,.4);white-space:nowrap;z-index:5;}
-  #tooltip .t-date{color:#e7ebef;font-weight:600;margin-bottom:2px;}
-  #tooltip .t-up{color:var(--up);}
-  #tooltip .t-down{color:var(--down);}
-  .crosshair{stroke:#3a4552;stroke-width:1;stroke-dasharray:2,3;}
-  #note{font-size:11px;color:var(--dim);margin-top:14px;line-height:1.6;}
-  #note code{background:var(--panel);border:1px solid var(--grid);padding:1px 5px;border-radius:3px;color:#e7ebef;}
-  #configRow{display:none;gap:8px;align-items:center;margin:10px 0;}
+  #status.err{color:var(--caution);}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap;}
+  .toolbar button, .btn{background:var(--panel);border:1px solid var(--grid);color:var(--text);
+    font-family:var(--sans);font-size:11px;font-weight:500;padding:6px 12px;border-radius:4px;cursor:pointer;letter-spacing:.02em;}
+  .toolbar button:hover, .btn:hover{border-color:var(--dim);}
+  .toolbar button.active{border-color:var(--accent);color:var(--accent);background:rgba(76,141,255,.08);}
+  .btn.primary{border-color:var(--accent);color:#fff;background:var(--accent);}
+  .btn.primary:hover{opacity:.9;}
+  .spacer{flex:1;}
+  #configRow{display:none;gap:8px;align-items:center;margin-top:10px;}
   #configRow.show{display:flex;}
   #configRow input{background:var(--panel);border:1px solid var(--grid);color:var(--text);
-    font-family:inherit;font-size:11px;padding:6px 8px;border-radius:3px;width:340px;}
-  #configRow button{background:var(--ma);border:none;color:#fff;font-family:inherit;font-size:11px;
-    padding:6px 12px;border-radius:3px;cursor:pointer;}
+    font-family:var(--mono);font-size:11px;padding:6px 8px;border-radius:4px;width:320px;}
+
+  /* ---------- Sidebars ---------- */
+  .sidebar{display:flex;flex-direction:column;gap:12px;}
+  .card{background:var(--panel);border:1px solid var(--grid);border-radius:6px;padding:14px 15px;position:relative;}
+  .card .kicker{font-family:var(--sans);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);
+    margin-bottom:8px;font-weight:700;}
+  .card .body{font-family:var(--sans);font-size:12.5px;line-height:1.55;color:var(--text);outline:none;white-space:pre-wrap;}
+  .card .body:empty:before{content:attr(data-placeholder);color:var(--dim);}
+  .card .body ul{margin:4px 0 0;padding-left:18px;}
+  .card .body li{margin-bottom:3px;}
+  .card-actions{display:flex;gap:6px;margin-top:10px;opacity:0;transition:opacity .15s;}
+  .card:hover .card-actions{opacity:1;}
+  .card-actions button{background:none;border:1px solid var(--grid);color:var(--dim);font-size:10px;
+    padding:3px 8px;border-radius:3px;cursor:pointer;font-family:var(--sans);}
+  .card-actions button:hover{color:var(--text);border-color:var(--dim);}
+  .addCardBtn{background:transparent;border:1px dashed var(--grid);color:var(--dim);font-family:var(--sans);
+    font-size:11px;padding:9px;border-radius:6px;cursor:pointer;}
+  .addCardBtn:hover{color:var(--text);border-color:var(--dim);}
+
+  /* ---------- Main ---------- */
+  main{display:flex;flex-direction:column;gap:18px;}
+  .panel{background:var(--panel);border:1px solid var(--grid);border-radius:6px;padding:14px 16px 6px;}
+  .panel-head{display:flex;align-items:center;gap:12px;margin-bottom:2px;flex-wrap:wrap;}
+  .panel-title{font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--bright);letter-spacing:.02em;}
+  .badge{font-family:var(--sans);font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.03em;}
+  .badge.normal{background:rgba(34,197,94,.12);color:var(--up);}
+  .badge.caution{background:rgba(245,166,35,.14);color:var(--caution);}
+  .badge.warning{background:rgba(240,71,62,.14);color:var(--warning);}
+  .thresholds{margin-left:auto;font-family:var(--sans);font-size:10px;color:var(--dim);display:flex;gap:12px;}
+  .thresholds b{color:var(--text);}
+  svg.chart{display:block;width:100%;height:auto;}
+  .chartwrap{position:relative;}
+  #tooltip{position:absolute;pointer-events:none;background:#1a2129;border:1px solid var(--grid);
+    border-radius:4px;padding:8px 10px;font-size:11px;color:var(--text);display:none;line-height:1.6;
+    box-shadow:0 4px 14px rgba(0,0,0,.4);white-space:nowrap;z-index:20;}
+  .t-date{color:var(--bright);font-weight:600;margin-bottom:2px;}
+  .t-up{color:var(--up);} .t-down{color:var(--down);}
+  .t-flag{margin-top:3px;font-weight:700;}
+  .t-flag.caution{color:var(--caution);} .t-flag.warning{color:var(--warning);}
+
+  /* ---------- Paste importer ---------- */
+  .importer{background:var(--panel);border:1px solid var(--grid);border-radius:6px;padding:14px 16px;}
+  .importer h3{font-family:var(--sans);font-size:12px;margin:0 0 6px;color:var(--bright);}
+  .importer p{font-family:var(--sans);font-size:11px;color:var(--dim);margin:0 0 10px;line-height:1.5;}
+  .importer textarea{width:100%;min-height:80px;background:#0d1117;border:1px solid var(--grid);color:var(--text);
+    font-family:var(--mono);font-size:11.5px;border-radius:4px;padding:9px;resize:vertical;}
+  .importer .row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;}
+  #previewWrap{margin-top:10px;display:none;}
+  #previewWrap table{width:100%;border-collapse:collapse;font-size:11px;}
+  #previewWrap th, #previewWrap td{border:1px solid var(--grid);padding:4px 7px;text-align:right;font-family:var(--mono);}
+  #previewWrap th{color:var(--dim);font-weight:600;font-family:var(--sans);font-size:9.5px;text-transform:uppercase;}
+  #previewWrap td:first-child, #previewWrap th:first-child{text-align:left;}
+
+  footer{grid-column:1/-1;font-family:var(--sans);font-size:11px;color:var(--dim);margin-top:8px;
+    border-top:1px solid var(--grid);padding-top:14px;line-height:1.6;}
+  footer code{background:var(--panel);border:1px solid var(--grid);padding:1px 5px;border-radius:3px;color:var(--bright);}
 </style>
 </head>
 <body>
-<div id="app">
-  <header>
-    <h1>20% Up / Down Breadth Study <span id="range"></span></h1>
-    <div id="status">loading…</div>
-  </header>
+<div id="layout">
 
+<header>
+  <div class="htop">
+    <h1>Breadth Study Dashboard <span id="range-label"></span></h1>
+    <div id="status">loading…</div>
+  </div>
   <div class="toolbar">
-    <button data-range="60" >3M</button>
-    <button data-range="130" >6M</button>
-    <button data-range="260" class="active">1Y</button>
-    <button data-range="99999" >ALL</button>
-    <button id="cfgBtn" style="margin-left:auto;">connect live sheet</button>
-    <div id="legend">
-      <span><span class="dot" style="background:var(--up)"></span>5-Day Up 20%</span>
-      <span><span class="dot" style="background:var(--down)"></span>5-Day Down 20%</span>
-      <span><span class="dot" style="background:var(--ma)"></span>20-day avg (Up)</span>
+    <button data-range="5">1W</button>
+    <button data-range="21">1M</button>
+    <button data-range="126">6M</button>
+    <button data-range="252" class="active">1Y</button>
+    <button data-range="756">3Y</button>
+    <button data-range="1260">5Y</button>
+    <button data-range="99999">ALL</button>
+    <div class="spacer"></div>
+    <button id="cfgBtn">connect live sheet</button>
+    <button id="exportBtn">export backup</button>
+    <button id="importBtn">import backup</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  </div>
+  <div id="configRow">
+    <input id="gidInput" placeholder="Paste the Market Internals tab's gid from the sheet URL">
+    <button class="btn primary" id="cfgApply">Load from Google Sheet</button>
+  </div>
+</header>
+
+<aside class="sidebar" id="leftSidebar"></aside>
+
+<main>
+  <div class="panel" data-metric="50">
+    <div class="panel-head">
+      <span class="panel-title">50% Up / Down Breadth Study</span>
+      <span class="badge normal" id="badge-50">Normal</span>
+      <span class="thresholds" id="thr-50"></span>
+    </div>
+    <div class="chartwrap"><svg class="chart" id="chart-50" viewBox="0 0 1400 300" preserveAspectRatio="none"></svg></div>
+  </div>
+
+  <div class="panel" data-metric="20">
+    <div class="panel-head">
+      <span class="panel-title">20% Up / Down Breadth Study</span>
+      <span class="badge normal" id="badge-20">Normal</span>
+      <span class="thresholds" id="thr-20"></span>
+    </div>
+    <div class="chartwrap"><svg class="chart" id="chart-20" viewBox="0 0 1400 300" preserveAspectRatio="none"></svg></div>
+  </div>
+
+  <div class="panel" data-metric="20d">
+    <div class="panel-head">
+      <span class="panel-title">$20 Up / Down Breadth Study</span>
+      <span class="badge normal" id="badge-20d">Normal</span>
+      <span class="thresholds" id="thr-20d"></span>
+    </div>
+    <div class="chartwrap"><svg class="chart" id="chart-20d" viewBox="0 0 1400 300" preserveAspectRatio="none"></svg></div>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <div class="importer">
+    <h3>Paste today's row from your sheet</h3>
+    <p>Copy straight from Excel/Sheets. Paste either <b>6 columns</b> — 50% Up, 50% Down, 20% Up, 20% Down, $20 Up, $20 Down
+      (date is assumed to be the next trading day after your last entry) — or <b>7 columns</b> starting with the Date
+      (M/D/YYYY). One row per line; multiple lines paste multiple days at once.</p>
+    <textarea id="pasteBox" placeholder="e.g.&#10;60&#9;173&#9;22&#9;18&#9;39&#9;26&#10;or&#10;7/28/2026&#9;60&#9;173&#9;22&#9;18&#9;39&#9;26"></textarea>
+    <div class="row">
+      <button class="btn primary" id="previewBtn">Preview</button>
+      <span id="pasteMsg" style="font-family:var(--sans);font-size:11px;color:var(--dim);"></span>
+    </div>
+    <div id="previewWrap">
+      <table id="previewTable"></table>
+      <div class="row">
+        <button class="btn primary" id="confirmBtn">Add these rows</button>
+        <button class="btn" id="cancelBtn">Cancel</button>
+      </div>
     </div>
   </div>
+</main>
 
-  <div id="configRow">
-    <input id="gidInput" placeholder="Paste your sheet tab's gid (from the URL, e.g. 1666545433)">
-    <button id="cfgApply">Load from Google Sheet</button>
-  </div>
+<aside class="sidebar" id="rightSidebar"></aside>
 
-  <div id="chartwrap">
-    <svg id="chart" viewBox="0 0 1360 460" preserveAspectRatio="none"></svg>
-    <div id="tooltip"></div>
-  </div>
+<footer>
+  Chart data syncs live from your Google Sheet when connected (top right); otherwise it shows the last saved snapshot plus
+  anything pasted below. Sidebar notes and pasted rows are saved in this browser only (<code>localStorage</code>) — they
+  won't follow you to another device or browser automatically. Use <code>export backup</code> to download everything as a
+  JSON file you can keep safe or move to another machine with <code>import backup</code>. For notes and data that stay in
+  sync everywhere without manual exports, the Google Sheet connection above is the one part of this page that's genuinely automatic.
+</footer>
 
-  <div id="note">
-    Reads the <b>Date</b>, <b>20% Up</b> and <b>20% Down</b> columns from your Market Monitor sheet automatically when
-    link sharing is set to "Anyone with the link – Viewer". Click <code>connect live sheet</code> and paste the gid of that
-    tab to enable live refresh; until then this shows the data as of the last sync. High Up with low Down = broad bullish
-    thrust; high Down with low Up = broad selling pressure; both elevated together = a choppy, whipsaw tape.
-  </div>
 </div>
 
 <script>
+/* ================= DATA ================= */
 const FILE_ID = "1TMy7k9K-6GK6reexO-KaO7mXhSdFWqp-MvY9dkqriJM";
-const FALLBACK_DATA = [{"date":"2025-09-25","up":64,"down":25},{"date":"2025-09-26","up":67,"down":20},{"date":"2025-09-29","up":56,"down":26},{"date":"2025-09-30","up":49,"down":35},{"date":"2025-10-01","up":55,"down":26},{"date":"2025-10-02","up":87,"down":18},{"date":"2025-10-03","up":113,"down":18},{"date":"2025-10-06","up":135,"down":17},{"date":"2025-10-07","up":127,"down":17},{"date":"2025-10-08","up":122,"down":13},{"date":"2025-10-09","up":117,"down":18},{"date":"2025-10-10","up":75,"down":37},{"date":"2025-10-13","up":97,"down":36},{"date":"2025-10-14","up":114,"down":28},{"date":"2025-10-15","up":104,"down":30},{"date":"2025-10-16","up":56,"down":45},{"date":"2025-10-17","up":65,"down":32},{"date":"2025-10-20","up":60,"down":34},{"date":"2025-10-21","up":42,"down":77},{"date":"2025-10-22","up":31,"down":118},{"date":"2025-10-23","up":48,"down":44},{"date":"2025-10-24","up":63,"down":24},{"date":"2025-10-27","up":56,"down":34},{"date":"2025-10-28","up":64,"down":27},{"date":"2025-10-29","up":110,"down":30},{"date":"2025-10-30","up":80,"down":42},{"date":"2025-10-31","up":69,"down":56},{"date":"2025-11-03","up":43,"down":72},{"date":"2025-11-04","up":38,"down":97},{"date":"2025-11-05","up":57,"down":72},{"date":"2025-11-06","up":56,"down":121},{"date":"2025-11-07","up":50,"down":112},{"date":"2025-11-10","up":80,"down":94},{"date":"2025-11-11","up":130,"down":66},{"date":"2025-11-12","up":92,"down":76},{"date":"2025-11-13","up":65,"down":66},{"date":"2025-11-14","up":50,"down":72},{"date":"2025-11-17","up":46,"down":103},{"date":"2025-11-18","up":40,"down":69},{"date":"2025-11-19","up":38,"down":92},{"date":"2025-11-20","up":42,"down":60},{"date":"2025-11-21","up":44,"down":48},{"date":"2025-11-24","up":68,"down":25},{"date":"2025-11-25","up":83,"down":26},{"date":"2025-11-26","up":111,"down":13},{"date":"2025-11-27","up":null,"down":null},{"date":"2025-11-28","up":203,"down":6},{"date":"2025-12-01","up":88,"down":7},{"date":"2025-12-02","up":47,"down":15},{"date":"2025-12-03","up":63,"down":13},{"date":"2025-12-04","up":75,"down":14},{"date":"2025-12-05","up":66,"down":23},{"date":"2025-12-08","up":111,"down":19},{"date":"2025-12-09","up":122,"down":17},{"date":"2025-12-10","up":85,"down":13},{"date":"2025-12-11","up":68,"down":19},{"date":"2025-12-12","up":59,"down":28},{"date":"2025-12-15","up":43,"down":37},{"date":"2025-12-16","up":38,"down":40},{"date":"2025-12-17","up":23,"down":81},{"date":"2025-12-18","up":30,"down":77},{"date":"2025-12-19","up":null,"down":null},{"date":"2025-12-22","up":75,"down":18},{"date":"2025-12-23","up":52,"down":22},{"date":"2025-12-24","up":94,"down":13},{"date":"2025-12-25","up":null,"down":null},{"date":"2025-12-26","up":47,"down":11},{"date":"2025-12-29","up":23,"down":12},{"date":"2025-12-30","up":16,"down":12},{"date":"2025-12-31","up":24,"down":10},{"date":"2026-01-01","up":null,"down":null},{"date":"2026-01-02","up":27,"down":15},{"date":"2026-01-05","up":62,"down":20},{"date":"2026-01-06","up":null,"down":null},{"date":"2026-01-07","up":111,"down":7},{"date":"2026-01-08","up":140,"down":20},{"date":"2026-01-09","up":119,"down":16},{"date":"2026-01-12","up":86,"down":10},{"date":"2026-01-13","up":73,"down":20},{"date":"2026-01-14","up":93,"down":29},{"date":"2026-01-15","up":73,"down":27},{"date":"2026-01-16","up":77,"down":27},{"date":"2026-01-19","up":null,"down":null},{"date":"2026-01-20","up":53,"down":30},{"date":"2026-01-21","up":69,"down":18},{"date":"2026-01-22","up":86,"down":14},{"date":"2026-01-23","up":78,"down":17},{"date":"2026-01-26","up":57,"down":20},{"date":"2026-01-27","up":70,"down":13},{"date":"2026-01-28","up":null,"down":null},{"date":"2026-01-29","up":35,"down":36},{"date":"2026-01-30","up":28,"down":64},{"date":"2026-02-02","up":37,"down":52},{"date":"2026-02-03","up":21,"down":78},{"date":"2026-02-04","up":39,"down":124},{"date":"2026-02-05","up":61,"down":51},{"date":"2026-02-06","up":62,"down":41},{"date":"2026-02-09","up":46,"down":32},{"date":"2026-02-10","up":64,"down":23},{"date":"2026-02-11","up":65,"down":27},{"date":"2026-02-12","up":58,"down":37},{"date":"2026-02-13","up":47,"down":27},{"date":"2026-02-16","up":42,"down":24},{"date":"2026-02-17","up":39,"down":31},{"date":"2026-02-18","up":25,"down":51},{"date":"2026-02-19","up":42,"down":49},{"date":"2026-02-20","up":32,"down":44},{"date":"2026-02-23","up":29,"down":27},{"date":"2026-02-24","up":32,"down":35},{"date":"2026-02-25","up":50,"down":26},{"date":"2026-02-26","up":45,"down":36},{"date":"2026-02-27","up":17,"down":27},{"date":"2026-03-02","up":122,"down":43},{"date":"2026-03-03","up":68,"down":39},{"date":"2026-03-04","up":68,"down":35},{"date":"2026-03-30","up":28,"down":72},{"date":"2026-03-31","up":40,"down":33},{"date":"2026-04-01","up":40,"down":36},{"date":"2026-04-02","up":53,"down":18},{"date":"2026-04-03","up":null,"down":null},{"date":"2026-04-06","up":85,"down":18},{"date":"2026-04-07","up":121,"down":13},{"date":"2026-04-08","up":72,"down":14},{"date":"2026-04-09","up":81,"down":16},{"date":"2026-04-10","up":66,"down":33},{"date":"2026-04-13","up":104,"down":17},{"date":"2026-04-14","up":144,"down":18},{"date":"2026-04-15","up":115,"down":10},{"date":"2026-04-16","up":131,"down":9},{"date":"2026-04-17","up":206,"down":13},{"date":"2026-04-20","up":167,"down":18},{"date":"2026-04-21","up":null,"down":null},{"date":"2026-04-22","up":95,"down":20},{"date":"2026-04-23","up":62,"down":23},{"date":"2026-04-24","up":67,"down":27},{"date":"2026-04-27","up":55,"down":27},{"date":"2026-04-28","up":55,"down":30},{"date":"2026-04-29","up":47,"down":50},{"date":"2026-04-30","up":56,"down":24},{"date":"2026-05-01","up":73,"down":18},{"date":"2026-05-04","up":68,"down":26},{"date":"2026-05-05","up":138,"down":22},{"date":"2026-05-06","up":213,"down":33},{"date":"2026-05-07","up":140,"down":49},{"date":"2026-05-08","up":147,"down":60},{"date":"2026-05-11","up":172,"down":70},{"date":"2026-05-12","up":130,"down":86},{"date":"2026-05-13","up":115,"down":88},{"date":"2026-05-14","up":121,"down":73},{"date":"2026-05-15","up":71,"down":53},{"date":"2026-05-18","up":null,"down":null},{"date":"2026-05-19","up":43,"down":74},{"date":"2026-05-20","up":51,"down":39},{"date":"2026-05-21","up":48,"down":24},{"date":"2026-05-25","up":null,"down":null},{"date":"2026-05-26","up":153,"down":9},{"date":"2026-05-27","up":235,"down":16},{"date":"2026-05-28","up":215,"down":14},{"date":"2026-05-29","up":141,"down":16},{"date":"2026-06-01","up":180,"down":17},{"date":"2026-06-02","up":121,"down":26},{"date":"2026-06-03","up":90,"down":37},{"date":"2026-06-04","up":63,"down":35},{"date":"2026-06-05","up":27,"down":100},{"date":"2026-06-08","up":30,"down":73},{"date":"2026-06-09","up":36,"down":162},{"date":"2026-06-10","up":38,"down":126},{"date":"2026-06-11","up":47,"down":64},{"date":"2026-06-12","up":80,"down":17},{"date":"2026-06-15","up":76,"down":21},{"date":"2026-06-16","up":68,"down":23},{"date":"2026-06-17","up":117,"down":25},{"date":"2026-06-18","up":83,"down":39},{"date":"2026-06-19","up":null,"down":null},{"date":"2026-06-22","up":91,"down":34},{"date":"2026-06-23","up":60,"down":27},{"date":"2026-06-24","up":69,"down":46},{"date":"2026-06-25","up":79,"down":47},{"date":"2026-06-26","up":84,"down":54},{"date":"2026-06-29","up":132,"down":41},{"date":"2026-06-30","up":130,"down":25},{"date":"2026-07-01","up":116,"down":15},{"date":"2026-07-02","up":130,"down":42},{"date":"2026-07-03","up":null,"down":null},{"date":"2026-07-06","up":67,"down":25},{"date":"2026-07-07","up":36,"down":77},{"date":"2026-07-08","up":29,"down":98},{"date":"2026-07-09","up":26,"down":37},{"date":"2026-07-10","up":29,"down":25},{"date":"2026-07-13","up":null,"down":null},{"date":"2026-07-14","up":28,"down":21},{"date":"2026-07-15","up":25,"down":26},{"date":"2026-07-16","up":26,"down":75},{"date":"2026-07-17","up":17,"down":45},{"date":"2026-07-20","up":17,"down":29},{"date":"2026-07-21","up":22,"down":21},{"date":"2026-07-22","up":21,"down":24},{"date":"2026-07-23","up":34,"down":22},{"date":"2026-07-24","up":15,"down":29},{"date":"2026-07-27","up":22,"down":18}];
+const FALLBACK_DATA = [{"date": "2025-09-25", "up50": 206, "down50": 55, "up20": 64, "down20": 25, "up20d": 8, "down20d": 33}, {"date": "2025-09-26", "up50": 217, "down50": 56, "up20": 67, "down20": 20, "up20d": 14, "down20d": 28}, {"date": "2025-09-29", "up50": 246, "down50": 57, "up20": 56, "down20": 26, "up20d": 11, "down20d": 23}, {"date": "2025-09-30", "up50": 215, "down50": 60, "up20": 49, "down20": 35, "up20d": 15, "down20d": 23}, {"date": "2025-10-01", "up50": 225, "down50": 60, "up20": 55, "down20": 26, "up20d": 46, "down20d": 20}, {"date": "2025-10-02", "up50": 243, "down50": 60, "up20": 87, "down20": 18, "up20d": 64, "down20d": 15}, {"date": "2025-10-03", "up50": 245, "down50": 60, "up20": 113, "down20": 18, "up20d": 49, "down20d": 19}, {"date": "2025-10-06", "up50": 275, "down50": 58, "up20": 135, "down20": 17, "up20d": 45, "down20d": 20}, {"date": "2025-10-07", "up50": 262, "down50": 57, "up20": 127, "down20": 17, "up20d": 23, "down20d": 17}, {"date": "2025-10-08", "up50": 257, "down50": 55, "up20": 122, "down20": 13, "up20d": 35, "down20d": 14}, {"date": "2025-10-09", "up50": 229, "down50": 55, "up20": 117, "down20": 18, "up20d": 24, "down20d": 24}, {"date": "2025-10-10", "up50": 200, "down50": 55, "up20": 75, "down20": 37, "up20d": 8, "down20d": 51}, {"date": "2025-10-13", "up50": 254, "down50": 56, "up20": 97, "down20": 36, "up20d": 16, "down20d": 31}, {"date": "2025-10-14", "up50": 249, "down50": 56, "up20": 114, "down20": 28, "up20d": 24, "down20d": 16}, {"date": "2025-10-15", "up50": 312, "down50": 57, "up20": 104, "down20": 30, "up20d": 17, "down20d": 32}, {"date": "2025-10-16", "up50": 278, "down50": 58, "up20": 56, "down20": 45, "up20d": 22, "down20d": 39}, {"date": "2025-10-17", "up50": 238, "down50": 54, "up20": 65, "down20": 32, "up20d": 40, "down20d": 15}, {"date": "2025-10-20", "up50": 232, "down50": 54, "up20": 60, "down20": 34, "up20d": 29, "down20d": 15}, {"date": "2025-10-21", "up50": 201, "down50": 55, "up20": 42, "down20": 77, "up20d": 26, "down20d": 19}, {"date": "2025-10-22", "up50": 166, "down50": 55, "up20": 31, "down20": 118, "up20d": 23, "down20d": 40}, {"date": "2025-10-23", "up50": 191, "down50": 53, "up20": 48, "down20": 44, "up20d": 40, "down20d": 24}, {"date": "2025-10-24", "up50": 193, "down50": 49, "up20": 63, "down20": 24, "up20d": 51, "down20d": 16}, {"date": "2025-10-27", "up50": 224, "down50": 49, "up20": 56, "down20": 34, "up20d": 44, "down20d": 18}, {"date": "2025-10-28", "up50": 208, "down50": 47, "up20": 64, "down20": 27, "up20d": 42, "down20d": 25}, {"date": "2025-10-29", "up50": 232, "down50": 49, "up20": 110, "down20": 30, "up20d": 79, "down20d": 37}, {"date": "2025-10-30", "up50": 202, "down50": 50, "up20": 80, "down20": 42, "up20d": 49, "down20d": 64}, {"date": "2025-10-31", "up50": 197, "down50": 49, "up20": 69, "down20": 56, "up20d": 49, "down20d": 73}, {"date": "2025-11-03", "up50": 177, "down50": 55, "up20": 43, "down20": 72, "up20d": 33, "down20d": 86}, {"date": "2025-11-04", "up50": 133, "down50": 58, "up20": 38, "down20": 97, "up20d": 22, "down20d": 86}, {"date": "2025-11-05", "up50": 148, "down50": 58, "up20": 57, "down20": 72, "up20d": 31, "down20d": 55}, {"date": "2025-11-06", "up50": 122, "down50": 65, "up20": 56, "down20": 121, "up20d": 37, "down20d": 54}, {"date": "2025-11-07", "up50": 122, "down50": 68, "up20": 50, "down20": 112, "up20d": 39, "down20d": 59}, {"date": "2025-11-10", "up50": 136, "down50": 71, "up20": 80, "down20": 94, "up20d": 37, "down20d": 36}, {"date": "2025-11-11", "up50": 138, "down50": 75, "up20": 130, "down20": 66, "up20d": 51, "down20d": 25}, {"date": "2025-11-12", "up50": 126, "down50": 76, "up20": 92, "down20": 76, "up20d": 38, "down20d": 41}, {"date": "2025-11-13", "up50": 81, "down50": 82, "up20": 65, "down20": 66, "up20d": 23, "down20d": 37}, {"date": "2025-11-14", "up50": 93, "down50": 92, "up20": 50, "down20": 72, "up20d": 13, "down20d": 47}, {"date": "2025-11-17", "up50": 81, "down50": 102, "up20": 46, "down20": 103, "up20d": 12, "down20d": 76}, {"date": "2025-11-18", "up50": 88, "down50": 105, "up20": 40, "down20": 69, "up20d": 8, "down20d": 87}, {"date": "2025-11-19", "up50": 89, "down50": 108, "up20": 38, "down20": 92, "up20d": 11, "down20d": 77}, {"date": "2025-11-20", "up50": 86, "down50": 106, "up20": 42, "down20": 60, "up20d": 12, "down20d": 70}, {"date": "2025-11-21", "up50": 98, "down50": 107, "up20": 44, "down20": 48, "up20d": 20, "down20d": 53}, {"date": "2025-11-24", "up50": 108, "down50": 106, "up20": 68, "down20": 25, "up20d": 36, "down20d": 20}, {"date": "2025-11-25", "up50": 118, "down50": 113, "up20": 83, "down20": 26, "up20d": 78, "down20d": 16}, {"date": "2025-11-26", "up50": 119, "down50": 114, "up20": 111, "down20": 13, "up20d": 76, "down20d": 9}, {"date": "2025-11-27", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2025-11-28", "up50": 121, "down50": 113, "up20": 203, "down20": 6, "up20d": 132, "down20d": 6}, {"date": "2025-12-01", "up50": 91, "down50": 123, "up20": 88, "down20": 7, "up20d": 51, "down20d": 8}, {"date": "2025-12-02", "up50": 81, "down50": 126, "up20": 47, "down20": 15, "up20d": 40, "down20d": 10}, {"date": "2025-12-03", "up50": 96, "down50": 130, "up20": 63, "down20": 13, "up20d": 39, "down20d": 13}, {"date": "2025-12-04", "up50": 107, "down50": 132, "up20": 75, "down20": 14, "up20d": 43, "down20d": 18}, {"date": "2025-12-05", "up50": 108, "down50": 132, "up20": 66, "down20": 23, "up20d": 38, "down20d": 21}, {"date": "2025-12-08", "up50": 133, "down50": 132, "up20": 111, "down20": 19, "up20d": 49, "down20d": 21}, {"date": "2025-12-09", "up50": 119, "down50": 136, "up20": 122, "down20": 17, "up20d": 38, "down20d": 22}, {"date": "2025-12-10", "up50": 111, "down50": 143, "up20": 85, "down20": 13, "up20d": 45, "down20d": 22}, {"date": "2025-12-11", "up50": 107, "down50": 145, "up20": 68, "down20": 19, "up20d": 60, "down20d": 16}, {"date": "2025-12-12", "up50": 111, "down50": 144, "up20": 59, "down20": 28, "up20d": 26, "down20d": 26}, {"date": "2025-12-15", "up50": 113, "down50": 145, "up20": 43, "down20": 37, "up20d": 31, "down20d": 34}, {"date": "2025-12-16", "up50": 83, "down50": 149, "up20": 38, "down20": 40, "up20d": 23, "down20d": 30}, {"date": "2025-12-17", "up50": 89, "down50": 153, "up20": 23, "down20": 81, "up20d": 16, "down20d": 78}, {"date": "2025-12-18", "up50": 92, "down50": 155, "up20": 30, "down20": 77, "up20d": 4, "down20d": 73}, {"date": "2025-12-19", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2025-12-22", "up50": 109, "down50": 157, "up20": 75, "down20": 18, "up20d": 38, "down20d": 9}, {"date": "2025-12-23", "up50": 101, "down50": 157, "up20": 52, "down20": 22, "up20d": 37, "down20d": 8}, {"date": "2025-12-24", "up50": 105, "down50": 157, "up20": 94, "down20": 13, "up20d": 62, "down20d": 3}, {"date": "2025-12-25", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2025-12-26", "up50": 102, "down50": 155, "up20": 47, "down20": 11, "up20d": 35, "down20d": 3}, {"date": "2025-12-29", "up50": 82, "down50": 157, "up20": 23, "down20": 12, "up20d": 5, "down20d": 3}, {"date": "2025-12-30", "up50": 81, "down50": 157, "up20": 16, "down20": 12, "up20d": 1, "down20d": 8}, {"date": "2025-12-31", "up50": 86, "down50": 158, "up20": 24, "down20": 10, "up20d": 2, "down20d": 13}, {"date": "2026-01-01", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-01-02", "up50": 108, "down50": 158, "up20": 27, "down20": 15, "up20d": 10, "down20d": 15}, {"date": "2026-01-05", "up50": 100, "down50": 159, "up20": 62, "down20": 20, "up20d": 29, "down20d": 17}, {"date": "2026-01-06", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-01-07", "up50": 131, "down50": 155, "up20": 111, "down20": 7, "up20d": 68, "down20d": 11}, {"date": "2026-01-08", "up50": 103, "down50": 149, "up20": 140, "down20": 20, "up20d": 93, "down20d": 14}, {"date": "2026-01-09", "up50": 117, "down50": 146, "up20": 119, "down20": 16, "up20d": 100, "down20d": 14}, {"date": "2026-01-12", "up50": 108, "down50": 150, "up20": 86, "down20": 10, "up20d": 69, "down20d": 14}, {"date": "2026-01-13", "up50": 142, "down50": 145, "up20": 73, "down20": 20, "up20d": 45, "down20d": 34}, {"date": "2026-01-14", "up50": 152, "down50": 144, "up20": 93, "down20": 29, "up20d": 59, "down20d": 34}, {"date": "2026-01-15", "up50": 175, "down50": 139, "up20": 73, "down20": 27, "up20d": 78, "down20d": 32}, {"date": "2026-01-16", "up50": 192, "down50": 138, "up20": 77, "down20": 27, "up20d": 60, "down20d": 36}, {"date": "2026-01-19", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-01-20", "up50": 185, "down50": 137, "up20": 53, "down20": 30, "up20d": 36, "down20d": 54}, {"date": "2026-01-21", "up50": 255, "down50": 135, "up20": 69, "down20": 18, "up20d": 46, "down20d": 32}, {"date": "2026-01-22", "up50": 250, "down50": 133, "up20": 86, "down20": 14, "up20d": 46, "down20d": 18}, {"date": "2026-01-23", "up50": 200, "down50": 129, "up20": 78, "down20": 17, "up20d": 26, "down20d": 31}, {"date": "2026-01-26", "up50": 169, "down50": 126, "up20": 57, "down20": 20, "up20d": 22, "down20d": 24}, {"date": "2026-01-27", "up50": 172, "down50": 121, "up20": 70, "down20": 13, "up20d": 41, "down20d": 18}, {"date": "2026-01-28", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-01-29", "up50": 154, "down50": 114, "up20": 35, "down20": 36, "up20d": 37, "down20d": 47}, {"date": "2026-01-30", "up50": 101, "down50": 110, "up20": 28, "down20": 64, "up20d": 30, "down20d": 59}, {"date": "2026-02-02", "up50": 103, "down50": 114, "up20": 37, "down20": 52, "up20d": 38, "down20d": 60}, {"date": "2026-02-03", "up50": 107, "down50": 116, "up20": 21, "down20": 78, "up20d": 44, "down20d": 87}, {"date": "2026-02-04", "up50": 90, "down50": 125, "up20": 39, "down20": 124, "up20d": 62, "down20d": 109}, {"date": "2026-02-05", "up50": 99, "down50": 142, "up20": 61, "down20": 51, "up20d": 26, "down20d": 93}, {"date": "2026-02-06", "up50": 92, "down50": 144, "up20": 62, "down20": 41, "up20d": 23, "down20d": 131}, {"date": "2026-02-09", "up50": 90, "down50": 144, "up20": 46, "down20": 32, "up20d": 19, "down20d": 102}, {"date": "2026-02-10", "up50": 92, "down50": 148, "up20": 64, "down20": 23, "up20d": 20, "down20d": 56}, {"date": "2026-02-11", "up50": 90, "down50": 147, "up20": 65, "down20": 27, "up20d": 11, "down20d": 76}, {"date": "2026-02-12", "up50": 76, "down50": 153, "up20": 58, "down20": 37, "up20d": 10, "down20d": 89}, {"date": "2026-02-13", "up50": 66, "down50": 150, "up20": 47, "down20": 27, "up20d": 18, "down20d": 60}, {"date": "2026-02-16", "up50": 67, "down50": 152, "up20": 42, "down20": 24, "up20d": 11, "down20d": 49}, {"date": "2026-02-17", "up50": 73, "down50": 154, "up20": 39, "down20": 31, "up20d": 14, "down20d": 39}, {"date": "2026-02-18", "up50": 80, "down50": 153, "up20": 25, "down20": 51, "up20d": 13, "down20d": 44}, {"date": "2026-02-19", "up50": 69, "down50": 156, "up20": 42, "down20": 49, "up20d": 34, "down20d": 28}, {"date": "2026-02-20", "up50": 71, "down50": 168, "up20": 32, "down20": 44, "up20d": 17, "down20d": 34}, {"date": "2026-02-23", "up50": 64, "down50": 169, "up20": 29, "down20": 27, "up20d": 18, "down20d": 30}, {"date": "2026-02-24", "up50": 71, "down50": 169, "up20": 32, "down20": 35, "up20d": 32, "down20d": 44}, {"date": "2026-02-25", "up50": 72, "down50": 166, "up20": 50, "down20": 26, "up20d": 46, "down20d": 29}, {"date": "2026-02-26", "up50": 80, "down50": 168, "up20": 45, "down20": 36, "up20d": 11, "down20d": 52}, {"date": "2026-02-27", "up50": 71, "down50": 175, "up20": 17, "down20": 27, "up20d": 17, "down20d": 42}, {"date": "2026-03-02", "up50": 168, "down50": 132, "up20": 122, "down20": 43, "up20d": 66, "down20d": 29}, {"date": "2026-03-03", "up50": 104, "down50": 133, "up20": 68, "down20": 39, "up20d": 37, "down20d": 69}, {"date": "2026-03-04", "up50": 108, "down50": 134, "up20": 68, "down20": 35, "up20d": 42, "down20d": 63}, {"date": "2026-03-30", "up50": 68, "down50": 174, "up20": 28, "down20": 72, "up20d": 9, "down20d": 87}, {"date": "2026-03-31", "up50": 73, "down50": 171, "up20": 40, "down20": 33, "up20d": 21, "down20d": 41}, {"date": "2026-04-01", "up50": 72, "down50": 167, "up20": 40, "down20": 36, "up20d": 22, "down20d": 25}, {"date": "2026-04-02", "up50": 88, "down50": 166, "up20": 53, "down20": 18, "up20d": 46, "down20d": 5}, {"date": "2026-04-03", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-04-06", "up50": 106, "down50": 170, "up20": 85, "down20": 18, "up20d": 75, "down20d": 5}, {"date": "2026-04-07", "up50": 79, "down50": 165, "up20": 121, "down20": 13, "up20d": 112, "down20d": 3}, {"date": "2026-04-08", "up50": 77, "down50": 165, "up20": 72, "down20": 14, "up20d": 118, "down20d": 5}, {"date": "2026-04-09", "up50": 86, "down50": 166, "up20": 81, "down20": 16, "up20d": 106, "down20d": 8}, {"date": "2026-04-10", "up50": 92, "down50": 161, "up20": 66, "down20": 33, "up20d": 112, "down20d": 22}, {"date": "2026-04-13", "up50": 112, "down50": 159, "up20": 104, "down20": 17, "up20d": 132, "down20d": 11}, {"date": "2026-04-14", "up50": 116, "down50": 156, "up20": 144, "down20": 18, "up20d": 148, "down20d": 15}, {"date": "2026-04-15", "up50": 117, "down50": 154, "up20": 115, "down20": 10, "up20d": 54, "down20d": 16}, {"date": "2026-04-16", "up50": 134, "down50": 153, "up20": 131, "down20": 9, "up20d": 58, "down20d": 21}, {"date": "2026-04-17", "up50": 134, "down50": 150, "up20": 206, "down20": 13, "up20d": 96, "down20d": 4}, {"date": "2026-04-20", "up50": 152, "down50": 147, "up20": 167, "down20": 18, "up20d": 72, "down20d": 13}, {"date": "2026-04-21", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-04-22", "up50": 171, "down50": 140, "up20": 95, "down20": 20, "up20d": 75, "down20d": 19}, {"date": "2026-04-23", "up50": 130, "down50": 143, "up20": 62, "down20": 23, "up20d": 80, "down20d": 18}, {"date": "2026-04-24", "up50": 147, "down50": 142, "up20": 67, "down20": 27, "up20d": 61, "down20d": 39}, {"date": "2026-04-27", "up50": 156, "down50": 137, "up20": 55, "down20": 27, "up20d": 46, "down20d": 49}, {"date": "2026-04-28", "up50": 118, "down50": 136, "up20": 55, "down20": 30, "up20d": 27, "down20d": 45}, {"date": "2026-04-29", "up50": 154, "down50": 137, "up20": 47, "down20": 50, "up20d": 28, "down20d": 59}, {"date": "2026-04-30", "up50": 161, "down50": 134, "up20": 56, "down20": 24, "up20d": 49, "down20d": 32}, {"date": "2026-05-01", "up50": 176, "down50": 124, "up20": 73, "down20": 18, "up20d": 44, "down20d": 37}, {"date": "2026-05-04", "up50": 224, "down50": 119, "up20": 68, "down20": 26, "up20d": 51, "down20d": 46}, {"date": "2026-05-05", "up50": 239, "down50": 103, "up20": 138, "down20": 22, "up20d": 98, "down20d": 38}, {"date": "2026-05-06", "up50": 257, "down50": 97, "up20": 213, "down20": 33, "up20d": 132, "down20d": 25}, {"date": "2026-05-07", "up50": 236, "down50": 85, "up20": 140, "down20": 49, "up20d": 70, "down20d": 47}, {"date": "2026-05-08", "up50": 305, "down50": 80, "up20": 147, "down20": 60, "up20d": 78, "down20d": 48}, {"date": "2026-05-11", "up50": 330, "down50": 80, "up20": 172, "down20": 70, "up20d": 95, "down20d": 46}, {"date": "2026-05-12", "up50": 277, "down50": 78, "up20": 130, "down20": 86, "up20d": 66, "down20d": 59}, {"date": "2026-05-13", "up50": 291, "down50": 80, "up20": 115, "down20": 88, "up20d": 50, "down20d": 66}, {"date": "2026-05-14", "up50": 325, "down50": 75, "up20": 121, "down20": 73, "up20d": 80, "down20d": 40}, {"date": "2026-05-15", "up50": 280, "down50": 72, "up20": 71, "down20": 53, "up20d": 31, "down20d": 59}, {"date": "2026-05-18", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-05-19", "up50": 218, "down50": 72, "up20": 43, "down20": 74, "up20d": 18, "down20d": 82}, {"date": "2026-05-20", "up50": 257, "down50": 71, "up20": 51, "down20": 39, "up20d": 25, "down20d": 59}, {"date": "2026-05-21", "up50": 265, "down50": 70, "up20": 48, "down20": 24, "up20d": 19, "down20d": 59}, {"date": "2026-05-25", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-05-26", "up50": 410, "down50": 74, "up20": 153, "down20": 9, "up20d": 98, "down20d": 14}, {"date": "2026-05-27", "up50": 466, "down50": 74, "up20": 235, "down20": 16, "up20d": 132, "down20d": 15}, {"date": "2026-05-28", "up50": 432, "down50": 71, "up20": 215, "down20": 14, "up20d": 100, "down20d": 15}, {"date": "2026-05-29", "up50": 420, "down50": 70, "up20": 141, "down20": 16, "up20d": 94, "down20d": 24}, {"date": "2026-06-01", "up50": 423, "down50": 68, "up20": 180, "down20": 17, "up20d": 92, "down20d": 43}, {"date": "2026-06-02", "up50": 428, "down50": 65, "up20": 121, "down20": 26, "up20d": 75, "down20d": 46}, {"date": "2026-06-03", "up50": 381, "down50": 67, "up20": 90, "down20": 37, "up20d": 72, "down20d": 39}, {"date": "2026-06-04", "up50": 340, "down50": 67, "up20": 63, "down20": 35, "up20d": 57, "down20d": 33}, {"date": "2026-06-05", "up50": 254, "down50": 73, "up20": 27, "down20": 100, "up20d": 22, "down20d": 57}, {"date": "2026-06-08", "up50": 291, "down50": 73, "up20": 30, "down20": 73, "up20d": 33, "down20d": 64}, {"date": "2026-06-09", "up50": 223, "down50": 75, "up20": 36, "down20": 162, "up20d": 40, "down20d": 87}, {"date": "2026-06-10", "up50": 186, "down50": 79, "up20": 38, "down20": 126, "up20d": 34, "down20d": 109}, {"date": "2026-06-11", "up50": 197, "down50": 81, "up20": 47, "down20": 64, "up20d": 38, "down20d": 78}, {"date": "2026-06-12", "up50": 197, "down50": 81, "up20": 80, "down20": 17, "up20d": 72, "down20d": 24}, {"date": "2026-06-15", "up50": 184, "down50": 81, "up20": 76, "down20": 21, "up20d": 93, "down20d": 14}, {"date": "2026-06-16", "up50": 163, "down50": 83, "up20": 68, "down20": 23, "up20d": 64, "down20d": 16}, {"date": "2026-06-17", "up50": 168, "down50": 82, "up20": 117, "down20": 25, "up20d": 112, "down20d": 24}, {"date": "2026-06-18", "up50": 184, "down50": 81, "up20": 83, "down20": 39, "up20d": 82, "down20d": 30}, {"date": "2026-06-19", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-06-22", "up50": 190, "down50": 82, "up20": 91, "down20": 34, "up20d": 84, "down20d": 41}, {"date": "2026-06-23", "up50": 165, "down50": 83, "up20": 60, "down20": 27, "up20d": 21, "down20d": 68}, {"date": "2026-06-24", "up50": 172, "down50": 83, "up20": 69, "down20": 46, "up20d": 40, "down20d": 53}, {"date": "2026-06-25", "up50": 208, "down50": 83, "up20": 79, "down20": 47, "up20d": 80, "down20d": 45}, {"date": "2026-06-26", "up50": 209, "down50": 86, "up20": 84, "down20": 54, "up20d": 58, "down20d": 72}, {"date": "2026-06-29", "up50": 214, "down50": 86, "up20": 132, "down20": 41, "up20d": 74, "down20d": 77}, {"date": "2026-06-30", "up50": 207, "down50": 90, "up20": 130, "down20": 25, "up20d": 116, "down20d": 26}, {"date": "2026-07-01", "up50": 197, "down50": 94, "up20": 116, "down20": 15, "up20d": 88, "down20d": 39}, {"date": "2026-07-02", "up50": 158, "down50": 101, "up20": 130, "down20": 42, "up20d": 98, "down20d": 98}, {"date": "2026-07-03", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-07-06", "up50": 143, "down50": 113, "up20": 67, "down20": 25, "up20d": 76, "down20d": 53}, {"date": "2026-07-07", "up50": 123, "down50": 119, "up20": 36, "down20": 77, "up20d": 64, "down20d": 95}, {"date": "2026-07-08", "up50": 110, "down50": 122, "up20": 29, "down20": 98, "up20d": 39, "down20d": 123}, {"date": "2026-07-09", "up50": 117, "down50": 124, "up20": 26, "down20": 37, "up20d": 25, "down20d": 68}, {"date": "2026-07-10", "up50": 109, "down50": 123, "up20": 29, "down20": 25, "up20d": 30, "down20d": 33}, {"date": "2026-07-13", "up50": null, "down50": null, "up20": null, "down20": null, "up20d": null, "down20d": null}, {"date": "2026-07-14", "up50": 104, "down50": 141, "up20": 28, "down20": 21, "up20d": 32, "down20d": 38}, {"date": "2026-07-15", "up50": 116, "down50": 143, "up20": 25, "down20": 26, "up20d": 29, "down20d": 40}, {"date": "2026-07-16", "up50": 113, "down50": 145, "up20": 26, "down20": 75, "up20d": 31, "down20d": 82}, {"date": "2026-07-17", "up50": 120, "down50": 143, "up20": 17, "down20": 45, "up20d": 21, "down20d": 73}, {"date": "2026-07-20", "up50": 93, "down50": 147, "up20": 17, "down20": 29, "up20d": 8, "down20d": 57}, {"date": "2026-07-21", "up50": 92, "down50": 155, "up20": 22, "down20": 21, "up20d": 15, "down20d": 40}, {"date": "2026-07-22", "up50": 75, "down50": 159, "up20": 21, "down20": 24, "up20d": 19, "down20d": 33}, {"date": "2026-07-23", "up50": 75, "down50": 162, "up20": 34, "down20": 22, "up20d": 47, "down20d": 50}, {"date": "2026-07-24", "up50": 67, "down50": 172, "up20": 15, "down20": 29, "up20d": 33, "down20d": 27}, {"date": "2026-07-27", "up50": 60, "down50": 173, "up20": 22, "down20": 18, "up20d": 39, "down20d": 26}];
+const THRESHOLDS = {
+  "50":  { caution: 200, warning: 310, label: "50%" },
+  "20":  { caution: 100, warning: 150, label: "20%" },
+  "20d": { caution: 80,  warning: 110, label: "$20" }
+};
+const METRIC_KEYS = {
+  "50":  { up: "up50",  down: "down50" },
+  "20":  { up: "up20",  down: "down20" },
+  "20d": { up: "up20d", down: "down20d" }
+};
+const DEFAULT_QUOTES = {
+  left: [
+    { kicker: "Rule of thumb", text: "When every 20% study goes up 200+ there will be a big pull back or choppy market." },
+    { kicker: "Discipline", text: "Always be in Control and Control risk-taking.\nT3A, T30A. Organise like crazy.\nContext, Qualifier and Checklist." }
+  ],
+  right: [
+    { kicker: "Comments", text: "The monthly Employment Situation — what we all call the \"jobs report\" — has been released on the first Friday of every month since 1950." },
+    { kicker: "Remaining 2026 monthly expiration dates", text:
+      "• August 21, 2026\n• September 18, 2026 (Triple Witching / End of Q3)\n• October 16, 2026\n• November 20, 2026\n• December 18, 2026 (Triple Witching / End of Q4)" },
+    { kicker: "Full 2027 monthly expiration dates", text:
+      "• January 15, 2027\n• February 19, 2027\n• March 19, 2027 (Triple Witching / End of Q1)\n• April 16, 2027\n• May 21, 2027\n• June 18, 2027 (Triple Witching / End of Q2)\n• July 16, 2027\n• August 20, 2027\n• September 17, 2027 (Triple Witching / End of Q3)\n• October 15, 2027\n• November 19, 2027\n• December 17, 2027 (Triple Witching / End of Q4)\n\nTrue calendar quarter-end dates: March 31, June 30, September 30, December 31, 2027." }
+  ]
+};
 
 let allData = FALLBACK_DATA.slice();
-let currentRange = 260;
+let userRows = JSON.parse(localStorage.getItem('breadthUserRows') || '[]');
+let currentRange = 252;
+let pendingRows = null;
 
+function mergedData(){
+  const map = new Map();
+  allData.forEach(r => map.set(r.date, r));
+  userRows.forEach(r => map.set(r.date, r));
+  return Array.from(map.values()).sort((a,b) => a.date.localeCompare(b.date));
+}
+
+/* ================= Sheet sync (reuses proven CSV parser) ================= */
 function parseCSV(text){
-  const rows = [];
-  let row = [], field = '', inQuotes = false;
+  const rows = []; let row = [], field = '', inQuotes = false;
   for(let i=0;i<text.length;i++){
     const c = text[i];
     if(inQuotes){
-      if(c === '"'){
-        if(text[i+1] === '"'){ field += '"'; i++; } else { inQuotes = false; }
-      } else field += c;
+      if(c === '"'){ if(text[i+1] === '"'){ field += '"'; i++; } else inQuotes = false; }
+      else field += c;
     } else {
       if(c === '"') inQuotes = true;
       else if(c === ','){ row.push(field); field=''; }
@@ -128,59 +259,64 @@ function parseCSV(text){
   if(field.length || row.length){ row.push(field); rows.push(row); }
   return rows;
 }
-
+function cleanNum(v){
+  if(v === undefined) return null;
+  v = v.trim().toLowerCase();
+  if(v === '' || v === 'x') return null;
+  const n = parseFloat(v);
+  return isNaN(n) ? null : n;
+}
 function parseSheetRows(rows){
-  // find header row containing "20% Up" / "20% Down" / "Date"
   let headerIdx = -1, cols = {};
   for(let i=0;i<Math.min(rows.length,15);i++){
     const r = rows[i].map(c => c.trim().toLowerCase());
     const dateI = r.findIndex(c => c === 'date');
-    const upI = r.findIndex(c => c.includes('20%') && c.includes('up'));
-    const downI = r.findIndex(c => c.includes('20%') && c.includes('down'));
-    if(dateI >= 0 && upI >= 0 && downI >= 0){
-      headerIdx = i; cols = {date:dateI, up:upI, down:downI}; break;
+    const u50 = r.findIndex(c => c.includes('50%') && c.includes('up'));
+    const d50 = r.findIndex(c => c.includes('50%') && c.includes('down'));
+    const u20 = r.findIndex(c => c.includes('20%') && c.includes('up'));
+    const d20 = r.findIndex(c => c.includes('20%') && c.includes('down'));
+    const u20d = r.findIndex(c => c.includes('$20') && c.includes('up'));
+    const d20d = r.findIndex(c => c.includes('$20') && c.includes('down'));
+    if(dateI>=0 && u50>=0 && d50>=0 && u20>=0 && d20>=0 && u20d>=0 && d20d>=0){
+      headerIdx = i; cols = {dateI,u50,d50,u20,d20,u20d,d20d}; break;
     }
   }
   if(headerIdx < 0) throw new Error('header not found');
   const out = [];
   for(let i=headerIdx+1;i<rows.length;i++){
     const r = rows[i];
-    if(!r || !r[cols.date]) continue;
-    const d = r[cols.date].trim();
+    if(!r || !r[cols.dateI]) continue;
+    const d = r[cols.dateI].trim();
     const m = d.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if(!m) continue;
     const iso = `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
-    const clean = v => {
-      if(v === undefined) return null;
-      v = v.trim().toLowerCase();
-      if(v === '' || v === 'x') return null;
-      const n = parseFloat(v);
-      return isNaN(n) ? null : n;
-    };
-    out.push({date: iso, up: clean(r[cols.up]), down: clean(r[cols.down])});
+    out.push({
+      date: iso,
+      up50: cleanNum(r[cols.u50]), down50: cleanNum(r[cols.d50]),
+      up20: cleanNum(r[cols.u20]), down20: cleanNum(r[cols.d20]),
+      up20d: cleanNum(r[cols.u20d]), down20d: cleanNum(r[cols.d20d])
+    });
   }
-  out.sort((a,b) => a.date.localeCompare(b.date));
-  const seen = new Set(), dedup = [];
+  out.sort((a,b)=>a.date.localeCompare(b.date));
+  const seen=new Set(), dedup=[];
   for(const row of out){ if(seen.has(row.date)) continue; seen.add(row.date); dedup.push(row); }
-  while(dedup.length && dedup[dedup.length-1].up === null && dedup[dedup.length-1].down === null) dedup.pop();
+  while(dedup.length){
+    const last = dedup[dedup.length-1];
+    if(['up50','down50','up20','down20','up20d','down20d'].every(k=>last[k]===null)) dedup.pop();
+    else break;
+  }
   return dedup;
 }
-
 async function tryLiveFetch(gid){
   const url = `https://docs.google.com/spreadsheets/d/${FILE_ID}/gviz/tq?tqx=out:csv&gid=${gid}`;
   const res = await fetch(url);
   if(!res.ok) throw new Error('fetch failed: ' + res.status);
-  const text = await res.text();
-  const rows = parseCSV(text);
-  return parseSheetRows(rows);
+  return parseSheetRows(parseCSV(await res.text()));
 }
-
 function setStatus(msg, cls){
   const el = document.getElementById('status');
-  el.textContent = msg;
-  el.className = cls || '';
+  el.textContent = msg; el.className = cls || '';
 }
-
 async function init(){
   const savedGid = localStorage.getItem('breadthGid');
   if(savedGid){
@@ -189,18 +325,13 @@ async function init(){
       setStatus('syncing with sheet…');
       const live = await tryLiveFetch(savedGid);
       if(live.length){ allData = live; setStatus('● live — synced ' + new Date().toLocaleTimeString(), 'live'); }
-    } catch(e){
-      setStatus('using last saved snapshot (live sheet not reachable — check sharing settings)', 'err');
-    }
+    } catch(e){ setStatus('using last saved snapshot (live sheet unreachable)', 'err'); }
   } else {
-    setStatus('showing last saved snapshot — click "connect live sheet" to enable auto-refresh');
+    setStatus('showing last saved snapshot — connect a live sheet or paste rows below');
   }
-  render();
+  renderAll();
 }
-
-document.getElementById('cfgBtn').addEventListener('click', () => {
-  document.getElementById('configRow').classList.toggle('show');
-});
+document.getElementById('cfgBtn').addEventListener('click', () => document.getElementById('configRow').classList.toggle('show'));
 document.getElementById('cfgApply').addEventListener('click', async () => {
   const gid = document.getElementById('gidInput').value.trim();
   if(!gid) return;
@@ -211,127 +342,272 @@ document.getElementById('cfgApply').addEventListener('click', async () => {
     allData = live;
     localStorage.setItem('breadthGid', gid);
     setStatus('● live — synced ' + new Date().toLocaleTimeString(), 'live');
-    render();
-  } catch(e){
-    setStatus('could not read that tab — confirm link sharing is "Anyone with the link"', 'err');
-  }
+    renderAll();
+  } catch(e){ setStatus('could not read that tab — confirm link sharing is "Anyone with the link"', 'err'); }
 });
 
+/* ================= Range buttons ================= */
 document.querySelectorAll('.toolbar button[data-range]').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.toolbar button[data-range]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentRange = parseInt(btn.dataset.range, 10);
-    render();
+    renderAll();
   });
 });
 
+/* ================= Chart rendering ================= */
 function sma(vals, period){
   const out = new Array(vals.length).fill(null);
-  let sum = 0, count = 0, buf = [];
+  let sum=0, count=0, buf=[];
   for(let i=0;i<vals.length;i++){
-    const v = vals[i];
-    buf.push(v);
-    if(v !== null){ sum += v; count++; }
-    if(buf.length > period){
-      const rem = buf.shift();
-      if(rem !== null){ sum -= rem; count--; }
-    }
-    out[i] = count > 0 ? sum / count : null;
+    const v = vals[i]; buf.push(v);
+    if(v!==null){ sum+=v; count++; }
+    if(buf.length>period){ const rem=buf.shift(); if(rem!==null){ sum-=rem; count--; } }
+    out[i] = count>0 ? sum/count : null;
   }
   return out;
 }
-
-function render(){
-  const data = allData.slice(-currentRange);
-  document.getElementById('range').textContent =
-    data.length ? `— ${data[0].date} to ${data[data.length-1].date}` : '';
-
-  const svg = document.getElementById('chart');
-  const W = 1360, H = 460, padL = 42, padR = 12, padT = 18, padB = 26;
-  const plotW = W - padL - padR, plotH = H - padT - padB;
-  const midY = padT + plotH / 2;
-
-  const ups = data.map(d => d.up ?? 0);
-  const downs = data.map(d => d.down ?? 0);
-  const maxVal = Math.max(10, ...ups, ...downs);
-  const scale = (plotH/2 - 6) / maxVal;
-
+function renderChart(metricKey){
+  const svg = document.getElementById('chart-' + metricKey);
+  const th = THRESHOLDS[metricKey];
+  const keys = METRIC_KEYS[metricKey];
+  const full = mergedData();
+  const data = full.slice(-currentRange);
   const n = data.length;
-  const bw = Math.max(1, plotW / n * 0.7);
+
+  const W = 1400, H = 300, padL = 46, padR = 12, padT = 10, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const midY = padT + plotH/2;
+
+  const ups = data.map(d => d[keys.up] ?? 0);
+  const downs = data.map(d => d[keys.down] ?? 0);
+  const maxDataVal = Math.max(10, ...ups, ...downs);
+  const maxVal = Math.max(maxDataVal * 1.08, th.warning * 1.15);
+  const scale = (plotH/2 - 4) / maxVal;
   const step = plotW / n;
+  const bw = Math.max(1, step * 0.7);
 
-  const maVals = sma(data.map(d => d.up), 20);
-
-  let svgParts = [];
-
-  // gridlines
-  [0, 0.25, 0.5, 0.75, 1].forEach(frac => {
-    const y = padT + plotH * frac;
-    svgParts.push(`<line class="gridline" x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}"/>`);
+  let parts = [];
+  [0,0.25,0.5,0.75,1].forEach(f => {
+    const y = padT + plotH*f;
+    parts.push(`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`);
   });
   const topLabel = Math.round(maxVal);
-  svgParts.push(`<text class="axislabel" x="4" y="${padT+8}">${topLabel}</text>`);
-  svgParts.push(`<text class="axislabel" x="4" y="${midY+4}">0</text>`);
-  svgParts.push(`<text class="axislabel" x="4" y="${H-padB}">${topLabel}</text>`);
+  parts.push(`<text x="4" y="${padT+8}" fill="var(--dim)" font-size="10">${topLabel}</text>`);
+  parts.push(`<text x="4" y="${midY+4}" fill="var(--dim)" font-size="10">0</text>`);
+  parts.push(`<text x="4" y="${H-padB}" fill="var(--dim)" font-size="10">${topLabel}</text>`);
 
-  // bars
-  data.forEach((d, i) => {
+  // threshold reference lines (mirrored)
+  [ [th.caution,'var(--caution)'], [th.warning,'var(--warning)'] ].forEach(([val,color]) => {
+    if(val*scale < plotH/2){
+      const yTop = midY - val*scale, yBot = midY + val*scale;
+      parts.push(`<line x1="${padL}" y1="${yTop}" x2="${W-padR}" y2="${yTop}" stroke="${color}" stroke-width="1" stroke-dasharray="4,4" opacity=".55"/>`);
+      parts.push(`<line x1="${padL}" y1="${yBot}" x2="${W-padR}" y2="${yBot}" stroke="${color}" stroke-width="1" stroke-dasharray="4,4" opacity=".55"/>`);
+      parts.push(`<text x="${W-padR-2}" y="${yTop-3}" text-anchor="end" fill="${color}" font-size="9" opacity=".8">${val}</text>`);
+    }
+  });
+
+  data.forEach((d,i) => {
     const x = padL + i*step + (step-bw)/2;
-    if(d.up !== null){
-      const h = d.up * scale;
-      svgParts.push(`<rect class="bar-up" x="${x.toFixed(2)}" y="${(midY-h).toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" data-i="${i}"/>`);
+    const uv = d[keys.up], dv = d[keys.down];
+    if(uv !== null){
+      const h = uv*scale;
+      parts.push(`<rect x="${x.toFixed(2)}" y="${(midY-h).toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" fill="var(--up)" data-i="${i}"/>`);
+      if(uv >= th.warning) parts.push(`<circle cx="${(x+bw/2).toFixed(2)}" cy="${(midY-h-6).toFixed(2)}" r="2.6" fill="var(--warning)"/>`);
+      else if(uv >= th.caution) parts.push(`<circle cx="${(x+bw/2).toFixed(2)}" cy="${(midY-h-6).toFixed(2)}" r="2.2" fill="var(--caution)"/>`);
     }
-    if(d.down !== null){
-      const h = d.down * scale;
-      svgParts.push(`<rect class="bar-down" x="${x.toFixed(2)}" y="${midY.toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" data-i="${i}"/>`);
+    if(dv !== null){
+      const h = dv*scale;
+      parts.push(`<rect x="${x.toFixed(2)}" y="${midY.toFixed(2)}" width="${bw.toFixed(2)}" height="${h.toFixed(2)}" fill="var(--down)" data-i="${i}"/>`);
+      if(dv >= th.warning) parts.push(`<circle cx="${(x+bw/2).toFixed(2)}" cy="${(midY+h+6).toFixed(2)}" r="2.6" fill="var(--warning)"/>`);
+      else if(dv >= th.caution) parts.push(`<circle cx="${(x+bw/2).toFixed(2)}" cy="${(midY+h+6).toFixed(2)}" r="2.2" fill="var(--caution)"/>`);
     }
   });
+  parts.push(`<line x1="${padL}" y1="${midY}" x2="${W-padR}" y2="${midY}" stroke="#2c3644" stroke-width="1.2"/>`);
 
-  // zero line
-  svgParts.push(`<line class="gridline" x1="${padL}" y1="${midY}" x2="${W-padR}" y2="${midY}" style="stroke:#2c3644;stroke-width:1.2"/>`);
-
-  // moving average line (on the up side)
-  let path = '';
-  maVals.forEach((v, i) => {
-    if(v === null) return;
-    const x = padL + i*step + step/2;
-    const y = midY - v*scale;
-    path += (path === '' ? 'M' : 'L') + x.toFixed(2) + ',' + y.toFixed(2) + ' ';
-  });
-  if(path) svgParts.push(`<path class="ma-line" d="${path}"/>`);
-
-  // x-axis date labels (sparse)
-  const labelEvery = Math.max(1, Math.round(n / 10));
-  data.forEach((d, i) => {
+  const labelEvery = Math.max(1, Math.round(n/9));
+  data.forEach((d,i) => {
     if(i % labelEvery !== 0) return;
     const x = padL + i*step + step/2;
     const [y,m,dd] = d.date.split('-');
-    svgParts.push(`<text class="axislabel" x="${x.toFixed(1)}" y="${H-6}" text-anchor="middle">${m}/${dd}</text>`);
+    parts.push(`<text x="${x.toFixed(1)}" y="${H-6}" text-anchor="middle" fill="var(--dim)" font-size="9.5">${m}/${dd}</text>`);
   });
 
-  svg.innerHTML = svgParts.join('');
+  svg.innerHTML = parts.join('');
 
-  // hover interactivity
+  // badge = worst status in the visible range's most recent 5 days
+  const recent = data.slice(-5);
+  let status = 'normal';
+  recent.forEach(d => {
+    const vals = [d[keys.up], d[keys.down]].filter(v => v !== null);
+    vals.forEach(v => {
+      if(v >= th.warning) status = 'warning';
+      else if(v >= th.caution && status !== 'warning') status = 'caution';
+    });
+  });
+  const badge = document.getElementById('badge-' + metricKey);
+  badge.className = 'badge ' + status;
+  badge.textContent = status === 'normal' ? 'Normal' : status === 'caution' ? '⚠ Caution' : '⛔ Warning';
+  document.getElementById('thr-' + metricKey).innerHTML =
+    `caution ≥ <b>${th.caution}</b>&nbsp;&nbsp;warning ≥ <b>${th.warning}</b>`;
+
+  // tooltip
   const tooltip = document.getElementById('tooltip');
-  const wrap = document.getElementById('chartwrap');
   svg.onmousemove = (e) => {
     const rect = svg.getBoundingClientRect();
-    const scaleX = W / rect.width;
-    const mx = (e.clientX - rect.left) * scaleX;
-    let idx = Math.floor((mx - padL) / step);
+    const scaleX = W/rect.width;
+    const mx = (e.clientX - rect.left)*scaleX;
+    let idx = Math.floor((mx-padL)/step);
     idx = Math.max(0, Math.min(n-1, idx));
-    const d = data[idx];
-    if(!d) return;
-    tooltip.style.display = 'block';
-    tooltip.style.left = Math.min(e.clientX - rect.left + 14, rect.width - 150) + 'px';
-    tooltip.style.top = (e.clientY - rect.top - 50) + 'px';
-    tooltip.innerHTML = `<div class="t-date">${d.date}</div>`+
-      `<div class="t-up">Up 20%: ${d.up ?? '—'}</div>`+
-      `<div class="t-down">Down 20%: ${d.down ?? '—'}</div>`;
+    const d = data[idx]; if(!d) return;
+    const uv = d[keys.up], dv = d[keys.down];
+    let flag = '';
+    const worst = Math.max(uv??0, dv??0);
+    if(worst >= th.warning) flag = `<div class="t-flag warning">⛔ Warning threshold crossed</div>`;
+    else if(worst >= th.caution) flag = `<div class="t-flag caution">⚠ Caution threshold crossed</div>`;
+    tooltip.style.display='block';
+    tooltip.style.left = Math.min(e.clientX - svg.closest('main').getBoundingClientRect().left + 14, 900) + 'px';
+    tooltip.style.top = (svg.getBoundingClientRect().top - svg.closest('main').getBoundingClientRect().top - 60) + 'px';
+    tooltip.innerHTML = `<div class="t-date">${d.date} — ${th.label}</div>`+
+      `<div class="t-up">Up: ${uv ?? '—'}</div><div class="t-down">Down: ${dv ?? '—'}</div>${flag}`;
   };
-  svg.onmouseleave = () => { tooltip.style.display = 'none'; };
+  svg.onmouseleave = () => { tooltip.style.display='none'; };
 }
+function renderAll(){
+  const full = mergedData();
+  const data = full.slice(-currentRange);
+  document.getElementById('range-label').textContent =
+    data.length ? `— ${data[0].date} to ${data[data.length-1].date}` : '';
+  ['50','20','20d'].forEach(renderChart);
+}
+
+/* ================= Sidebar quote cards ================= */
+function loadQuotes(){
+  const saved = localStorage.getItem('breadthQuotes');
+  return saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_QUOTES));
+}
+function saveQuotes(q){ localStorage.setItem('breadthQuotes', JSON.stringify(q)); }
+let quotes = loadQuotes();
+
+function renderSidebar(side){
+  const el = document.getElementById(side + 'Sidebar');
+  el.innerHTML = '';
+  quotes[side].forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="kicker" contenteditable="true" data-role="kicker">${q.kicker}</div>
+      <div class="body" contenteditable="true" data-placeholder="Write a note…" data-role="text">${(q.text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>
+      <div class="card-actions">
+        <button data-act="save">Save</button>
+        <button data-act="delete">Remove</button>
+      </div>`;
+    const kickerEl = card.querySelector('[data-role="kicker"]');
+    const textEl = card.querySelector('[data-role="text"]');
+    card.querySelector('[data-act="save"]').addEventListener('click', () => {
+      quotes[side][idx] = { kicker: kickerEl.textContent, text: textEl.innerText };
+      saveQuotes(quotes);
+    });
+    card.querySelector('[data-act="delete"]').addEventListener('click', () => {
+      quotes[side].splice(idx,1); saveQuotes(quotes); renderSidebar(side);
+    });
+    el.appendChild(card);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'addCardBtn';
+  addBtn.textContent = '+ Add note';
+  addBtn.addEventListener('click', () => {
+    quotes[side].push({ kicker: 'Note', text: '' });
+    saveQuotes(quotes); renderSidebar(side);
+  });
+  el.appendChild(addBtn);
+}
+renderSidebar('left'); renderSidebar('right');
+
+/* ================= Paste importer ================= */
+function nextWeekday(iso){
+  const d = new Date(iso + 'T00:00:00');
+  do { d.setDate(d.getDate()+1); } while(d.getDay()===0 || d.getDay()===6);
+  return d.toISOString().slice(0,10);
+}
+document.getElementById('previewBtn').addEventListener('click', () => {
+  const raw = document.getElementById('pasteBox').value.trim();
+  const msg = document.getElementById('pasteMsg');
+  if(!raw){ msg.textContent = 'Paste something first.'; return; }
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  const full = mergedData();
+  let lastDate = full.length ? full[full.length-1].date : new Date().toISOString().slice(0,10);
+  const rows = [];
+  for(const line of lines){
+    let fields = line.split('\t');
+    if(fields.length < 6) fields = line.split(',');
+    fields = fields.map(f=>f.trim());
+    let date, nums;
+    if(fields.length >= 7){
+      const m = fields[0].match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(!m){ msg.textContent = `Could not read date "${fields[0]}" — expected M/D/YYYY.`; return; }
+      date = `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+      nums = fields.slice(1,7);
+    } else if(fields.length === 6){
+      date = nextWeekday(lastDate);
+      nums = fields;
+    } else {
+      msg.textContent = `A row has ${fields.length} columns — need 6 or 7.`; return;
+    }
+    lastDate = date;
+    const [up50,down50,up20,down20,up20d,down20d] = nums.map(cleanNum);
+    rows.push({date,up50,down50,up20,down20,up20d,down20d});
+  }
+  pendingRows = rows;
+  msg.textContent = '';
+  const tbl = document.getElementById('previewTable');
+  tbl.innerHTML = '<tr><th>Date</th><th>50% Up</th><th>50% Down</th><th>20% Up</th><th>20% Down</th><th>$20 Up</th><th>$20 Down</th></tr>' +
+    rows.map(r => `<tr><td>${r.date}</td><td>${r.up50??''}</td><td>${r.down50??''}</td><td>${r.up20??''}</td><td>${r.down20??''}</td><td>${r.up20d??''}</td><td>${r.down20d??''}</td></tr>`).join('');
+  document.getElementById('previewWrap').style.display = 'block';
+});
+document.getElementById('confirmBtn').addEventListener('click', () => {
+  if(!pendingRows) return;
+  const map = new Map(userRows.map(r=>[r.date,r]));
+  pendingRows.forEach(r => map.set(r.date, r));
+  userRows = Array.from(map.values());
+  localStorage.setItem('breadthUserRows', JSON.stringify(userRows));
+  document.getElementById('previewWrap').style.display='none';
+  document.getElementById('pasteBox').value = '';
+  document.getElementById('pasteMsg').textContent = `Added ${pendingRows.length} row(s).`;
+  pendingRows = null;
+  renderAll();
+});
+document.getElementById('cancelBtn').addEventListener('click', () => {
+  pendingRows = null;
+  document.getElementById('previewWrap').style.display='none';
+});
+
+/* ================= Backup export / import ================= */
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const payload = { quotes, userRows, gid: localStorage.getItem('breadthGid') || null, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'breadth-dashboard-backup.json';
+  a.click();
+});
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', (e) => {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const payload = JSON.parse(reader.result);
+      if(payload.quotes) { quotes = payload.quotes; saveQuotes(quotes); }
+      if(payload.userRows) { userRows = payload.userRows; localStorage.setItem('breadthUserRows', JSON.stringify(userRows)); }
+      if(payload.gid) { localStorage.setItem('breadthGid', payload.gid); document.getElementById('gidInput').value = payload.gid; }
+      renderSidebar('left'); renderSidebar('right'); renderAll();
+      setStatus('backup imported', 'live');
+    } catch(err){ alert('Could not read that backup file.'); }
+  };
+  reader.readAsText(file);
+});
 
 init();
 </script>
