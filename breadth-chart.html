@@ -19,6 +19,7 @@
     --down-dim:#5c1f1c;
     --caution:#f5a623;
     --warning:#f0473e;
+    --avg:#9d7bea;
     --accent:#4c8dff;
     --mono:'SF Mono','JetBrains Mono',Consolas,Menlo,monospace;
     --sans:-apple-system,'Segoe UI',Inter,Arial,sans-serif;
@@ -49,6 +50,13 @@
   #configRow.show{display:flex;}
   #configRow input{background:var(--panel);border:1px solid var(--grid);color:var(--text);
     font-family:var(--mono);font-size:11px;padding:6px 8px;border-radius:4px;width:320px;}
+  #ghConfigRow{display:none;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  #ghConfigRow.show{display:flex;}
+  #ghConfigRow input{background:var(--panel);border:1px solid var(--grid);color:var(--text);
+    font-family:var(--mono);font-size:11px;padding:6px 8px;border-radius:4px;width:320px;}
+  #ghConfigRow .hint{font-family:var(--sans);font-size:10.5px;color:var(--dim);width:100%;line-height:1.5;}
+  #lastUpdated{font-size:10px;color:var(--dim);margin-top:2px;}
+  .statuswrap{text-align:right;}
 
   /* ---------- Sidebars ---------- */
   .sidebar{display:flex;flex-direction:column;gap:12px;}
@@ -113,7 +121,10 @@
 <header>
   <div class="htop">
     <h1>Breadth Study Dashboard <span id="range-label"></span></h1>
-    <div id="status">loading…</div>
+    <div class="statuswrap">
+      <div id="status">loading…</div>
+      <div id="lastUpdated"></div>
+    </div>
   </div>
   <div class="toolbar">
     <button data-range="5">1W</button>
@@ -124,10 +135,20 @@
     <button data-range="1260">5Y</button>
     <button data-range="99999">ALL</button>
     <div class="spacer"></div>
+    <button id="ghCfgBtn">github sync</button>
     <button id="cfgBtn">connect live sheet</button>
     <button id="exportBtn">export backup</button>
     <button id="importBtn">import backup</button>
     <input type="file" id="importFile" accept="application/json" style="display:none">
+  </div>
+  <div id="ghConfigRow">
+    <input id="ghTokenInput" type="password" placeholder="GitHub token (repo-scoped, write access)">
+    <button class="btn primary" id="ghCfgApply">Save token &amp; sync</button>
+    <button class="btn" id="ghClear">Remove token</button>
+    <span class="hint">Data is always read from the repo (no token needed to view). A token is only needed on a
+      device you want to push new pasted rows / notes FROM. Create one at github.com/settings/tokens with
+      "Contents: Read and write" access scoped to the PSX repo, and it's stored only in this browser's
+      localStorage — never committed anywhere.</span>
   </div>
   <div id="configRow">
     <input id="gidInput" placeholder="Paste the Market Internals tab's gid from the sheet URL">
@@ -190,11 +211,12 @@
 <aside class="sidebar" id="rightSidebar"></aside>
 
 <footer>
-  Chart data syncs live from your Google Sheet when connected (top right); otherwise it shows the last saved snapshot plus
-  anything pasted below. Sidebar notes and pasted rows are saved in this browser only (<code>localStorage</code>) — they
-  won't follow you to another device or browser automatically. Use <code>export backup</code> to download everything as a
-  JSON file you can keep safe or move to another machine with <code>import backup</code>. For notes and data that stay in
-  sync everywhere without manual exports, the Google Sheet connection above is the one part of this page that's genuinely automatic.
+  Pasted rows and sidebar notes are saved to <code>breadth_data.json</code> in the PSX GitHub repo, so every device that
+  opens this page reads the same data — no setup needed to view it. To push new pasted rows or notes back up, add a
+  GitHub token via <code>github sync</code> (top right) on that device; without a token the page is read-only against
+  GitHub but still fully usable. Chart data can also sync live from a connected Google Sheet. Everything is mirrored to
+  this browser's <code>localStorage</code> too as an offline cache. Use <code>export backup</code> / <code>import backup</code>
+  for a manual JSON snapshot any time.
 </footer>
 
 </div>
@@ -231,6 +253,73 @@ let allData = FALLBACK_DATA.slice();
 let userRows = JSON.parse(localStorage.getItem('breadthUserRows') || '[]');
 let currentRange = 252;
 let pendingRows = null;
+
+/* ================= GitHub persistence ================= */
+const GH_OWNER = 'jamilnaveed-jpg';
+const GH_REPO = 'PSX';
+const GH_PATH = 'breadth_data.json';
+const GH_BRANCH = 'main';
+let ghSha = null;
+let lastUpdatedAt = null;
+
+function updateLastUpdatedLabel(){
+  const el = document.getElementById('lastUpdated');
+  if(!el) return;
+  el.textContent = lastUpdatedAt ? 'data last updated ' + new Date(lastUpdatedAt).toLocaleString() : '';
+}
+
+async function loadFromGithub(){
+  const token = localStorage.getItem('breadthGhToken');
+  try{
+    let json;
+    if(token){
+      const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}?ref=${GH_BRANCH}`, {
+        headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' }
+      });
+      if(!res.ok) throw new Error('gh read failed ' + res.status);
+      const meta = await res.json();
+      ghSha = meta.sha;
+      json = JSON.parse(decodeURIComponent(escape(atob(meta.content.replace(/\n/g,'')))));
+    } else {
+      const res = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/${GH_PATH}?t=${Date.now()}`);
+      if(!res.ok) throw new Error('raw fetch failed ' + res.status);
+      json = await res.json();
+    }
+    return json;
+  } catch(e){ console.warn('GitHub load failed', e); return null; }
+}
+
+async function saveToGithub(){
+  const token = localStorage.getItem('breadthGhToken');
+  if(!token) return;
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    userRows, quotes,
+    gid: localStorage.getItem('breadthGid') || null
+  };
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+  try{
+    setStatus('saving to GitHub…');
+    const shaRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}?ref=${GH_BRANCH}`, {
+      headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json' }
+    });
+    if(shaRes.ok){ const meta = await shaRes.json(); ghSha = meta.sha; }
+    const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_PATH}`, {
+      method: 'PUT',
+      headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github+json', 'Content-Type':'application/json' },
+      body: JSON.stringify({ message: 'Update breadth data ' + payload.updatedAt, content, sha: ghSha, branch: GH_BRANCH })
+    });
+    if(!res.ok) throw new Error('gh save failed ' + res.status);
+    const out = await res.json();
+    ghSha = out.content.sha;
+    lastUpdatedAt = payload.updatedAt;
+    updateLastUpdatedLabel();
+    setStatus('● saved to GitHub — ' + new Date(lastUpdatedAt).toLocaleTimeString(), 'live');
+  } catch(e){
+    console.warn('GitHub save failed', e);
+    setStatus('could not save to GitHub — check token has repo write access', 'err');
+  }
+}
 
 function mergedData(){
   const map = new Map();
@@ -318,6 +407,14 @@ function setStatus(msg, cls){
   el.textContent = msg; el.className = cls || '';
 }
 async function init(){
+  const remote = await loadFromGithub();
+  if(remote){
+    if(Array.isArray(remote.userRows)){ userRows = remote.userRows; localStorage.setItem('breadthUserRows', JSON.stringify(userRows)); }
+    if(remote.quotes){ quotes = remote.quotes; saveQuotes(quotes); renderSidebar('left'); renderSidebar('right'); }
+    if(remote.gid){ localStorage.setItem('breadthGid', remote.gid); document.getElementById('gidInput').value = remote.gid; }
+    if(remote.updatedAt) lastUpdatedAt = remote.updatedAt;
+  }
+  updateLastUpdatedLabel();
   const savedGid = localStorage.getItem('breadthGid');
   if(savedGid){
     document.getElementById('gidInput').value = savedGid;
@@ -331,6 +428,23 @@ async function init(){
   }
   renderAll();
 }
+document.getElementById('ghCfgBtn').addEventListener('click', () => {
+  document.getElementById('ghConfigRow').classList.toggle('show');
+  if(localStorage.getItem('breadthGhToken')) document.getElementById('ghTokenInput').placeholder = 'token saved — paste a new one to replace it';
+});
+document.getElementById('ghCfgApply').addEventListener('click', () => {
+  const tok = document.getElementById('ghTokenInput').value.trim();
+  if(!tok) return;
+  localStorage.setItem('breadthGhToken', tok);
+  document.getElementById('ghTokenInput').value = '';
+  document.getElementById('ghTokenInput').placeholder = 'token saved — paste a new one to replace it';
+  saveToGithub();
+});
+document.getElementById('ghClear').addEventListener('click', () => {
+  localStorage.removeItem('breadthGhToken');
+  document.getElementById('ghTokenInput').placeholder = 'GitHub token (repo-scoped, write access)';
+  setStatus('GitHub token removed — this device is read-only now', '');
+});
 document.getElementById('cfgBtn').addEventListener('click', () => document.getElementById('configRow').classList.toggle('show'));
 document.getElementById('cfgApply').addEventListener('click', async () => {
   const gid = document.getElementById('gidInput').value.trim();
@@ -398,13 +512,21 @@ function renderChart(metricKey){
   parts.push(`<text x="4" y="${midY+4}" fill="var(--dim)" font-size="10">0</text>`);
   parts.push(`<text x="4" y="${H-padB}" fill="var(--dim)" font-size="10">${topLabel}</text>`);
 
+  // average reference line (mean of up+down values in the visible range), mirrored like the thresholds
+  const avgSamples = [];
+  data.forEach(d => { const u=d[keys.up], v=d[keys.down]; if(u!==null) avgSamples.push(u); if(v!==null) avgSamples.push(v); });
+  const avgVal = avgSamples.length ? avgSamples.reduce((a,b)=>a+b,0)/avgSamples.length : 0;
+
   // threshold reference lines (mirrored)
-  [ [th.caution,'var(--caution)'], [th.warning,'var(--warning)'] ].forEach(([val,color]) => {
+  [ [th.caution,'var(--caution)','caution'], [th.warning,'var(--warning)','warning'], [avgVal,'var(--avg)','avg'] ].forEach(([val,color,name]) => {
     if(val*scale < plotH/2){
       const yTop = midY - val*scale, yBot = midY + val*scale;
-      parts.push(`<line x1="${padL}" y1="${yTop}" x2="${W-padR}" y2="${yTop}" stroke="${color}" stroke-width="1" stroke-dasharray="4,4" opacity=".55"/>`);
-      parts.push(`<line x1="${padL}" y1="${yBot}" x2="${W-padR}" y2="${yBot}" stroke="${color}" stroke-width="1" stroke-dasharray="4,4" opacity=".55"/>`);
-      parts.push(`<text x="${W-padR-2}" y="${yTop-3}" text-anchor="end" fill="${color}" font-size="9" opacity=".8">${val}</text>`);
+      const dash = name==='avg' ? '2,3' : '4,4';
+      const opac = name==='avg' ? '.7' : '.55';
+      parts.push(`<line x1="${padL}" y1="${yTop}" x2="${W-padR}" y2="${yTop}" stroke="${color}" stroke-width="1" stroke-dasharray="${dash}" opacity="${opac}"/>`);
+      parts.push(`<line x1="${padL}" y1="${yBot}" x2="${W-padR}" y2="${yBot}" stroke="${color}" stroke-width="1" stroke-dasharray="${dash}" opacity="${opac}"/>`);
+      const label = name==='avg' ? `avg ${Math.round(val)}` : val;
+      parts.push(`<text x="${W-padR-2}" y="${yTop-3}" text-anchor="end" fill="${color}" font-size="9" opacity=".8">${label}</text>`);
     }
   });
 
@@ -450,7 +572,7 @@ function renderChart(metricKey){
   badge.className = 'badge ' + status;
   badge.textContent = status === 'normal' ? 'Normal' : status === 'caution' ? '⚠ Caution' : '⛔ Warning';
   document.getElementById('thr-' + metricKey).innerHTML =
-    `caution ≥ <b>${th.caution}</b>&nbsp;&nbsp;warning ≥ <b>${th.warning}</b>`;
+    `caution ≥ <b>${th.caution}</b>&nbsp;&nbsp;warning ≥ <b>${th.warning}</b>&nbsp;&nbsp;avg ≈ <b>${Math.round(avgVal)}</b>`;
 
   // tooltip
   const tooltip = document.getElementById('tooltip');
@@ -508,9 +630,11 @@ function renderSidebar(side){
     card.querySelector('[data-act="save"]').addEventListener('click', () => {
       quotes[side][idx] = { kicker: kickerEl.textContent, text: textEl.innerText };
       saveQuotes(quotes);
+      saveToGithub();
     });
     card.querySelector('[data-act="delete"]').addEventListener('click', () => {
       quotes[side].splice(idx,1); saveQuotes(quotes); renderSidebar(side);
+      saveToGithub();
     });
     el.appendChild(card);
   });
@@ -520,6 +644,7 @@ function renderSidebar(side){
   addBtn.addEventListener('click', () => {
     quotes[side].push({ kicker: 'Note', text: '' });
     saveQuotes(quotes); renderSidebar(side);
+    saveToGithub();
   });
   el.appendChild(addBtn);
 }
@@ -577,6 +702,7 @@ document.getElementById('confirmBtn').addEventListener('click', () => {
   document.getElementById('pasteMsg').textContent = `Added ${pendingRows.length} row(s).`;
   pendingRows = null;
   renderAll();
+  saveToGithub();
 });
 document.getElementById('cancelBtn').addEventListener('click', () => {
   pendingRows = null;
@@ -604,6 +730,7 @@ document.getElementById('importFile').addEventListener('change', (e) => {
       if(payload.gid) { localStorage.setItem('breadthGid', payload.gid); document.getElementById('gidInput').value = payload.gid; }
       renderSidebar('left'); renderSidebar('right'); renderAll();
       setStatus('backup imported', 'live');
+      saveToGithub();
     } catch(err){ alert('Could not read that backup file.'); }
   };
   reader.readAsText(file);
