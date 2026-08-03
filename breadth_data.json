@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-03T08:50:31.637Z",
+  "updatedAt": "2026-08-03T08:52:40.689Z",
   "userRows": [
     {
       "date": "2026-07-31",
@@ -47,6 +47,10 @@
       {
         "kicker": "Discipline",
         "text": "Always be in Control and Control risk-taking.\nT3A, T30A. Organise like crazy.\nContext, Qualifier and Checklist."
+      },
+      {
+        "kicker": "Note",
+        "text": ""
       }
     ],
     "right": [
