@@ -1,6 +1,68 @@
 {
-  "updatedAt": null,
-  "userRows": [],
-  "quotes": null,
+  "updatedAt": "2026-08-03T08:50:31.637Z",
+  "userRows": [
+    {
+      "date": "2026-07-31",
+      "up50": 71,
+      "down50": 212,
+      "up20": 52,
+      "down20": 34,
+      "up20d": 63,
+      "down20d": 66
+    },
+    {
+      "date": "2026-07-30",
+      "up50": 83,
+      "down50": 213,
+      "up20": 68,
+      "down20": 39,
+      "up20d": 77,
+      "down20d": 95
+    },
+    {
+      "date": "2026-07-29",
+      "up50": 67,
+      "down50": 221,
+      "up20": 68,
+      "down20": 149,
+      "up20d": 94,
+      "down20d": 129
+    },
+    {
+      "date": "2026-07-28",
+      "up50": 58,
+      "down50": 188,
+      "up20": 25,
+      "down20": 74,
+      "up20d": 88,
+      "down20d": 91
+    }
+  ],
+  "quotes": {
+    "left": [
+      {
+        "kicker": "Rule of thumb",
+        "text": "When every 20% study goes up 200+ there will be a big pull back or choppy market."
+      },
+      {
+        "kicker": "Discipline",
+        "text": "Always be in Control and Control risk-taking.\nT3A, T30A. Organise like crazy.\nContext, Qualifier and Checklist."
+      }
+    ],
+    "right": [
+      {
+        "kicker": "Comments",
+        "text": "The monthly Employment Situation — what we all call the \"jobs report\" — has been released on the first Friday of every month since 1950."
+      },
+      {
+        "kicker": "Remaining 2026 monthly expiration dates",
+        "text": "• August 21, 2026\n• September 18, 2026 (Triple Witching / End of Q3)\n• October 16, 2026\n• November 20, 2026\n• December 18, 2026 (Triple Witching / End of Q4)"
+      },
+      {
+        "kicker": "Full 2027 monthly expiration dates",
+        "text": "• January 15, 2027\n• February 19, 2027\n• March 19, 2027 (Triple Witching / End of Q1)\n• April 16, 2027\n• May 21, 2027\n• June 18, 2027 (Triple Witching / End of Q2)\n• July 16, 2027\n• August 20, 2027\n• September 17, 2027 (Triple Witching / End of Q3)\n• October 15, 2027\n• November 19, 2027\n• December 17, 2027 (Triple Witching / End of Q4)\n\nTrue calendar quarter-end dates: March 31, June 30, September 30, December 31, 2027."
+      }
+    ]
+  },
   "gid": null
 }
