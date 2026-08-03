@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-03T08:55:38.840Z",
+  "updatedAt": "2026-08-03T08:56:40.357Z",
   "userRows": [
     {
       "date": "2026-07-31",
@@ -50,7 +50,7 @@
       },
       {
         "kicker": "Note",
-        "text": "Token \nExpires on Tue, Aug 3 2027"
+        "text": ""
       }
     ],
     "right": [
