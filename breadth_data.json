@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-04T16:38:28.176Z",
+  "updatedAt": "2026-08-04T16:39:41.704Z",
   "userRows": [
     {
       "date": "2026-07-31",
@@ -58,7 +58,7 @@
       },
       {
         "kicker": "Note",
-        "text": "Setup = Market Structure, Entry strategy, Exit strategy, Size strategy, stop strategy, Frequency strategy "
+        "text": "Setup = Market Structure, Entry strategy, Exit strategy, Size strategy, stop strategy, Frequency strategy"
       }
     ],
     "right": [
