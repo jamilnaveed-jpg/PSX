@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RDA Yield, Rebalancing & UK Tax Calculator</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --border: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #4ade80;
+            --accent-amber: #fbbf24;
+            --accent-rose: #fb7185;
+            --accent-purple: #c084fc;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        h1 { font-size: 24px; margin: 0 0 6px 0; color: var(--text-main); }
+        h2 { font-size: 18px; color: var(--accent-blue); margin-top: 32px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .subtitle { color: var(--text-muted); font-size: 14px; margin: 0; }
+
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 12px; font-weight: 700; color: var(--accent-blue); margin-bottom: 6px; }
+        .input-group input, .input-group select {
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .card.recommended { border: 2px solid var(--accent-green); }
+
+        .badge {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--accent-green);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .card-title { font-size: 16px; font-weight: 700; color: var(--accent-blue); margin-bottom: 12px; }
+        .stat-val { font-size: 26px; font-weight: 800; margin: 6px 0; }
+        .stat-sub { font-size: 12px; color: var(--text-muted); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            font-size: 13.5px;
+            margin-bottom: 24px;
+        }
+
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #0f172a; color: var(--accent-blue); font-weight: 600; }
+
+        .callout {
+            background: rgba(56, 189, 248, 0.08);
+            border-left: 4px solid var(--accent-blue);
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 16px;
+            font-size: 13.5px;
+        }
+
+        .lakh-info {
+            font-size: 12px;
+            color: var(--accent-amber);
+            margin-top: 4px;
+        }
+
+        .slider-val {
+            font-size: 12px;
+            color: var(--accent-purple);
+            font-weight: bold;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Roshan Digital Account (RDA) Complete Yield & Portfolio Suite</h1>
+        <p class="subtitle">Target Yield Capitalizer, FX Devaluation & Rebalancing Simulator, and HMRC Self Assessment Tax Breakdown.</p>
+    </header>
+
+    <!-- SECTION 1: CORE TARGET INPUTS -->
+    <h2>1. Target Income Controls</h2>
+    <div class="grid-inputs">
+        <div class="input-group">
+            <label for="currency">Target Income Currency</label>
+            <select id="currency">
+                <option value="GBP">GBP (£)</option>
+                <option value="PKR">PKR (Rs. / Lakhs / Millions)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="freq">Income Frequency</label>
+            <select id="freq">
+                <option value="annual">Annual Income Target</option>
+                <option value="monthly">Monthly Income Target</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="targetProfit">Target Net Profit (After WHT)</label>
+            <input type="number" id="targetProfit" value="5000" step="500">
+            <div id="lakhDisplay" class="lakh-info"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="pkrFx">Current GBP/PKR Exchange Rate</label>
+            <input type="number" id="pkrFx" value="350" step="1">
+        </div>
+    </div>
+
+    <!-- Strategy Cards -->
+    <div class="cards-container">
+        <div class="card recommended">
+            <span class="badge">RECOMMENDED (Zero FX Risk)</span>
+            <div class="card-title">Option 1: 100% GBP NPC</div>
+            <div class="stat-sub">Gross: 11.0% | Net WHT: 9.9%</div>
+            <div class="stat-val" id="cap-gbp" style="color: var(--accent-green);">£0</div>
+            <div class="stat-sub" id="pkr-eq-gbp">Equivalent: Rs. 0</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Option 2: 50/50 Dual Allocation</div>
+            <div class="stat-sub">Blended Net Yield: ~12.15%</div>
+            <div class="stat-val" id="cap-dual" style="color: var(--accent-blue);">£0</div>
+            <div class="stat-sub" id="pkr-eq-dual">Split: 50% GBP / 50% PKR</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Option 3: 100% PKR Conventional NPC</div>
+            <div class="stat-sub">Gross: 16.0% | Net WHT: 14.4%</div>
+            <div class="stat-val" id="cap-pkr" style="color: var(--accent-amber);">£0</div>
+            <div class="stat-sub" id="pkr-eq-pkr">Subject to Currency Devaluation</div>
+        </div>
+    </div>
+
+    <!-- Yield Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Strategy Allocation</th>
+                <th>Required Capital (GBP)</th>
+                <th>Required Capital (PKR)</th>
+                <th>Gross Income (Before Tax)</th>
+                <th>Pakistan WHT (10%)</th>
+                <th>Net Target Income (After Tax)</th>
+            </tr>
+        </thead>
+        <tbody id="yield-table"></tbody>
+    </table>
+
+    <!-- SECTION 2: FX REBALANCING SIMULATOR -->
+    <h2>2. FX Devaluation & Portfolio Rebalancing Simulator</h2>
+    <div class="grid-inputs">
+        <div class="input-group">
+            <label for="devRate">Projected Annual PKR Devaluation (%)</label>
+            <input type="range" id="devRate" min="0" max="25" value="6" step="0.5">
+            <div class="slider-val" id="devRateVal">6.0% / year</div>
+        </div>
+
+        <div class="input-group">
+            <label for="horizonYears">Investment Horizon (Years)</label>
+            <select id="horizonYears">
+                <option value="1">1 Year</option>
+                <option value="2">2 Years</option>
+                <option value="3" selected>3 Years</option>
+                <option value="5">5 Years</option>
+            </select>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Holding Strategy</th>
+                <th>Future Exchange Rate</th>
+                <th>Portfolio Value in GBP (End of Period)</th>
+                <th>Realized Annual Return in GBP</th>
+                <th>50/50 Rebalancing Action Required</th>
+            </tr>
+        </thead>
+        <tbody id="sim-table"></tbody>
+    </table>
+
+    <!-- SECTION 3: UK SELF ASSESSMENT TAX BREAKDOWN -->
+    <h2>3. UK HMRC Self Assessment Tax Breakdown</h2>
+    <div class="grid-inputs">
+        <div class="input-group">
+            <label for="ukTaxBand">UK Income Tax Band</label>
+            <select id="ukTaxBand">
+                <option value="basic">Basic Rate (20%) - £1,000 PSA</option>
+                <option value="higher" selected>Higher Rate (40%) - £500 PSA</option>
+                <option value="additional">Additional Rate (45%) - £0 PSA</option>
+            </select>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Strategy Allocation</th>
+                <th>Gross Foreign Interest (GBP)</th>
+                <th>Unused Personal Savings Allowance</th>
+                <th>Gross Taxable Interest</th>
+                <th>UK Tax Due (Before Credit)</th>
+                <th>Foreign Tax Credit (Pakistan 10% WHT)</th>
+                <th>Net UK HMRC Payable</th>
+            </tr>
+        </thead>
+        <tbody id="tax-table"></tbody>
+    </table>
+
+    <div class="callout">
+        <strong>📌 Key Financial & Tax Takeaways:</strong>
+        <ul>
+            <li><strong>Double Taxation Relief (DTA):</strong> Under Article 22 of the UK-Pakistan Double Taxation Agreement, Pakistan WHT (10%) can be claimed directly against your UK HMRC liability to avoid paying tax twice.</li>
+            <li><strong>Personal Savings Allowance (PSA):</strong> Higher rate taxpayers (£50,271–£125,140) receive a £500 tax-free savings allowance. Basic rate taxpayers receive £1,000.</li>
+            <li><strong>Rebalancing Logic:</strong> If PKR devaluates faster than the ~4.5% yield premium of PKR certificates over GBP certificates, a 100% PKR allocation underperforms in real GBP terms. The 50/50 rebalancing action tells you exactly how much to shift back into PKR or GBP to keep your risk exposure even.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const RATES = {
+        gbpGross: 0.11,
+        gbpNet: 0.099,
+        pkrGross: 0.16,
+        pkrNet: 0.144,
+        wht: 0.10
+    };
+
+    function formatGBP(val) { return '£' + Math.round(val).toLocaleString('en-GB'); }
+
+    function toLakhsMillions(pkrVal) {
+        if (pkrVal >= 10000000) return (pkrVal / 10000000).toFixed(2) + ' Crore';
+        if (pkrVal >= 100000) return (pkrVal / 100000).toFixed(2) + ' Lakh';
+        return Math.round(pkrVal).toLocaleString('en-PK') + ' PKR';
+    }
+
+    function calculate() {
+        const currency = document.getElementById('currency').value;
+        const freq = document.getElementById('freq').value;
+        const targetProfitInput = parseFloat(document.getElementById('targetProfit').value) || 0;
+        const pkrFx = parseFloat(document.getElementById('pkrFx').value) || 350;
+        const devRate = parseFloat(document.getElementById('devRate').value) / 100;
+        const horizonYears = parseInt(document.getElementById('horizonYears').value);
+        const ukTaxBand = document.getElementById('ukTaxBand').value;
+
+        document.getElementById('devRateVal').innerText = (devRate * 100).toFixed(1) + '% / year';
+
+        // Display Lakh helper
+        const lakhEl = document.getElementById('lakhDisplay');
+        if (currency === 'PKR') {
+            const annualPkr = freq === 'monthly' ? targetProfitInput * 12 : targetProfitInput;
+            lakhEl.innerText = `Equivalent: ${toLakhsMillions(targetProfitInput)} (${toLakhsMillions(annualPkr)} / yr)`;
+        } else {
+            lakhEl.innerText = '';
+        }
+
+        // Standardize Target to Annual GBP
+        let annualTargetGbp = 0;
+        if (currency === 'GBP') {
+            annualTargetGbp = freq === 'monthly' ? targetProfitInput * 12 : targetProfitInput;
+        } else {
+            const annualTargetPkr = freq === 'monthly' ? targetProfitInput * 12 : targetProfitInput;
+            annualTargetGbp = annualTargetPkr / pkrFx;
+        }
+
+        // Required Capital Calculation
+        const reqGbpCap1 = annualTargetGbp / RATES.gbpNet;
+        const reqPkrCap1 = reqGbpCap1 * pkrFx;
+        const grossGbp1 = reqGbpCap1 * RATES.gbpGross;
+        const whtGbp1 = grossGbp1 * RATES.wht;
+        const netGbp1 = grossGbp1 - whtGbp1;
+
+        const reqGbpCap3 = annualTargetGbp / RATES.pkrNet;
+        const reqPkrCap3 = reqGbpCap3 * pkrFx;
+        const grossGbp3 = reqGbpCap3 * RATES.pkrGross;
+        const whtGbp3 = grossGbp3 * RATES.wht;
+        const netGbp3 = grossGbp3 - whtGbp3;
+
+        const blendedNetRate = (RATES.gbpNet + RATES.pkrNet) / 2;
+        const reqGbpCap2 = annualTargetGbp / blendedNetRate;
+        const reqPkrCap2 = reqGbpCap2 * pkrFx;
+        const grossGbp2 = (reqGbpCap2 * 0.5 * RATES.gbpGross) + (reqGbpCap2 * 0.5 * RATES.pkrGross);
+        const whtGbp2 = grossGbp2 * RATES.wht;
+        const netGbp2 = grossGbp2 - whtGbp2;
+
+        // Populate Card UI
+        if (currency === 'GBP') {
+            document.getElementById('cap-gbp').innerText = formatGBP(reqGbpCap1);
+            document.getElementById('pkr-eq-gbp').innerText = `Equivalent: ${toLakhsMillions(reqPkrCap1)}`;
+            document.getElementById('cap-dual').innerText = formatGBP(reqGbpCap2);
+            document.getElementById('pkr-eq-dual').innerText = `Split: ${formatGBP(reqGbpCap2/2)} / ${toLakhsMillions(reqPkrCap2/2)}`;
+            document.getElementById('cap-pkr').innerText = formatGBP(reqGbpCap3);
+            document.getElementById('pkr-eq-pkr').innerText = `Equivalent: ${toLakhsMillions(reqPkrCap3)}`;
+        } else {
+            document.getElementById('cap-gbp').innerText = toLakhsMillions(reqPkrCap1);
+            document.getElementById('pkr-eq-gbp').innerText = `Equivalent: ${formatGBP(reqGbpCap1)}`;
+            document.getElementById('cap-dual').innerText = toLakhsMillions(reqPkrCap2);
+            document.getElementById('pkr-eq-dual').innerText = `Equivalent: ${formatGBP(reqGbpCap2)}`;
+            document.getElementById('cap-pkr').innerText = toLakhsMillions(reqPkrCap3);
+            document.getElementById('pkr-eq-pkr').innerText = `Equivalent: ${formatGBP(reqGbpCap3)}`;
+        }
+
+        // Section 1 Table
+        const isMonthly = freq === 'monthly';
+        const mult = isMonthly ? 1/12 : 1;
+        const freqLabel = isMonthly ? '/ mo' : '/ yr';
+
+        document.getElementById('yield-table').innerHTML = `
+            <tr>
+                <td><strong>Option 1: 100% GBP NPC</strong></td>
+                <td><strong>${formatGBP(reqGbpCap1)}</strong></td>
+                <td>${toLakhsMillions(reqPkrCap1)}</td>
+                <td>${formatGBP(grossGbp1 * mult)}</td>
+                <td style="color:var(--accent-rose);">${formatGBP(whtGbp1 * mult)}</td>
+                <td style="color:var(--accent-green); font-weight:700;">${formatGBP(netGbp1 * mult)} ${freqLabel}</td>
+            </tr>
+            <tr>
+                <td><strong>Option 2: 50/50 Dual Allocation</strong></td>
+                <td><strong>${formatGBP(reqGbpCap2)}</strong></td>
+                <td>${toLakhsMillions(reqPkrCap2)}</td>
+                <td>${formatGBP(grossGbp2 * mult)}</td>
+                <td style="color:var(--accent-rose);">${formatGBP(whtGbp2 * mult)}</td>
+                <td style="color:var(--accent-green); font-weight:700;">${formatGBP(netGbp2 * mult)} ${freqLabel}</td>
+            </tr>
+            <tr>
+                <td><strong>Option 3: 100% PKR NPC</strong></td>
+                <td><strong>${formatGBP(reqGbpCap3)}</strong></td>
+                <td>${toLakhsMillions(reqPkrCap3)}</td>
+                <td>${formatGBP(grossGbp3 * mult)}</td>
+                <td style="color:var(--accent-rose);">${formatGBP(whtGbp3 * mult)}</td>
+                <td style="color:var(--accent-green); font-weight:700;">${formatGBP(netGbp3 * mult)} ${freqLabel}</td>
+            </tr>
+        `;
+
+        // Section 2 Table: Devaluation & Rebalancing Simulation
+        const futureFx = pkrFx * Math.pow(1 + devRate, horizonYears);
+        
+        // Option 1 Future Value (GBP)
+        const futVal1 = reqGbpCap1 * Math.pow(1 + RATES.gbpNet, horizonYears);
+        const irr1 = ((Math.pow(futVal1 / reqGbpCap1, 1 / horizonYears) - 1) * 100).toFixed(2);
+
+        // Option 3 Future Value (PKR converted to GBP at future FX)
+        const futPkrVal3 = (reqGbpCap3 * pkrFx) * Math.pow(1 + RATES.pkrNet, horizonYears);
+        const futVal3InGbp = futPkrVal3 / futureFx;
+        const irr3 = ((Math.pow(futVal3InGbp / reqGbpCap3, 1 / horizonYears) - 1) * 100).toFixed(2);
+
+        // Option 2 Future Value (50% GBP, 50% PKR converted at future FX)
+        const gbpPartFut = (reqGbpCap2 * 0.5) * Math.pow(1 + RATES.gbpNet, horizonYears);
+        const pkrPartFutInGbp = ((reqGbpCap2 * 0.5 * pkrFx) * Math.pow(1 + RATES.pkrNet, horizonYears)) / futureFx;
+        const futVal2InGbp = gbpPartFut + pkrPartFutInGbp;
+        const irr2 = ((Math.pow(futVal2InGbp / reqGbpCap2, 1 / horizonYears) - 1) * 100).toFixed(2);
+
+        // Rebalancing Delta for 50/50
+        const targetHalfVal = futVal2InGbp / 2;
+        const diffGbp = gbpPartFut - targetHalfVal;
+        let rebalanceText = "";
+        if (diffGbp > 0) {
+            rebalanceText = `Shift ${formatGBP(diffGbp)} from GBP to PKR NPC`;
+        } else {
+            rebalanceText = `Shift ${formatGBP(Math.abs(diffGbp))} from PKR NPC to GBP`;
+        }
+
+        document.getElementById('sim-table').innerHTML = `
+            <tr>
+                <td><strong>Option 1: 100% GBP NPC</strong></td>
+                <td>1 GBP = ${futureFx.toFixed(1)} PKR</td>
+                <td><strong>${formatGBP(futVal1)}</strong></td>
+                <td style="color:var(--accent-green);">${irr1}% p.a.</td>
+                <td style="color:var(--text-muted);">N/A (100% GBP)</td>
+            </tr>
+            <tr>
+                <td><strong>Option 2: 50/50 Dual Allocation</strong></td>
+                <td>1 GBP = ${futureFx.toFixed(1)} PKR</td>
+                <td><strong>${formatGBP(futVal2InGbp)}</strong></td>
+                <td style="color:var(--accent-blue);">${irr2}% p.a.</td>
+                <td style="color:var(--accent-amber); font-weight:bold;">${rebalanceText}</td>
+            </tr>
+            <tr>
+                <td><strong>Option 3: 100% PKR NPC</strong></td>
+                <td>1 GBP = ${futureFx.toFixed(1)} PKR</td>
+                <td><strong>${formatGBP(futVal3InGbp)}</strong></td>
+                <td style="color:${irr3 >= 0 ? 'var(--accent-green)' : 'var(--accent-rose)'};">${irr3}% p.a.</td>
+                <td style="color:var(--text-muted);">N/A (100% PKR)</td>
+            </tr>
+        `;
+
+        // Section 3 Table: UK HMRC Tax Breakdown
+        let taxRate = 0.20;
+        let psa = 1000;
+
+        if (ukTaxBand === 'higher') { taxRate = 0.40; psa = 500; }
+        else if (ukTaxBand === 'additional') { taxRate = 0.45; psa = 0; }
+
+        const options = [
+            { name: "Option 1: 100% GBP NPC", gross: grossGbp1, wht: whtGbp1 },
+            { name: "Option 2: 50/50 Dual Allocation", gross: grossGbp2, wht: whtGbp2 },
+            { name: "Option 3: 100% PKR NPC", gross: grossGbp3, wht: whtGbp3 }
+        ];
+
+        let taxRows = "";
+        options.forEach(opt => {
+            const taxable = Math.max(0, opt.gross - psa);
+            const ukTaxPreCredit = taxable * taxRate;
+            const ftc = Math.min(ukTaxPreCredit, opt.wht); // Double Taxation Relief limited to UK tax
+            const netUkTaxPayable = Math.max(0, ukTaxPreCredit - ftc);
+
+            taxRows += `
+                <tr>
+                    <td><strong>${opt.name}</strong></td>
+                    <td>${formatGBP(opt.gross)}</td>
+                    <td>${formatGBP(psa)}</td>
+                    <td>${formatGBP(taxable)}</td>
+                    <td>${formatGBP(ukTaxPreCredit)} (${(taxRate*100)}%)</td>
+                    <td style="color:var(--accent-green);">${formatGBP(ftc)}</td>
+                    <td style="color:var(--accent-rose); font-weight:bold;">${formatGBP(netUkTaxPayable)}</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById('tax-table').innerHTML = taxRows;
+    }
+
+    document.querySelectorAll('input, select').forEach(elem => elem.addEventListener('input', calculate));
+    calculate();
+</script>
+
+</body>
+</html>

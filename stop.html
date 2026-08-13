@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>US Stock Risk, Trailing Stop & Charting Dashboard</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --border-color: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-yellow: #eab308;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 24px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--accent-blue);
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 6px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .presets {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-preset {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-preset:hover, .btn-preset.active {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: #0f172a;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .results-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .metric-card {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-card .info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metric-card .val {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .status-banner {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        .status-good {
+            background-color: rgba(34, 197, 94, 0.15);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        .status-warn {
+            background-color: rgba(234, 179, 8, 0.15);
+            border: 1px solid var(--accent-yellow);
+            color: var(--accent-yellow);
+        }
+
+        .status-danger {
+            background-color: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        .target-risk-box, .trailing-box {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 8px;
+        }
+
+        .box-title {
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .apply-btn {
+            background-color: var(--accent-purple);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.78rem;
+            cursor: pointer;
+        }
+
+        .chart-container {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            height: 240px;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>US Stock Risk, Trailing Stop & Visual Dashboard</h1>
+    <p class="subtitle">Complete risk analysis: Trailing stop floors, target position sizing, Chart.js visuals & R:R ratios.</p>
+
+    <div class="main-grid">
+        <!-- Inputs Column -->
+        <div>
+            <div class="section-title">1. Trade & Portfolio Parameters</div>
+
+            <div class="form-group">
+                <label>Portfolio Size ($)</label>
+                <input type="number" id="portfolioSize" value="100000" step="1000">
+                <div class="presets">
+                    <button class="btn-preset" onclick="setPortfolio(10000)">$10K</button>
+                    <button class="btn-preset" onclick="setPortfolio(50000)">$50K</button>
+                    <button class="btn-preset active" onclick="setPortfolio(100000)">$100K</button>
+                    <button class="btn-preset" onclick="setPortfolio(500000)">$500K</button>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Purchase Price ($)</label>
+                    <input type="number" id="currentPrice" value="150.00" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Initial Stop-Loss ($)</label>
+                    <input type="number" id="stopLossPrice" value="141.00" step="0.01">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label>Take-Profit Target ($)</label>
+                    <input type="number" id="takeProfitPrice" value="172.50" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Shares (Trade Size)</label>
+                    <input type="number" id="numShares" value="200" step="1">
+                </div>
+            </div>
+
+            <!-- Target Risk Sizer -->
+            <div class="target-risk-box">
+                <div class="box-title" style="color: var(--accent-purple);">
+                    <span>🎯 Target Risk Sizer</span>
+                    <button class="apply-btn" onclick="applyTargetShares()">Apply Shares</button>
+                </div>
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <label>Max Dollar Risk Target ($)</label>
+                    <input type="number" id="targetRiskDollar" value="1000" step="50">
+                    <div class="presets">
+                        <button class="btn-preset" onclick="setTargetRisk(500)">$500</button>
+                        <button class="btn-preset active" onclick="setTargetRisk(1000)">$1,000</button>
+                        <button class="btn-preset" onclick="setTargetRiskPct(1)">1% Port</button>
+                        <button class="btn-preset" onclick="setTargetRiskPct(2)">2% Port</button>
+                    </div>
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                    <span>Calculated Shares: <strong id="calcTargetShares" style="color: var(--accent-purple);">0</strong></span>
+                    <span>Capital Req: <strong id="calcTargetCapital" style="color: var(--text-main);">$0.00</strong></span>
+                </div>
+            </div>
+
+            <!-- Trailing Stop Simulator -->
+            <div class="trailing-box">
+                <div class="box-title" style="color: var(--accent-blue);">
+                    <span>📈 Trailing Stop-Loss Floor Tracker</span>
+                </div>
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <label>Peak Price Reached ($)</label>
+                    <input type="number" id="peakPrice" value="165.00" step="0.01">
+                </div>
+                <div style="font-size: 0.82rem; color: var(--text-muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                    <span>Trailing Stop Level: <strong id="trailingStopVal" style="color: var(--accent-blue);">$0.00</strong></span>
+                    <span>Locked Profit: <strong id="lockedProfitVal" style="color: var(--accent-green);">$0.00</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results & Charts Column -->
+        <div class="results-panel">
+            <div class="section-title">2. Analytics & Visual Risk Profile</div>
+
+            <div class="metric-card">
+                <div class="info">
+                    <label>Position Capital Exposure</label>
+                    <span class="val" id="positionVal">$0.00</span>
+                </div>
+                <div class="info" style="text-align: right;">
+                    <label>Portfolio Share</label>
+                    <span class="val" id="portfolioPct">0.0%</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="metric-card">
+                    <div class="info">
+                        <label>Max Loss</label>
+                        <span class="val" id="maxDollarLoss" style="color: var(--accent-red)">-$0.00</span>
+                        <span style="font-size:0.75rem; color: var(--text-muted);" id="stopLossPct">0% drop</span>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="info">
+                        <label>Potential Profit</label>
+                        <span class="val" id="maxDollarProfit" style="color: var(--accent-green)">+$0.00</span>
+                        <span style="font-size:0.75rem; color: var(--text-muted);" id="takeProfitPct">0% gain</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="info">
+                    <label>Risk-Reward (R:R)</label>
+                    <span class="val" id="rrRatio">1 : 0.00</span>
+                </div>
+                <div class="info" style="text-align: right;">
+                    <label>Breakeven Win Rate</label>
+                    <span class="val" id="breakevenWinRate" style="color: var(--accent-blue)">0%</span>
+                </div>
+            </div>
+
+            <div id="statusBanner" class="status-banner status-good">
+                Evaluation loading...
+            </div>
+
+            <!-- Chart.js Canvas -->
+            <div class="chart-container">
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let calculatedSharesForTarget = 0;
+    let riskChart;
+
+    function initChart() {
+        const ctx = document.getElementById('riskChart').getContext('2d');
+        riskChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Max Risk ($)', 'Potential Profit ($)', 'Total Position Capital ($)'],
+                datasets: [{
+                    label: 'Trade Value Impact ($)',
+                    data: [0, 0, 0],
+                    backgroundColor: ['#ef4444', '#22c55e', '#38bdf8'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: '#334155' }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    function setPortfolio(val) {
+        document.getElementById('portfolioSize').value = val;
+        calculate();
+    }
+
+    function setTargetRisk(val) {
+        document.getElementById('targetRiskDollar').value = val;
+        calculate();
+    }
+
+    function setTargetRiskPct(pct) {
+        const portfolio = parseFloat(document.getElementById('portfolioSize').value) || 0;
+        document.getElementById('targetRiskDollar').value = portfolio * (pct / 100);
+        calculate();
+    }
+
+    function applyTargetShares() {
+        if (calculatedSharesForTarget > 0) {
+            document.getElementById('numShares').value = calculatedSharesForTarget;
+            calculate();
+        }
+    }
+
+    function calculate() {
+        const portfolio = parseFloat(document.getElementById('portfolioSize').value) || 0;
+        const currentPrice = parseFloat(document.getElementById('currentPrice').value) || 0;
+        const stopLoss = parseFloat(document.getElementById('stopLossPrice').value) || 0;
+        const takeProfit = parseFloat(document.getElementById('takeProfitPrice').value) || 0;
+        const shares = parseFloat(document.getElementById('numShares').value) || 0;
+        const targetRiskDollar = parseFloat(document.getElementById('targetRiskDollar').value) || 0;
+        const peakPrice = parseFloat(document.getElementById('peakPrice').value) || 0;
+
+        const priceDropPerShare = currentPrice - stopLoss;
+        const priceGainPerShare = takeProfit - currentPrice;
+
+        // 1. Target Risk Calculation
+        if (priceDropPerShare > 0 && targetRiskDollar > 0) {
+            calculatedSharesForTarget = Math.floor(targetRiskDollar / priceDropPerShare);
+            const targetCapital = calculatedSharesForTarget * currentPrice;
+            document.getElementById('calcTargetShares').innerText = calculatedSharesForTarget.toLocaleString() + ' shares';
+            document.getElementById('calcTargetCapital').innerText = '$' + targetCapital.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        } else {
+            calculatedSharesForTarget = 0;
+            document.getElementById('calcTargetShares').innerText = '0 shares';
+            document.getElementById('calcTargetCapital').innerText = '$0.00';
+        }
+
+        // 2. Trailing Stop Tracker Calculation
+        const trailingDistPct = (priceDropPerShare / currentPrice);
+        if (peakPrice >= currentPrice && trailingDistPct > 0) {
+            const trailingStopLevel = peakPrice * (1 - trailingDistPct);
+            const lockedProfitPerShare = trailingStopLevel - currentPrice;
+            const totalLockedProfit = lockedProfitPerShare * shares;
+
+            document.getElementById('trailingStopVal').innerText = '$' + trailingStopLevel.toFixed(2);
+            if (totalLockedProfit > 0) {
+                document.getElementById('lockedProfitVal').innerText = '+$' + totalLockedProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('lockedProfitVal').style.color = 'var(--accent-green)';
+            } else {
+                document.getElementById('lockedProfitVal').innerText = '-$' + Math.abs(totalLockedProfit).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                document.getElementById('lockedProfitVal').style.color = 'var(--accent-red)';
+            }
+        }
+
+        if (portfolio <= 0 || currentPrice <= 0 || stopLoss <= 0 || shares <= 0) return;
+
+        // 3. Trade Metrics
+        const positionValue = currentPrice * shares;
+        const portfolioPct = (positionValue / portfolio) * 100;
+        const stopLossPct = (priceDropPerShare / currentPrice) * 100;
+        const maxLoss = priceDropPerShare * shares;
+        const portfolioImpactPct = (maxLoss / portfolio) * 100;
+
+        const takeProfitPct = (priceGainPerShare / currentPrice) * 100;
+        const maxProfit = priceGainPerShare * shares;
+
+        const rrMultiplier = priceDropPerShare > 0 ? (priceGainPerShare / priceDropPerShare) : 0;
+        const breakevenWinRate = rrMultiplier > 0 ? (1 / (1 + rrMultiplier)) * 100 : 0;
+
+        // 4. Update UI Fields
+        document.getElementById('positionVal').innerText = '$' + positionValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('portfolioPct').innerText = portfolioPct.toFixed(1) + '%';
+
+        document.getElementById('stopLossPct').innerText = '-' + stopLossPct.toFixed(2) + '% stop distance';
+        document.getElementById('maxDollarLoss').innerText = '-$' + maxLoss.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        document.getElementById('takeProfitPct').innerText = '+' + takeProfitPct.toFixed(2) + '% profit distance';
+        document.getElementById('maxDollarProfit').innerText = '+$' + maxProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+        document.getElementById('breakevenWinRate').innerText = breakevenWinRate.toFixed(1) + '%';
+
+        const rrElement = document.getElementById('rrRatio');
+        rrElement.innerText = '1 : ' + rrMultiplier.toFixed(2);
+        rrElement.style.color = rrMultiplier >= 2.0 ? 'var(--accent-green)' : (rrMultiplier >= 1.0 ? 'var(--accent-yellow)' : 'var(--accent-red)');
+
+        // 5. Dynamic Status Banner
+        const banner = document.getElementById('statusBanner');
+        let statusText = `Port Risk: <strong>${portfolioImpactPct.toFixed(2)}%</strong>. `;
+        if (rrMultiplier >= 2.0 && portfolioImpactPct <= 2.0) {
+            statusText += `Optimal trade setup! Favorable risk-to-reward ratio with safe exposure.`;
+            banner.className = 'status-banner status-good';
+        } else if (portfolioImpactPct > 2.0) {
+            statusText += `Caution: Total risk exceeds 2% portfolio threshold. Reduce share count.`;
+            banner.className = 'status-banner status-danger';
+        } else {
+            statusText += `Sub-optimal R:R (1:${rrMultiplier.toFixed(2)}). Consider adjusting targets.`;
+            banner.className = 'status-banner status-warn';
+        }
+        banner.innerHTML = statusText;
+
+        // 6. Update Chart.js Data
+        if (riskChart) {
+            riskChart.data.datasets[0].data = [maxLoss, maxProfit, positionValue];
+            riskChart.update();
+        }
+    }
+
+    // Attach listener events
+    ['portfolioSize', 'currentPrice', 'stopLossPrice', 'takeProfitPrice', 'numShares', 'targetRiskDollar', 'peakPrice'].forEach(id => {
+        document.getElementById(id).addEventListener('input', calculate);
+    });
+
+    window.onload = function() {
+        initChart();
+        calculate();
+    };
+</script>
+
+</body>
+</html>

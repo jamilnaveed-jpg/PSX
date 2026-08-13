@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Short Selling Risk Calculator & Diagnostics</title>
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: #151c2c;
+      --border-color: #2a3447;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #ef4444; /* Red theme for shorting/risk */
+      --primary-hover: #dc2626;
+      --accent: #f59e0b;
+      --success: #10b981;
+      --info: #3b82f6;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 1000px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .warning-banner {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.15));
+      border: 1px solid var(--primary);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .warning-title {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quote-box {
+      font-style: italic;
+      color: #fca5a5;
+      font-size: 0.9rem;
+      border-left: 3px solid var(--primary);
+      padding-left: 10px;
+      margin-top: 4px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin-bottom: 16px;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background-color: #0b0f19;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+      background: #0b0f19;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .result-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .result-item span {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .result-item strong {
+      font-size: 1.15rem;
+      color: var(--text-main);
+      margin-top: 4px;
+    }
+
+    .result-item.danger strong {
+      color: var(--primary);
+    }
+
+    /* Bar Visualizations */
+    .visual-section {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .bar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bar-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .bar-track {
+      height: 16px;
+      background-color: #0b0f19;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+
+    /* Safety Checklist */
+    .checklist {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .check-item {
+      background-color: #0b0f19;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+    }
+
+    .check-item input[type="checkbox"] {
+      width: auto;
+      margin-top: 3px;
+      cursor: pointer;
+    }
+
+    .info-callout {
+      background-color: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid var(--info);
+      padding: 12px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.85rem;
+      color: #93c5fd;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Warning Banner -->
+    <div class="warning-banner">
+      <div class="warning-title">
+        ⚠️ HIGH RISK WARNING: SHORT SELLING IS NOT A LONG-TERM STRATEGY
+      </div>
+      <div>
+        Short selling carries <strong>theoretically infinite downside risk</strong> because stock prices can rise indefinitely. Short positions are subject to borrow fees, margin interest, and extreme asymmetric tail-risk (short squeezes).
+      </div>
+      <div class="quote-box">
+        "Markets can remain irrational longer than you can remain solvent." — John Maynard Keynes<br>
+        "Short selling is a tactical sprint, not a marathon. Get in, hit the target or cut loss, and get out."
+      </div>
+    </div>
+
+    <!-- Main Calculator Inputs -->
+    <div class="card">
+      <h2>Short Position Sizing & Cost Calculator</h2>
+      
+      <div class="grid-3">
+        <div class="form-group">
+          <label for="symbol">Ticker Symbol</label>
+          <input type="text" id="symbol" value="TSLA" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="accountSize">Account Equity ($)</label>
+          <input type="number" id="accountSize" value="50000" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="riskPercent">Risk % per Trade</label>
+          <input type="number" id="riskPercent" step="0.1" value="1.0" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="currentPrice">Current / Entry Price ($)</label>
+          <input type="number" id="currentPrice" step="0.01" value="200.00" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="stopLoss">Stop Loss Price ($)</label>
+          <input type="number" id="stopLoss" step="0.01" value="210.00" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="targetPrice">Profit Target ($)</label>
+          <input type="number" id="targetPrice" step="0.01" value="170.00" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="borrowRate">Annual Borrow Fee (%)</label>
+          <input type="number" id="borrowRate" step="0.1" value="3.5" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="shortInterest">Short Interest (% of Float)</label>
+          <input type="number" id="shortInterest" step="0.1" value="18.5" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="avgVolume">Avg Daily Volume (Shares)</label>
+          <input type="number" id="avgVolume" value="25000000" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="sharesShort">Total Shares Shorted (Market Wide)</label>
+          <input type="number" id="sharesShort" value="125000000" oninput="calculate()">
+        </div>
+
+        <div class="form-group">
+          <label for="holdDays">Planned Hold Duration (Days)</label>
+          <input type="number" id="holdDays" value="10" oninput="calculate()">
+        </div>
+      </div>
+
+      <!-- Core Metrics -->
+      <div class="results-grid">
+        <div class="result-item danger">
+          <span>Max Risk ($)</span>
+          <strong id="outRiskAmount">$0.00</strong>
+        </div>
+        <div class="result-item">
+          <span>Position (Shares)</span>
+          <strong id="outShares">0</strong>
+        </div>
+        <div class="result-item">
+          <span>Total Short Value</span>
+          <strong id="outShortValue">$0.00</strong>
+        </div>
+        <div class="result-item">
+          <span>Borrow Drag / Day</span>
+          <strong id="outDailyFee">$0.00</strong>
+        </div>
+        <div class="result-item">
+          <span>Total Carry Drag</span>
+          <strong id="outTotalFee">$0.00</strong>
+        </div>
+        <div class="result-item">
+          <span>Days to Cover (DTC)</span>
+          <strong id="outDTC">0.0 Days</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Impact Dashboard -->
+    <div class="card">
+      <h2>Short Squeeze & Holding Time Diagnostics</h2>
+      
+      <div class="visual-section">
+        <!-- Days to Cover Indicator -->
+        <div class="bar-container">
+          <div class="bar-header">
+            <span>Short Squeeze Risk (Days to Cover Index)</span>
+            <span id="dtcText" style="font-weight: 700;">Low Risk</span>
+          </div>
+          <div class="bar-track">
+            <div id="dtcBar" class="bar-fill" style="width: 20%; background-color: var(--success);"></div>
+          </div>
+        </div>
+
+        <!-- Short Interest Bar -->
+        <div class="bar-container">
+          <div class="bar-header">
+            <span>Short Interest % of Float</span>
+            <span id="siText" style="font-weight: 700;">18.5%</span>
+          </div>
+          <div class="bar-track">
+            <div id="siBar" class="bar-fill" style="width: 18.5%; background-color: var(--accent);"></div>
+          </div>
+        </div>
+
+        <!-- Carrying Cost Decay vs Target Gain -->
+        <div class="bar-container">
+          <div class="bar-header">
+            <span>Borrow Fee Drag vs. Projected Profit</span>
+            <span id="dragText" style="font-weight: 700;">0.0% Erosion</span>
+          </div>
+          <div class="bar-track">
+            <div id="dragBar" class="bar-fill" style="width: 5%; background-color: var(--info);"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-callout" id="squeezeWarning">
+        <strong>Diagnostics Analysis:</strong> Short Interest and Days to Cover indicate normal market liquidity. Always monitor unexpected news or earnings gaps.
+      </div>
+    </div>
+
+    <!-- Pre-Trade Market Condition Checklist -->
+    <div class="card">
+      <h2>Pre-Trade Checklist: Is Market Safe to Short?</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+        Shorting in a strong bull market or into high momentum is dangerous. Verify these conditions before placing the trade:
+      </p>
+
+      <div class="checklist">
+        <label class="check-item">
+          <input type="checkbox">
+          <span><strong>Overall Market Trend:</strong> S&P 500 / Nasdaq are below 50-day Moving Average (Market isn't in extreme melt-up mode).</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox">
+          <span><strong>No Upcoming Catalyst:</strong> Earnings, FDA approval, or investor day is NOT occurring during planned holding window.</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox">
+          <span><strong>Technical Breakdown:</strong> Stock is breaking down below support or showing clear range expansion down (e.g. 4% BO down).</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox">
+          <span><strong>Hard Stop-Loss Placed:</strong> Automatic buy-stop order is queued with broker (Do NOT rely on mental stops for short trades).</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox">
+          <span><strong>Borrow Fee Acceptable:</strong> Annual borrow rate is stable and shares are hard-to-borrow status is confirmed with broker.</span>
+        </label>
+        <label class="check-item">
+          <input type="checkbox">
+          <span><strong>Quick Exit Plan:</strong> Exit target set within 3-10 days maximum to capture quick momentum burst and avoid decay.</span>
+        </label>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function calculate() {
+      const accountSize = parseFloat(document.getElementById('accountSize').value) || 0;
+      const riskPercent = parseFloat(document.getElementById('riskPercent').value) || 0;
+      const currentPrice = parseFloat(document.getElementById('currentPrice').value) || 0;
+      const stopLoss = parseFloat(document.getElementById('stopLoss').value) || 0;
+      const targetPrice = parseFloat(document.getElementById('targetPrice').value) || 0;
+      const borrowRate = parseFloat(document.getElementById('borrowRate').value) || 0;
+      const shortInterest = parseFloat(document.getElementById('shortInterest').value) || 0;
+      const avgVolume = parseFloat(document.getElementById('avgVolume').value) || 1;
+      const sharesShort = parseFloat(document.getElementById('sharesShort').value) || 0;
+      const holdDays = parseFloat(document.getElementById('holdDays').value) || 1;
+
+      // Position Sizing Calculation
+      const maxRisk = accountSize * (riskPercent / 100);
+      const riskPerShare = stopLoss - currentPrice;
+
+      let shares = 0;
+      let totalShortValue = 0;
+      let dailyBorrowFee = 0;
+      let totalCarryFee = 0;
+
+      if (riskPerShare > 0) {
+        shares = Math.floor(maxRisk / riskPerShare);
+        totalShortValue = shares * currentPrice;
+        dailyBorrowFee = (totalShortValue * (borrowRate / 100)) / 365;
+        totalCarryFee = dailyBorrowFee * holdDays;
+      }
+
+      // Squeeze Index Calculations
+      // Days to Cover (DTC) = Shares Short / Average Daily Volume
+      const dtc = sharesShort / avgVolume;
+
+      // Projected Max Profit (if price drops to target)
+      const priceProfitPerShare = currentPrice - targetPrice;
+      const grossProfit = priceProfitPerShare > 0 ? priceProfitPerShare * shares : 0;
+      const feeErosion = grossProfit > 0 ? (totalCarryFee / grossProfit) * 100 : 0;
+
+      // Update Outputs
+      document.getElementById('outRiskAmount').innerText = `$${maxRisk.toFixed(2)}`;
+      document.getElementById('outShares').innerText = shares > 0 ? shares.toLocaleString() : 'Invalid Stop';
+      document.getElementById('outShortValue').innerText = `$${totalShortValue.toFixed(2)}`;
+      document.getElementById('outDailyFee').innerText = `$${dailyBorrowFee.toFixed(2)}`;
+      document.getElementById('outTotalFee').innerText = `$${totalCarryFee.toFixed(2)}`;
+      document.getElementById('outDTC').innerText = `${dtc.toFixed(1)} Days`;
+
+      // Update Visualization Bars
+      
+      // 1. Days To Cover Squeeze Meter
+      const dtcBar = document.getElementById('dtcBar');
+      const dtcText = document.getElementById('dtcText');
+      // Scale: > 5 Days to Cover = High Danger Squeeze Potential
+      let dtcPct = Math.min((dtc / 10) * 100, 100);
+      dtcBar.style.width = `${dtcPct}%`;
+
+      if (dtc >= 5) {
+        dtcBar.style.backgroundColor = 'var(--primary)';
+        dtcText.innerText = `${dtc.toFixed(1)} DTC - HIGH SQUEEZE RISK!`;
+        dtcText.style.color = 'var(--primary)';
+      } else if (dtc >= 3) {
+        dtcBar.style.backgroundColor = 'var(--accent)';
+        dtcText.innerText = `${dtc.toFixed(1)} DTC - Moderate Risk`;
+        dtcText.style.color = 'var(--accent)';
+      } else {
+        dtcBar.style.backgroundColor = 'var(--success)';
+        dtcText.innerText = `${dtc.toFixed(1)} DTC - Low Squeeze Risk`;
+        dtcText.style.color = 'var(--success)';
+      }
+
+      // 2. Short Interest % Meter
+      const siBar = document.getElementById('siBar');
+      const siText = document.getElementById('siText');
+      let siPct = Math.min(shortInterest, 100);
+      siBar.style.width = `${siPct}%`;
+      siText.innerText = `${shortInterest.toFixed(1)}% of Float`;
+      
+      if (shortInterest > 20) {
+        siBar.style.backgroundColor = 'var(--primary)';
+      } else if (shortInterest > 10) {
+        siBar.style.backgroundColor = 'var(--accent)';
+      } else {
+        siBar.style.backgroundColor = 'var(--info)';
+      }
+
+      // 3. Carrying Cost Drag Meter
+      const dragBar = document.getElementById('dragBar');
+      const dragText = document.getElementById('dragText');
+      let dragPct = Math.min(feeErosion, 100);
+      dragBar.style.width = `${dragPct}%`;
+      dragText.innerText = `${feeErosion.toFixed(1)}% of Target Profit Lost to Fees`;
+
+      if (feeErosion > 25) {
+        dragBar.style.backgroundColor = 'var(--primary)';
+      } else if (feeErosion > 10) {
+        dragBar.style.backgroundColor = 'var(--accent)';
+      } else {
+        dragBar.style.backgroundColor = 'var(--info)';
+      }
+
+      // Diagnostic Warning Message
+      const warningBox = document.getElementById('squeezeWarning');
+      if (dtc >= 5 || shortInterest > 20) {
+        warningBox.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+        warningBox.style.borderLeft = '3px solid var(--primary)';
+        warningBox.style.color = '#fca5a5';
+        warningBox.innerHTML = `<strong>⚠️ CRITICAL SQUEEZE WARNING:</strong> High Short Interest (${shortInterest}%) or high Days to Cover (${dtc.toFixed(1)} days) detected. A sudden positive news item can trigger a violent forced cover rally ("Short Squeeze"). Keep holding time short!`;
+      } else if (riskPerShare <= 0) {
+        warningBox.style.backgroundColor = 'rgba(245, 158, 11, 0.15)';
+        warningBox.style.borderLeft = '3px solid var(--accent)';
+        warningBox.style.color = '#fde68a';
+        warningBox.innerHTML = `<strong>⚠️ INVALID INPUT:</strong> Stop Loss price ($${stopLoss}) must be HIGHER than current entry price ($${currentPrice}) when taking a short trade.`;
+      } else {
+        warningBox.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+        warningBox.style.borderLeft = '3px solid var(--info)';
+        warningBox.style.color = '#93c5fd';
+        warningBox.innerHTML = `<strong>Diagnostics Analysis:</strong> Liquidity is sufficient (DTC: ${dtc.toFixed(1)} days). Estimated daily borrow drag is $${dailyBorrowFee.toFixed(2)}. Plan to exit within ${holdDays} days to minimize fee erosion and tail risk.`;
+      }
+    }
+
+    window.onload = function() {
+      calculate();
+    };
+  </script>
+</body>
+</html>
