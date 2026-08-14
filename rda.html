@@ -41,7 +41,7 @@
 
         .grid-inputs {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -135,12 +135,12 @@
 
 <div class="container">
     <header>
-        <h1>Roshan Digital Account (RDA) Complete Yield & Portfolio Suite</h1>
-        <p class="subtitle">Target Yield Capitalizer, FX Devaluation & Rebalancing Simulator, and HMRC Self Assessment Tax Breakdown.</p>
+        <h1>Roshan Digital Account (RDA) Portfolio & Tax Suite</h1>
+        <p class="subtitle">Updated with 7.50% GBP & 12.25% PKR Baseline NPC Rates.</p>
     </header>
 
-    <!-- SECTION 1: CORE TARGET INPUTS -->
-    <h2>1. Target Income Controls</h2>
+    <!-- SECTION 1: CORE CONTROLS & RATES -->
+    <h2>1. Target Income Controls & Interest Rates</h2>
     <div class="grid-inputs">
         <div class="input-group">
             <label for="currency">Target Income Currency</label>
@@ -160,13 +160,23 @@
 
         <div class="input-group">
             <label for="targetProfit">Target Net Profit (After WHT)</label>
-            <input type="number" id="targetProfit" value="5000" step="500">
+            <input type="number" id="targetProfit" value="2430" step="100">
             <div id="lakhDisplay" class="lakh-info"></div>
         </div>
 
         <div class="input-group">
-            <label for="pkrFx">Current GBP/PKR Exchange Rate</label>
-            <input type="number" id="pkrFx" value="350" step="1">
+            <label for="pkrFx">Exchange Rate (PKR / GBP)</label>
+            <input type="number" id="pkrFx" value="374" step="1">
+        </div>
+
+        <div class="input-group">
+            <label for="gbpRateInput">GBP NPC Rate Gross (%)</label>
+            <input type="number" id="gbpRateInput" value="7.50" step="0.25">
+        </div>
+
+        <div class="input-group">
+            <label for="pkrRateInput">PKR NPC Rate Gross (%)</label>
+            <input type="number" id="pkrRateInput" value="12.25" step="0.25">
         </div>
     </div>
 
@@ -175,21 +185,21 @@
         <div class="card recommended">
             <span class="badge">RECOMMENDED (Zero FX Risk)</span>
             <div class="card-title">Option 1: 100% GBP NPC</div>
-            <div class="stat-sub">Gross: 11.0% | Net WHT: 9.9%</div>
+            <div class="stat-sub" id="card1-rates">Gross: 7.50% | Net WHT: 6.75%</div>
             <div class="stat-val" id="cap-gbp" style="color: var(--accent-green);">£0</div>
             <div class="stat-sub" id="pkr-eq-gbp">Equivalent: Rs. 0</div>
         </div>
 
         <div class="card">
             <div class="card-title">Option 2: 50/50 Dual Allocation</div>
-            <div class="stat-sub">Blended Net Yield: ~12.15%</div>
+            <div class="stat-sub" id="card2-rates">Blended Net Yield: ~8.89%</div>
             <div class="stat-val" id="cap-dual" style="color: var(--accent-blue);">£0</div>
             <div class="stat-sub" id="pkr-eq-dual">Split: 50% GBP / 50% PKR</div>
         </div>
 
         <div class="card">
-            <div class="card-title">Option 3: 100% PKR Conventional NPC</div>
-            <div class="stat-sub">Gross: 16.0% | Net WHT: 14.4%</div>
+            <div class="card-title">Option 3: 100% PKR NPC</div>
+            <div class="stat-sub" id="card3-rates">Gross: 12.25% | Net WHT: 11.025%</div>
             <div class="stat-val" id="cap-pkr" style="color: var(--accent-amber);">£0</div>
             <div class="stat-sub" id="pkr-eq-pkr">Subject to Currency Devaluation</div>
         </div>
@@ -215,16 +225,16 @@
     <div class="grid-inputs">
         <div class="input-group">
             <label for="devRate">Projected Annual PKR Devaluation (%)</label>
-            <input type="range" id="devRate" min="0" max="25" value="6" step="0.5">
-            <div class="slider-val" id="devRateVal">6.0% / year</div>
+            <input type="range" id="devRate" min="0" max="25" value="4.0" step="0.5">
+            <div class="slider-val" id="devRateVal">4.0% / year</div>
         </div>
 
         <div class="input-group">
             <label for="horizonYears">Investment Horizon (Years)</label>
             <select id="horizonYears">
-                <option value="1">1 Year</option>
+                <option value="1" selected>1 Year</option>
                 <option value="2">2 Years</option>
-                <option value="3" selected>3 Years</option>
+                <option value="3">3 Years</option>
                 <option value="5">5 Years</option>
             </select>
         </div>
@@ -274,27 +284,19 @@
     <div class="callout">
         <strong>📌 Key Financial & Tax Takeaways:</strong>
         <ul>
-            <li><strong>Double Taxation Relief (DTA):</strong> Under Article 22 of the UK-Pakistan Double Taxation Agreement, Pakistan WHT (10%) can be claimed directly against your UK HMRC liability to avoid paying tax twice.</li>
-            <li><strong>Personal Savings Allowance (PSA):</strong> Higher rate taxpayers (£50,271–£125,140) receive a £500 tax-free savings allowance. Basic rate taxpayers receive £1,000.</li>
-            <li><strong>Rebalancing Logic:</strong> If PKR devaluates faster than the ~4.5% yield premium of PKR certificates over GBP certificates, a 100% PKR allocation underperforms in real GBP terms. The 50/50 rebalancing action tells you exactly how much to shift back into PKR or GBP to keep your risk exposure even.</li>
+            <li><strong>Correct Rates Applied:</strong> Uses the 7.50% GBP gross yield (6.75% net) and 12.25% PKR gross yield (11.025% net) as per official 1-year NPC guidelines.</li>
+            <li><strong>Double Taxation Relief (DTA):</strong> Under Article 22 of the UK-Pakistan Double Taxation Agreement, Pakistan 10% WHT is credited directly against your HMRC tax bill.</li>
+            <li><strong>Rebalancing Logic:</strong> Calculates real GBP returns after accounting for PKR devaluation and guides rebalancing shifts to preserve target portfolio weights.</li>
         </ul>
     </div>
 </div>
 
 <script>
-    const RATES = {
-        gbpGross: 0.11,
-        gbpNet: 0.099,
-        pkrGross: 0.16,
-        pkrNet: 0.144,
-        wht: 0.10
-    };
-
     function formatGBP(val) { return '£' + Math.round(val).toLocaleString('en-GB'); }
 
     function toLakhsMillions(pkrVal) {
-        if (pkrVal >= 10000000) return (pkrVal / 10000000).toFixed(2) + ' Crore';
-        if (pkrVal >= 100000) return (pkrVal / 100000).toFixed(2) + ' Lakh';
+        if (pkrVal >= 10000000) return (pkrVal / 10000000).toFixed(2) + ' Crore PKR';
+        if (pkrVal >= 100000) return (pkrVal / 100000).toFixed(2) + ' Lakhs PKR';
         return Math.round(pkrVal).toLocaleString('en-PK') + ' PKR';
     }
 
@@ -302,14 +304,28 @@
         const currency = document.getElementById('currency').value;
         const freq = document.getElementById('freq').value;
         const targetProfitInput = parseFloat(document.getElementById('targetProfit').value) || 0;
-        const pkrFx = parseFloat(document.getElementById('pkrFx').value) || 350;
+        const pkrFx = parseFloat(document.getElementById('pkrFx').value) || 374;
         const devRate = parseFloat(document.getElementById('devRate').value) / 100;
         const horizonYears = parseInt(document.getElementById('horizonYears').value);
         const ukTaxBand = document.getElementById('ukTaxBand').value;
 
+        // Custom rate inputs
+        const gbpGrossRate = (parseFloat(document.getElementById('gbpRateInput').value) || 7.50) / 100;
+        const pkrGrossRate = (parseFloat(document.getElementById('pkrRateInput').value) || 12.25) / 100;
+        const whtRate = 0.10;
+
+        const gbpNetRate = gbpGrossRate * (1 - whtRate);
+        const pkrNetRate = pkrGrossRate * (1 - whtRate);
+        const blendedNetRate = (gbpNetRate + pkrNetRate) / 2;
+
         document.getElementById('devRateVal').innerText = (devRate * 100).toFixed(1) + '% / year';
 
-        // Display Lakh helper
+        // Update card headers
+        document.getElementById('card1-rates').innerText = `Gross: ${(gbpGrossRate*100).toFixed(2)}% | Net WHT: ${(gbpNetRate*100).toFixed(2)}%`;
+        document.getElementById('card2-rates').innerText = `Blended Net Yield: ~${(blendedNetRate*100).toFixed(2)}%`;
+        document.getElementById('card3-rates').innerText = `Gross: ${(pkrGrossRate*100).toFixed(2)}% | Net WHT: ${(pkrNetRate*100).toFixed(3)}%`;
+
+        // Lakh helper display
         const lakhEl = document.getElementById('lakhDisplay');
         if (currency === 'PKR') {
             const annualPkr = freq === 'monthly' ? targetProfitInput * 12 : targetProfitInput;
@@ -327,27 +343,26 @@
             annualTargetGbp = annualTargetPkr / pkrFx;
         }
 
-        // Required Capital Calculation
-        const reqGbpCap1 = annualTargetGbp / RATES.gbpNet;
+        // Capital Requirements
+        const reqGbpCap1 = annualTargetGbp / gbpNetRate;
         const reqPkrCap1 = reqGbpCap1 * pkrFx;
-        const grossGbp1 = reqGbpCap1 * RATES.gbpGross;
-        const whtGbp1 = grossGbp1 * RATES.wht;
+        const grossGbp1 = reqGbpCap1 * gbpGrossRate;
+        const whtGbp1 = grossGbp1 * whtRate;
         const netGbp1 = grossGbp1 - whtGbp1;
 
-        const reqGbpCap3 = annualTargetGbp / RATES.pkrNet;
+        const reqGbpCap3 = annualTargetGbp / pkrNetRate;
         const reqPkrCap3 = reqGbpCap3 * pkrFx;
-        const grossGbp3 = reqGbpCap3 * RATES.pkrGross;
-        const whtGbp3 = grossGbp3 * RATES.wht;
+        const grossGbp3 = reqGbpCap3 * pkrGrossRate;
+        const whtGbp3 = grossGbp3 * whtRate;
         const netGbp3 = grossGbp3 - whtGbp3;
 
-        const blendedNetRate = (RATES.gbpNet + RATES.pkrNet) / 2;
         const reqGbpCap2 = annualTargetGbp / blendedNetRate;
         const reqPkrCap2 = reqGbpCap2 * pkrFx;
-        const grossGbp2 = (reqGbpCap2 * 0.5 * RATES.gbpGross) + (reqGbpCap2 * 0.5 * RATES.pkrGross);
-        const whtGbp2 = grossGbp2 * RATES.wht;
+        const grossGbp2 = (reqGbpCap2 * 0.5 * gbpGrossRate) + (reqGbpCap2 * 0.5 * pkrGrossRate);
+        const whtGbp2 = grossGbp2 * whtRate;
         const netGbp2 = grossGbp2 - whtGbp2;
 
-        // Populate Card UI
+        // Card Display
         if (currency === 'GBP') {
             document.getElementById('cap-gbp').innerText = formatGBP(reqGbpCap1);
             document.getElementById('pkr-eq-gbp').innerText = `Equivalent: ${toLakhsMillions(reqPkrCap1)}`;
@@ -396,33 +411,26 @@
             </tr>
         `;
 
-        // Section 2 Table: Devaluation & Rebalancing Simulation
+        // Section 2 Table: FX Simulation
         const futureFx = pkrFx * Math.pow(1 + devRate, horizonYears);
         
-        // Option 1 Future Value (GBP)
-        const futVal1 = reqGbpCap1 * Math.pow(1 + RATES.gbpNet, horizonYears);
+        const futVal1 = reqGbpCap1 * Math.pow(1 + gbpNetRate, horizonYears);
         const irr1 = ((Math.pow(futVal1 / reqGbpCap1, 1 / horizonYears) - 1) * 100).toFixed(2);
 
-        // Option 3 Future Value (PKR converted to GBP at future FX)
-        const futPkrVal3 = (reqGbpCap3 * pkrFx) * Math.pow(1 + RATES.pkrNet, horizonYears);
+        const futPkrVal3 = (reqGbpCap3 * pkrFx) * Math.pow(1 + pkrNetRate, horizonYears);
         const futVal3InGbp = futPkrVal3 / futureFx;
         const irr3 = ((Math.pow(futVal3InGbp / reqGbpCap3, 1 / horizonYears) - 1) * 100).toFixed(2);
 
-        // Option 2 Future Value (50% GBP, 50% PKR converted at future FX)
-        const gbpPartFut = (reqGbpCap2 * 0.5) * Math.pow(1 + RATES.gbpNet, horizonYears);
-        const pkrPartFutInGbp = ((reqGbpCap2 * 0.5 * pkrFx) * Math.pow(1 + RATES.pkrNet, horizonYears)) / futureFx;
+        const gbpPartFut = (reqGbpCap2 * 0.5) * Math.pow(1 + gbpNetRate, horizonYears);
+        const pkrPartFutInGbp = ((reqGbpCap2 * 0.5 * pkrFx) * Math.pow(1 + pkrNetRate, horizonYears)) / futureFx;
         const futVal2InGbp = gbpPartFut + pkrPartFutInGbp;
         const irr2 = ((Math.pow(futVal2InGbp / reqGbpCap2, 1 / horizonYears) - 1) * 100).toFixed(2);
 
-        // Rebalancing Delta for 50/50
         const targetHalfVal = futVal2InGbp / 2;
         const diffGbp = gbpPartFut - targetHalfVal;
-        let rebalanceText = "";
-        if (diffGbp > 0) {
-            rebalanceText = `Shift ${formatGBP(diffGbp)} from GBP to PKR NPC`;
-        } else {
-            rebalanceText = `Shift ${formatGBP(Math.abs(diffGbp))} from PKR NPC to GBP`;
-        }
+        let rebalanceText = diffGbp > 0 
+            ? `Shift ${formatGBP(diffGbp)} from GBP to PKR NPC`
+            : `Shift ${formatGBP(Math.abs(diffGbp))} from PKR NPC to GBP`;
 
         document.getElementById('sim-table').innerHTML = `
             <tr>
@@ -448,7 +456,7 @@
             </tr>
         `;
 
-        // Section 3 Table: UK HMRC Tax Breakdown
+        // Section 3 Table: Tax
         let taxRate = 0.20;
         let psa = 1000;
 
@@ -465,7 +473,7 @@
         options.forEach(opt => {
             const taxable = Math.max(0, opt.gross - psa);
             const ukTaxPreCredit = taxable * taxRate;
-            const ftc = Math.min(ukTaxPreCredit, opt.wht); // Double Taxation Relief limited to UK tax
+            const ftc = Math.min(ukTaxPreCredit, opt.wht);
             const netUkTaxPayable = Math.max(0, ukTaxPreCredit - ftc);
 
             taxRows += `
