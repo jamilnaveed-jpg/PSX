@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Position Sizer & 80/20 Staging Dashboard</title>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: #131b2e;
+      --card-border: #232f48;
+      --input-bg: #0b111e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #8b5cf6;
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.2);
+      --warning: #f59e0b;
+      --success: #10b981;
+      --success-glow: rgba(16, 18, 129, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      padding: 24px 16px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .dashboard-container {
+      max-width: 1100px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .header-panel {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .header-panel h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-long {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-short {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .mode-toggle-group {
+      display: flex;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 3px;
+    }
+
+    .mode-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active-long {
+      background: var(--success);
+      color: #ffffff;
+    }
+
+    .mode-btn.active-short {
+      background: var(--danger);
+      color: #ffffff;
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .grid-main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 12px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group.full-width {
+      grid-column: span 2;
+    }
+
+    label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background-color: var(--input-bg);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+    }
+
+    /* Slider Container */
+    .slider-box {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+
+    .slider-header span {
+      color: var(--text-muted);
+    }
+
+    .slider-header strong {
+      color: var(--primary);
+      font-size: 1rem;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #1e293b;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    }
+
+    /* Sizing Input Toggle Switch */
+    .input-toggle-group {
+      display: flex;
+      background: #090d16;
+      padding: 2px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+    }
+
+    .input-toggle-btn {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .input-toggle-btn.active {
+      background: var(--card-border);
+      color: #ffffff;
+    }
+
+    /* Output Metric Grid */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .result-card {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .result-card span {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .result-card strong {
+      font-size: 1.15rem;
+      color: var(--text-main);
+    }
+
+    .result-card.danger-card strong {
+      color: var(--danger);
+    }
+
+    .result-card.success-card strong {
+      color: var(--success);
+    }
+
+    /* Visual Evolution Gauges */
+    .gauge-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 6px;
+    }
+
+    .gauge-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .gauge-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+
+    .gauge-label span {
+      color: var(--text-muted);
+    }
+
+    .gauge-label strong {
+      font-weight: 700;
+    }
+
+    .bar-track {
+      height: 14px;
+      background: var(--input-bg);
+      border-radius: 7px;
+      border: 1px solid var(--card-border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 7px;
+      transition: width 0.3s ease, background-color 0.3s ease;
+    }
+
+    /* Status Pill */
+    .status-pill {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 0.3px;
+    }
+
+    .status-safe {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .status-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      border: 1px solid var(--warning);
+    }
+
+    .status-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    /* 80/20 Strategy Section */
+    .strategy-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .strategy-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sub-card {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sub-card-header {
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sub-card-header.core { color: var(--success); }
+    .sub-card-header.runner { color: var(--accent); }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+      padding-bottom: 6px;
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .stat-row span { color: var(--text-muted); }
+    .stat-row strong { color: var(--text-main); }
+
+    .explanation-box {
+      background: rgba(139, 92, 246, 0.08);
+      border-left: 3px solid var(--accent);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.83rem;
+      color: #c4b5fd;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    
+    <!-- Top Bar Navigation / Settings -->
+    <div class="header-panel">
+      <h1>
+        <span>📈 Position Size & Risk Evolution Dashboard</span>
+        <span id="sideBadge" class="badge-long">LONG TRADE</span>
+      </h1>
+
+      <div class="mode-toggle-group">
+        <button id="btnLong" class="mode-btn active-long" onclick="setTradeSide('LONG')">🟢 LONG</button>
+        <button id="btnShort" class="mode-btn" onclick="setTradeSide('SHORT')">🔴 SHORT</button>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid-main">
+
+      <!-- LEFT COLUMN: Inputs & Size Adjuster -->
+      <div class="card">
+        <div class="card-title">
+          <span>1. Position Inputs</span>
+          <div class="input-toggle-group">
+            <button id="modeShares" class="input-toggle-btn active" onclick="setSizeMode('SHARES')">Shares (#)</button>
+            <button id="modeCapital" class="input-toggle-btn" onclick="setSizeMode('CAPITAL')">Capital ($)</button>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="accountEquity">Account Equity ($)</label>
+            <input type="number" id="accountEquity" value="50000" oninput="recalculate()">
+          </div>
+
+          <div class="form-group">
+            <label for="targetRiskPct">Baseline Max Risk (%)</label>
+            <input type="number" id="targetRiskPct" step="0.1" value="1.0" oninput="recalculate()">
+          </div>
+
+          <div class="form-group">
+            <label for="entryPrice">Entry Price ($)</label>
+            <input type="number" id="entryPrice" step="0.01" value="150.00" oninput="recalculate()">
+          </div>
+
+          <div class="form-group">
+            <label for="stopLossInput">Stop Loss ($)</label>
+            <input type="number" id="stopLossInput" step="0.01" value="142.50" oninput="onStopLossInputChange()">
+          </div>
+        </div>
+
+        <!-- Interactive Size Slider -->
+        <div class="slider-box">
+          <div class="slider-header">
+            <span>Dynamic Size Slider</span>
+            <strong id="sliderDisplayValue">500 Shares</strong>
+          </div>
+          <input type="range" id="sizeSlider" min="10" max="2000" step="10" value="500" oninput="onSliderMove()">
+          <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted);">
+            <span id="sliderMinLabel">10 Shares</span>
+            <span id="sliderMaxLabel">2,000 Shares</span>
+          </div>
+        </div>
+
+        <!-- 80/20 Target Setup -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="targetCore">80% Core Target ($)</label>
+            <input type="number" id="targetCore" step="0.01" value="165.00" oninput="recalculate()">
+          </div>
+
+          <div class="form-group">
+            <label for="targetRunner">20% Runner Target ($)</label>
+            <input type="number" id="targetRunner" step="0.01" value="180.00" oninput="recalculate()">
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: Real-Time Metrics & Risk Evolution -->
+      <div class="card">
+        <div class="card-title">
+          <span>2. Risk & Exposure Impact</span>
+          <span id="statusPill" class="status-pill status-safe">SAFE ALLOCATION</span>
+        </div>
+
+        <!-- Output Cards -->
+        <div class="results-grid">
+          <div class="result-card">
+            <span>Total Position Value</span>
+            <strong id="outPositionValue">$0.00</strong>
+          </div>
+
+          <div class="result-card">
+            <span>Account Allocation</span>
+            <strong id="outAllocation">0.0%</strong>
+          </div>
+
+          <div class="result-card danger-card">
+            <span>Capital at Risk ($)</span>
+            <strong id="outRiskDollars">$0.00</strong>
+          </div>
+
+          <div class="result-card danger-card">
+            <span>Account Risk (%)</span>
+            <strong id="outRiskPct">0.0%</strong>
+          </div>
+
+          <div class="result-card">
+            <span>Stop Distance ($)</span>
+            <strong id="outStopDistance">$0.00</strong>
+          </div>
+
+          <div class="result-card">
+            <span>Stop Distance (%)</span>
+            <strong id="outStopPct">0.0%</strong>
+          </div>
+        </div>
+
+        <!-- Evolution Gauges -->
+        <div class="gauge-section">
+          <!-- Risk vs Target Baseline -->
+          <div class="gauge-container">
+            <div class="gauge-label">
+              <span>Account Risk vs. Baseline Target (<span id="targetRiskRef">1.0</span>%)</span>
+              <strong id="gaugeRiskVal">0.0% / 1.0%</strong>
+            </div>
+            <div class="bar-track">
+              <div id="gaugeRiskFill" class="bar-fill"></div>
+            </div>
+          </div>
+
+          <!-- Position Exposure Gauge -->
+          <div class="gauge-container">
+            <div class="gauge-label">
+              <span>Account Capital Exposure</span>
+              <strong id="gaugeAllocVal">0.0%</strong>
+            </div>
+            <div class="bar-track">
+              <div id="gaugeAllocFill" class="bar-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 80/20 Trade Staging Strategy Breakdown -->
+    <div class="card">
+      <div class="card-title">
+        <span>3. 80 / 20 Trade Execution Strategy & Extended Runner Metrics</span>
+        <span style="font-size: 0.8rem; color: var(--accent); font-weight: 600;">Scale Out + Trend Capture</span>
+      </div>
+
+      <div class="strategy-grid">
+        <!-- 80% Core Exit -->
+        <div class="sub-card">
+          <div class="sub-card-header core">
+            🎯 80% Core Position (Lock Profit)
+          </div>
+          <div class="stat-row">
+            <span>Core Share Size:</span>
+            <strong id="outCoreShares">0 Shares</strong>
+          </div>
+          <div class="stat-row">
+            <span>Core Target Price:</span>
+            <strong id="outCoreTarget">$0.00</strong>
+          </div>
+          <div class="stat-row">
+            <span>Core Reward / Risk (R):</span>
+            <strong id="outCoreRR">0.00 R</strong>
+          </div>
+          <div class="stat-row">
+            <span>Core Realized Profit:</span>
+            <strong id="outCoreProfit" style="color: var(--success);">$0.00</strong>
+          </div>
+        </div>
+
+        <!-- 20% Runner Exit -->
+        <div class="sub-card">
+          <div class="sub-card-header runner">
+            🚀 20% Runner Position (3-5 Day Trend)
+          </div>
+          <div class="stat-row">
+            <span>Runner Share Size:</span>
+            <strong id="outRunnerShares">0 Shares</strong>
+          </div>
+          <div class="stat-row">
+            <span>Runner Target Price:</span>
+            <strong id="outRunnerTarget">$0.00</strong>
+          </div>
+          <div class="stat-row">
+            <span>Runner Reward / Risk (R):</span>
+            <strong id="outRunnerRR">0.00 R</strong>
+          </div>
+          <div class="stat-row">
+            <span>Runner Potential Profit:</span>
+            <strong id="outRunnerProfit" style="color: var(--accent);">$0.00</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Combined Performance Summary -->
+      <div class="explanation-box">
+        <strong>💡 80/20 Strategy Logic:</strong> When price hits the 80% Target, sell 80% of your position to lock in guaranteed profit (<span id="summaryCoreProfit">$0.00</span>) and adjust your Stop Loss on the remaining 20% to <strong>Breakeven (Entry Price)</strong>. The remaining 20% runner carries <strong>zero downside risk</strong> while providing upside potential (<span id="summaryRunnerProfit">$0.00</span>) if the stock trends strongly over the next 3 to 5 days. Total trade profit potential: <strong id="summaryTotalProfit" style="color: var(--success);">$0.00</strong>.
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // State Variables
+    let tradeSide = 'LONG'; // 'LONG' or 'SHORT'
+    let sizeMode = 'SHARES'; // 'SHARES' or 'CAPITAL'
+
+    function setTradeSide(side) {
+      tradeSide = side;
+      const btnLong = document.getElementById('btnLong');
+      const btnShort = document.getElementById('btnShort');
+      const sideBadge = document.getElementById('sideBadge');
+
+      if (side === 'LONG') {
+        btnLong.className = 'mode-btn active-long';
+        btnShort.className = 'mode-btn';
+        sideBadge.className = 'badge-long';
+        sideBadge.innerText = 'LONG TRADE';
+      } else {
+        btnLong.className = 'mode-btn';
+        btnShort.className = 'mode-btn active-short';
+        sideBadge.className = 'badge-short';
+        sideBadge.innerText = 'SHORT TRADE';
+      }
+      recalculate();
+    }
+
+    function setSizeMode(mode) {
+      sizeMode = mode;
+      document.getElementById('modeShares').className = mode === 'SHARES' ? 'input-toggle-btn active' : 'input-toggle-btn';
+      document.getElementById('modeCapital').className = mode === 'CAPITAL' ? 'input-toggle-btn active' : 'input-toggle-btn';
+      
+      updateSliderConfig();
+      recalculate();
+    }
+
+    function updateSliderConfig() {
+      const entryPrice = parseFloat(document.getElementById('entryPrice').value) || 1;
+      const equity = parseFloat(document.getElementById('accountEquity').value) || 1;
+      const slider = document.getElementById('sizeSlider');
+
+      if (sizeMode === 'SHARES') {
+        const maxShares = Math.max(100, Math.floor((equity * 1.5) / entryPrice));
+        slider.min = 10;
+        slider.max = maxShares;
+        slider.step = 10;
+        document.getElementById('sliderMinLabel').innerText = '10 Shares';
+        document.getElementById('sliderMaxLabel').innerText = `${maxShares.toLocaleString()} Shares`;
+      } else {
+        const maxCapital = Math.floor(equity * 1.5);
+        slider.min = 500;
+        slider.max = maxCapital;
+        slider.step = 500;
+        document.getElementById('sliderMinLabel').innerText = '$500';
+        document.getElementById('sliderMaxLabel').innerText = `$${maxCapital.toLocaleString()}`;
+      }
+    }
+
+    function onSliderMove() {
+      recalculate();
+    }
+
+    function onStopLossInputChange() {
+      recalculate();
+    }
+
+    function recalculate() {
+      const equity = parseFloat(document.getElementById('accountEquity').value) || 0;
+      const baselineRiskPct = parseFloat(document.getElementById('targetRiskPct').value) || 0;
+      const entryPrice = parseFloat(document.getElementById('entryPrice').value) || 0;
+      const stopPrice = parseFloat(document.getElementById('stopLossInput').value) || 0;
+      const targetCore = parseFloat(document.getElementById('targetCore').value) || 0;
+      const targetRunner = parseFloat(document.getElementById('targetRunner').value) || 0;
+      const sliderVal = parseFloat(document.getElementById('sizeSlider').value) || 0;
+
+      document.getElementById('targetRiskRef').innerText = baselineRiskPct.toFixed(1);
+
+      // Determine Shares and Position Capital based on slider mode
+      let shares = 0;
+      let positionValue = 0;
+
+      if (sizeMode === 'SHARES') {
+        shares = sliderVal;
+        positionValue = shares * entryPrice;
+        document.getElementById('sliderDisplayValue').innerText = `${shares.toLocaleString()} Shares`;
+      } else {
+        positionValue = sliderVal;
+        shares = entryPrice > 0 ? Math.floor(positionValue / entryPrice) : 0;
+        document.getElementById('sliderDisplayValue').innerText = `$${positionValue.toLocaleString()}`;
+      }
+
+      // Calculate Stop Loss Distance
+      let stopDistance = 0;
+      let stopPct = 0;
+
+      if (tradeSide === 'LONG') {
+        stopDistance = entryPrice - stopPrice;
+      } else {
+        stopDistance = stopPrice - entryPrice;
+      }
+
+      if (entryPrice > 0) {
+        stopPct = (stopDistance / entryPrice) * 100;
+      }
+
+      // Risk Calculations
+      const riskDollars = shares * stopDistance;
+      const riskPctOfAccount = equity > 0 ? (riskDollars / equity) * 100 : 0;
+      const allocationPct = equity > 0 ? (positionValue / equity) * 100 : 0;
+
+      // Render Primary Outputs
+      document.getElementById('outPositionValue').innerText = `$${positionValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('outAllocation').innerText = `${allocationPct.toFixed(1)}%`;
+      document.getElementById('outRiskDollars').innerText = `$${riskDollars.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('outRiskPct').innerText = `${riskPctOfAccount.toFixed(2)}%`;
+      document.getElementById('outStopDistance').innerText = `$${Math.abs(stopDistance).toFixed(2)}`;
+      document.getElementById('outStopPct').innerText = `${stopPct.toFixed(2)}%`;
+
+      // Render Gauges & Warnings
+      renderRiskGauge(riskPctOfAccount, baselineRiskPct);
+      renderAllocationGauge(allocationPct);
+      updateStatusPill(riskPctOfAccount, baselineRiskPct, stopDistance);
+
+      // 80/20 Strategy Calculations
+      calculate8020(shares, entryPrice, stopDistance, targetCore, targetRunner);
+    }
+
+    function renderRiskGauge(riskPct, baselinePct) {
+      const fill = document.getElementById('gaugeRiskFill');
+      const valText = document.getElementById('gaugeRiskVal');
+
+      valText.innerText = `${riskPct.toFixed(2)}% / ${baselinePct.toFixed(1)}%`;
+      
+      const ratio = baselinePct > 0 ? (riskPct / baselinePct) * 100 : 0;
+      const clampedFill = Math.min(Math.max(ratio, 0), 100);
+      fill.style.width = `${clampedFill}%`;
+
+      if (riskPct > baselinePct * 1.5) {
+        fill.style.backgroundColor = 'var(--danger)';
+      } else if (riskPct > baselinePct) {
+        fill.style.backgroundColor = 'var(--warning)';
+      } else {
+        fill.style.backgroundColor = 'var(--success)';
+      }
+    }
+
+    function renderAllocationGauge(allocPct) {
+      const fill = document.getElementById('gaugeAllocFill');
+      const valText = document.getElementById('gaugeAllocVal');
+
+      valText.innerText = `${allocPct.toFixed(1)}% of Equity`;
+      const clampedFill = Math.min(Math.max(allocPct, 0), 100);
+      fill.style.width = `${clampedFill}%`;
+
+      if (allocPct > 50) {
+        fill.style.backgroundColor = 'var(--warning)';
+      } else {
+        fill.style.backgroundColor = 'var(--primary)';
+      }
+    }
+
+    function updateStatusPill(riskPct, baselinePct, stopDistance) {
+      const pill = document.getElementById('statusPill');
+
+      if (stopDistance <= 0) {
+        pill.className = 'status-pill status-danger';
+        pill.innerText = tradeSide === 'LONG' ? 'INVALID STOP (Stop > Entry)' : 'INVALID STOP (Stop < Entry)';
+        return;
+      }
+
+      if (riskPct > baselinePct * 1.5) {
+        pill.className = 'status-pill status-danger';
+        pill.innerText = 'HIGH RISK (Over Baseline Target)';
+      } else if (riskPct > baselinePct) {
+        pill.className = 'status-pill status-warning';
+        pill.innerText = 'MODERATE RISK (Slightly Above Baseline)';
+      } else {
+        pill.className = 'status-pill status-safe';
+        pill.innerText = 'SAFE ALLOCATION (Within Limits)';
+      }
+    }
+
+    function calculate8020(totalShares, entryPrice, stopDistance, targetCore, targetRunner) {
+      const coreShares = Math.floor(totalShares * 0.8);
+      const runnerShares = totalShares - coreShares;
+
+      let coreReward = 0;
+      let runnerReward = 0;
+
+      if (tradeSide === 'LONG') {
+        coreReward = targetCore - entryPrice;
+        runnerReward = targetRunner - entryPrice;
+      } else {
+        coreReward = entryPrice - targetCore;
+        runnerReward = entryPrice - targetRunner;
+      }
+
+      const coreRR = stopDistance > 0 ? (coreReward / stopDistance) : 0;
+      const runnerRR = stopDistance > 0 ? (runnerReward / stopDistance) : 0;
+
+      const coreProfit = coreShares * coreReward;
+      const runnerProfit = runnerShares * runnerReward;
+      const totalProfit = coreProfit + runnerProfit;
+
+      document.getElementById('outCoreShares').innerText = `${coreShares.toLocaleString()} Shares (80%)`;
+      document.getElementById('outCoreTarget').innerText = `$${targetCore.toFixed(2)}`;
+      document.getElementById('outCoreRR').innerText = `${coreRR.toFixed(2)} R`;
+      document.getElementById('outCoreProfit').innerText = `$${coreProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      document.getElementById('outRunnerShares').innerText = `${runnerShares.toLocaleString()} Shares (20%)`;
+      document.getElementById('outRunnerTarget').innerText = `$${targetRunner.toFixed(2)}`;
+      document.getElementById('outRunnerRR').innerText = `${runnerRR.toFixed(2)} R`;
+      document.getElementById('outRunnerProfit').innerText = `$${runnerProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      document.getElementById('summaryCoreProfit').innerText = `$${coreProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('summaryRunnerProfit').innerText = `$${runnerProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('summaryTotalProfit').innerText = `$${totalProfit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    // Initialize
+    window.onload = function() {
+      updateSliderConfig();
+      recalculate();
+    };
+  </script>
+</body>
+</html>
