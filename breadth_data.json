@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-04T16:39:41.704Z",
+  "updatedAt": "2026-08-19T06:29:25.595Z",
   "userRows": [
     {
       "date": "2026-07-31",
@@ -36,6 +36,105 @@
       "down20": 74,
       "up20d": 88,
       "down20d": 91
+    },
+    {
+      "date": "2026-08-18",
+      "up50": 129,
+      "down50": 206,
+      "up20": 50,
+      "down20": 25,
+      "up20d": 27,
+      "down20d": 30
+    },
+    {
+      "date": "2026-08-17",
+      "up50": null,
+      "down50": null,
+      "up20": null,
+      "down20": null,
+      "up20d": null,
+      "down20d": null
+    },
+    {
+      "date": "2026-08-14",
+      "up50": 139,
+      "down50": 221,
+      "up20": 67,
+      "down20": 25,
+      "up20d": 48,
+      "down20d": 15
+    },
+    {
+      "date": "2026-08-13",
+      "up50": 136,
+      "down50": 213,
+      "up20": 98,
+      "down20": 30,
+      "up20d": 73,
+      "down20d": 17
+    },
+    {
+      "date": "2026-08-12",
+      "up50": 118,
+      "down50": 211,
+      "up20": 125,
+      "down20": 55,
+      "up20d": 61,
+      "down20d": 28
+    },
+    {
+      "date": "2026-08-11",
+      "up50": 127,
+      "down50": 206,
+      "up20": 143,
+      "down20": 83,
+      "up20d": 54,
+      "down20d": 50
+    },
+    {
+      "date": "2026-08-10",
+      "up50": 119,
+      "down50": 208,
+      "up20": 187,
+      "down20": 69,
+      "up20d": 86,
+      "down20d": 34
+    },
+    {
+      "date": "2026-08-07",
+      "up50": 128,
+      "down50": 203,
+      "up20": 263,
+      "down20": 42,
+      "up20d": 142,
+      "down20d": 28
+    },
+    {
+      "date": "2026-08-06",
+      "up50": 107,
+      "down50": 205,
+      "up20": 136,
+      "down20": 40,
+      "up20d": 107,
+      "down20d": 34
+    },
+    {
+      "date": "2026-08-05",
+      "up50": 105,
+      "down50": 211,
+      "up20": 262,
+      "down20": 33,
+      "up20d": 172,
+      "down20d": 33
+    },
+    {
+      "date": "2026-08-04",
+      "up50": 98,
+      "down50": 216,
+      "up20": 156,
+      "down20": 25,
+      "up20d": 118,
+      "down20d": 38
     }
   ],
   "quotes": {
@@ -54,11 +153,7 @@
       },
       {
         "kicker": "Note",
-        "text": "3 or more EP 9m down in 2 weeks means big selling will come, be wary of it "
-      },
-      {
-        "kicker": "Note",
-        "text": "Setup = Market Structure, Entry strategy, Exit strategy, Size strategy, stop strategy, Frequency strategy"
+        "text": ""
       }
     ],
     "right": [
